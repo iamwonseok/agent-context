@@ -1,0 +1,37 @@
+---
+# CI-01-01: Job names should be descriptive (PASS)
+# AI Review: Job names clearly describe their purpose
+
+stages:
+  - validate
+  - build
+  - test
+  - deploy
+
+# Good: Descriptive job names
+validate-yaml-syntax:
+  stage: validate
+  script:
+    - yamllint .
+
+build-docker-image:
+  stage: build
+  script:
+    - docker build -t myapp .
+
+run-unit-tests:
+  stage: test
+  script:
+    - pytest tests/unit/
+
+run-integration-tests:
+  stage: test
+  script:
+    - pytest tests/integration/
+
+deploy-to-staging:
+  stage: deploy
+  script:
+    - kubectl apply -f k8s/staging/
+  environment:
+    name: staging

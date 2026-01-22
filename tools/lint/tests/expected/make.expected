@@ -1,0 +1,128 @@
+# MAKE Lint Expected Output
+# Generated: 2026-01-23T01:11:14+0900
+
+$ ./bin/lint-make tests/make/fail/Make-02-01_space_recipe.mk
+Checking 1 Makefile(s)...
+
+[FAIL] tests/make/fail/Make-02-01_space_recipe.mk
+[NG] Make-02-01: Space indentation in recipe
+9:    echo "Building..."
+10:    gcc -o main main.c
+11:    echo "Done"
+[OK] Make-04-01: Using ${VAR} format
+[OK] Make-06-02: .PHONY declared
+[OK] Make-08-03: endif has comment
+
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-make tests/make/fail/Make-04-01_paren_vars.mk
+Checking 1 Makefile(s)...
+
+[FAIL] tests/make/fail/Make-04-01_paren_vars.mk
+[OK] Make-02-01: Tab indentation
+[NG] Make-04-01: Using $(VAR) instead of ${VAR}
+11:SOURCES  := $(wildcard $(SRC_DIR)/*.c)
+12:OBJECTS  := $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+16:all: $(TARGET)
+[OK] Make-06-02: .PHONY declared
+[OK] Make-08-03: endif has comment
+
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-make tests/make/fail/Make-06-02_no_phony.mk
+Checking 1 Makefile(s)...
+
+[FAIL] tests/make/fail/Make-06-02_no_phony.mk
+[OK] Make-02-01: Tab indentation
+[OK] Make-04-01: Using ${VAR} format
+[NG] Make-06-02: Missing .PHONY declaration
+[OK] Make-08-03: endif has comment
+
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-make tests/make/fail/Make-08-03_no_endif_comment.mk
+Checking 1 Makefile(s)...
+
+[FAIL] tests/make/fail/Make-08-03_no_endif_comment.mk
+[OK] Make-02-01: Tab indentation
+[OK] Make-04-01: Using ${VAR} format
+[NG] Make-06-02: Missing .PHONY declaration
+[NG] Make-08-03: endif without comment
+11:endif
+19:endif
+23:endif
+
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-make tests/make/pass/Make-02-01_tab_recipe.mk
+Checking 1 Makefile(s)...
+
+[PASS] tests/make/pass/Make-02-01_tab_recipe.mk
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-make tests/make/pass/Make-04-01_brace_vars.mk
+Checking 1 Makefile(s)...
+
+[PASS] tests/make/pass/Make-04-01_brace_vars.mk
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-make tests/make/pass/Make-06-02_phony.mk
+Checking 1 Makefile(s)...
+
+[PASS] tests/make/pass/Make-06-02_phony.mk
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-make tests/make/pass/Make-08-03_endif_comment.mk
+Checking 1 Makefile(s)...
+
+[PASS] tests/make/pass/Make-08-03_endif_comment.mk
+
+========================================
+Makefile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+

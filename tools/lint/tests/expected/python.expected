@@ -1,0 +1,374 @@
+# PYTHON Lint Expected Output
+# Generated: 2026-01-23T01:11:14+0900
+
+$ ./bin/lint-python tests/python/fail/Py-02-01_tab_indent.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-02-01_tab_indent.py
+[NG] Py-02-01: Tab indentation found
+8:	"""Example with wrong indentation."""
+9:	value = 0
+10:	if value == 0:
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-02-04_no_blank_lines.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-02-04_no_blank_lines.py
+[OK] Py-02-01: Space indentation
+[NG] Py-02-04: Missing blank lines between definitions
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-03-02_multiple_imports.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-03-02_multiple_imports.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[NG] Py-03-02: Multiple imports on one line
+6:import os, sys, json
+8:import requests, yaml
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-03-03_wrong_import_order.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-03-03_wrong_import_order.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[NG] Py-03-03: Import order incorrect (stdlib should come first)
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-03-04_wildcard_import.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-03-04_wildcard_import.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[NG] Py-03-04: Wildcard import found
+7:from collections import *
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-05-01_single_quotes.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-05-01_single_quotes.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[NG] Py-05-01: Single quotes found
+6:    name = 'Alice'
+7:    message = 'Hello, World!'
+8:    path = '/usr/local/bin'
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-06-02_space_in_parens.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-06-02_space_in_parens.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[NG] Py-06-02: Space inside parentheses
+7:def process( data, options=None ):
+9:    result = func( arg1, arg2 )
+15:def func( a, b ):
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-08-05_mutable_default.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-08-05_mutable_default.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[NG] Py-08-05: Mutable default argument
+7:def process_items(items=[]):
+12:def create_config(options={}):
+17:def append_value(value, target=[]):
+[OK] Py-10-01: No bare except
+[OK] Py-11-01: No file operations or using with
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-10-01_bare_except.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-10-01_bare_except.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[NG] Py-10-01: Bare except found
+11:    except:
+20:    except:
+28:    except:
+[OK] Py-11-01: Using with statement
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/fail/Py-11-01_no_with_statement.py
+Checking 1 Python file(s)...
+
+[FAIL] tests/python/fail/Py-11-01_no_with_statement.py
+[OK] Py-02-01: Space indentation
+[OK] Py-02-04: Proper blank lines
+[OK] Py-03-02: One import per line
+[OK] Py-03-03: Import order correct
+[OK] Py-03-04: No wildcard imports
+[OK] Py-05-01: Using double quotes
+[OK] Py-06-02: No space inside parentheses
+[OK] Py-08-05: No mutable defaults
+[OK] Py-10-01: No bare except
+[NG] Py-11-01: open() without with
+9:    f = open(path, "r")
+17:    f = open(path, "w")
+24:    src_file = open(src, "rb")
+
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-02-01_space_indent.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-02-01_space_indent.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-02-04_blank_lines.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-02-04_blank_lines.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-03-02_single_import.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-03-02_single_import.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-03-03_import_order.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-03-03_import_order.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-03-04_no_wildcard.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-03-04_no_wildcard.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-05-01_double_quotes.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-05-01_double_quotes.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-06-02_no_space_in_parens.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-06-02_no_space_in_parens.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-08-05_no_mutable_default.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-08-05_no_mutable_default.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-10-01_specific_except.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-10-01_specific_except.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-python tests/python/pass/Py-11-01_with_statement.py
+Checking 1 Python file(s)...
+
+[PASS] tests/python/pass/Py-11-01_with_statement.py
+
+========================================
+Python Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+

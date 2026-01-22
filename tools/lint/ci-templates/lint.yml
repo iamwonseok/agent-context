@@ -1,0 +1,371 @@
+# GitLab CI Template for Coding Convention Checks
+# Include this in your project's .gitlab-ci.yml:
+#
+#   include:
+#     - project: 'yourgroup/agent-context'
+#       ref: main
+#       file: '/tools/lint/ci-templates/lint.yml'
+#
+# Required CI/CD Variables (for private repo access):
+#   SSH_KEY_FOR_CONTAINER - File type, private key for cloning
+#   SSH_KNOWN_HOSTS - File type, known hosts for GitLab server
+#
+---
+
+variables:
+  # Docker image for linting tools (pre-built on Nexus)
+  LINT_IMAGE: nexus.soc-vnv.o:5000/coding-convention-test:v1.0
+  # Context directory (local or submodule)
+  CONTEXT_DIR: ${CI_PROJECT_DIR}/.context
+  # GitLab server for SSH (change if using different server)
+  GITLAB_HOST: gitlab.fadutec.dev
+
+# SSH setup for private repo access
+.ssh_setup:
+  before_script:
+    - |
+      if [ -n "$SSH_KEY_FOR_CONTAINER" ]; then
+        command -v ssh-agent >/dev/null || ( apk update && apk add openssh-client git )
+        eval $(ssh-agent -s)
+        chmod 400 "$SSH_KEY_FOR_CONTAINER"
+        ssh-add "$SSH_KEY_FOR_CONTAINER"
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+      fi
+
+# Template for lint jobs
+.lint:test:
+  stage: test
+  image: ${LINT_IMAGE}
+  variables:
+    # Script directory inside the container
+    SCRIPT_DIR: /work/tools/lint/scripts
+  before_script:
+    - |
+      # Determine script directory based on context location
+      # New structure: .agent/tools/lint/scripts
+      if [ -d "${CI_PROJECT_DIR}/.agent/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/.agent/tools/lint/scripts"
+      elif [ -d "${CONTEXT_DIR}/.agent/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/.agent/tools/lint/scripts"
+      # Legacy structure: tools/lint/scripts
+      elif [ -d "${CONTEXT_DIR}/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/tools/lint/scripts"
+      elif [ -d "${CI_PROJECT_DIR}/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/tools/lint/scripts"
+      # Legacy path for backward compatibility
+      elif [ -d "${CONTEXT_DIR}/coding-convention/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/coding-convention/scripts"
+      elif [ -d "${CI_PROJECT_DIR}/coding-convention/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/coding-convention/scripts"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# C/C++ linting (static analysis)
+# In MR: checks only changed files (git diff)
+# On default branch: checks test cases only
+lint:c:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - |
+      # Get changed C files in MR
+      if [ "${CI_PIPELINE_SOURCE}" = "merge_request_event" ]; then
+        CHANGED_FILES=$(git diff --name-only ${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA} -- '*.c' '*.h' '*.cpp' '*.hpp' 2>/dev/null || true)
+        if [ -n "${CHANGED_FILES}" ]; then
+          echo "Checking changed files only:"
+          echo "${CHANGED_FILES}"
+          export CHECK_FILES="${CHANGED_FILES}"
+        fi
+      fi
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/c.results ${SCRIPT_DIR}/test_c_junit.sh ${CHECK_FILES} > junit-c.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-c.xml
+      - lint-results/
+    reports:
+      junit: junit-c.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.c"
+        - "**/*.h"
+        - "**/*.cpp"
+        - "**/*.hpp"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# C/C++ AI Review (for Detectable=No rules)
+# Uses Ollama installed on GitLab Runner host machine
+#
+# Requirements:
+#   - Ollama installed and running on the GitLab Runner host
+#   - Model pre-pulled: ollama pull qwen2.5-coder:14b
+#
+# Optional CI/CD variables:
+#   OLLAMA_HOST: Override Ollama URL (default: auto-detect host)
+#   OLLAMA_MODEL: Model to use (default: qwen2.5-coder:14b)
+#   ENABLE_AI_REVIEW: Set to "false" to disable (default: true)
+lint:c:ai:
+  extends: .lint:test
+  variables:
+    OLLAMA_MODEL: qwen2.5-coder:14b
+    # For Docker executor to access host's Ollama
+    FF_NETWORK_PER_BUILD: "true"
+  script:
+    - |
+      cd ${CI_PROJECT_DIR}
+      
+      # Skip if explicitly disabled
+      if [ "${ENABLE_AI_REVIEW}" = "false" ]; then
+        echo "AI review disabled via ENABLE_AI_REVIEW=false"
+        echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="skipped"><skipped message="AI review disabled"/></testcase></testsuite></testsuites>' > junit-c-ai.xml
+        exit 0
+      fi
+      
+      # Determine Ollama host (try multiple options for Docker-to-host connectivity)
+      if [ -n "${OLLAMA_HOST}" ]; then
+        echo "Using configured OLLAMA_HOST: ${OLLAMA_HOST}"
+      else
+        # Try common addresses (localhost first for shell executor)
+        for host in "http://localhost:11434" "http://127.0.0.1:11434" "http://host.docker.internal:11434" "http://172.17.0.1:11434"; do
+          echo "Trying ${host}..."
+          if curl -s --max-time 3 "${host}/api/tags" >/dev/null 2>&1; then
+            OLLAMA_HOST="${host}"
+            echo "Found Ollama at ${OLLAMA_HOST}"
+            break
+          fi
+        done
+      fi
+      
+      # Check if Ollama is accessible
+      if [ -z "${OLLAMA_HOST}" ]; then
+        echo "WARNING: Ollama not found - skipping AI review"
+        echo "  To enable AI review, ensure:"
+        echo "  1. Ollama is running on the GitLab Runner host"
+        echo "  2. Ollama is listening on 0.0.0.0:11434 (not just localhost)"
+        echo "     Run: OLLAMA_HOST=0.0.0.0 ollama serve"
+        echo "  3. Or set OLLAMA_HOST variable in CI/CD settings"
+        echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="ollama_connection"><skipped message="Ollama not available">Ollama not found on host - AI review skipped</skipped></testcase></testsuite></testsuites>' > junit-c-ai.xml
+        exit 0
+      fi
+      
+      # Verify model is available
+      echo "Checking model ${OLLAMA_MODEL}..."
+      if ! curl -s "${OLLAMA_HOST}/api/tags" | grep -q "${OLLAMA_MODEL}"; then
+        echo "WARNING: Model ${OLLAMA_MODEL} not found. Attempting to pull..."
+        curl -s "${OLLAMA_HOST}/api/pull" -d "{\"name\": \"${OLLAMA_MODEL}\"}" || true
+      fi
+      
+      echo "Running AI code review with ${OLLAMA_MODEL}..."
+      
+      # Get changed C files in MR (AI reviews only changed files)
+      CHECK_FILES=""
+      if [ "${CI_PIPELINE_SOURCE}" = "merge_request_event" ]; then
+        CHECK_FILES=$(git diff --name-only ${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA} -- '*.c' '*.h' 2>/dev/null | tr '\n' ' ' || true)
+        if [ -n "${CHECK_FILES}" ]; then
+          echo "AI reviewing changed files: ${CHECK_FILES}"
+        else
+          echo "No C files changed in MR, skipping AI review"
+          echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="0"></testsuite></testsuites>' > junit-c-ai.xml
+          exit 0
+        fi
+      else
+        echo "Running on default branch - checking test cases"
+      fi
+      
+      echo "=== Debug Info ==="
+      echo "SCRIPT_DIR=${SCRIPT_DIR}"
+      echo "CHECK_FILES=${CHECK_FILES}"
+      echo "OLLAMA_HOST=${OLLAMA_HOST}"
+      echo "OLLAMA_MODEL=${OLLAMA_MODEL}"
+      
+      # Verify Ollama is responding
+      if ! curl -s --max-time 5 "${OLLAMA_HOST}/api/tags" >/dev/null 2>&1; then
+        echo "WARNING: Ollama not responding at ${OLLAMA_HOST} - skipping AI review"
+        echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="ollama_connection"><skipped message="Ollama not responding">Cannot connect to ${OLLAMA_HOST} - AI review skipped</skipped></testcase></testsuite></testsuites>' > junit-c-ai.xml
+        exit 0
+      fi
+      
+      echo "Ollama is ready, starting review..."
+      
+      # Run AI review
+      mkdir -p ai-review-results
+      ls -la ${SCRIPT_DIR}/test_c_ai_review.sh 2>/dev/null || echo "Script not found at ${SCRIPT_DIR}"
+      
+      echo ""
+      echo "=== Running AI Review ==="
+      OLLAMA_HOST="${OLLAMA_HOST}" OLLAMA_MODEL="${OLLAMA_MODEL}" REPORT_FILE=ai-review-results/ai-review-report.md ${SCRIPT_DIR}/test_c_ai_review.sh ${CHECK_FILES} > junit-c-ai.xml || echo "Script exited with code $?"
+      
+      echo ""
+      echo "=== Generated JUnit XML ==="
+      ls -la junit-c-ai.xml 2>/dev/null || echo "junit-c-ai.xml not found!"
+      echo "File size: $(wc -c < junit-c-ai.xml 2>/dev/null || echo 0) bytes"
+      echo ""
+      echo "=== JUnit XML Content (first 50 lines) ==="
+      head -50 junit-c-ai.xml 2>/dev/null || echo "(empty or not created)"
+      echo ""
+      echo "=== Markdown Report Preview ==="
+      head -30 ai-review-results/ai-review-report.md 2>/dev/null || echo "(report not created)"
+  artifacts:
+    when: always
+    paths:
+      - junit-c-ai.xml
+      - ai-review-results/
+    reports:
+      junit: junit-c-ai.xml
+  rules:
+    # Run only on scheduled pipelines (weekly) - too slow for MR
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Allow manual trigger anytime
+    - when: manual
+      allow_failure: true
+
+# Bash linting
+lint:bash:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/bash.results ${SCRIPT_DIR}/test_bash_junit.sh > junit-bash.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-bash.xml
+      - lint-results/
+    reports:
+      junit: junit-bash.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.sh"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Python linting
+lint:python:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/python.results ${SCRIPT_DIR}/test_python_junit.sh > junit-python.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-python.xml
+      - lint-results/
+    reports:
+      junit: junit-python.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.py"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Makefile linting
+lint:make:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/make.results ${SCRIPT_DIR}/test_make_junit.sh > junit-make.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-make.xml
+      - lint-results/
+    reports:
+      junit: junit-make.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/Makefile"
+        - "**/*.mk"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# YAML/Dockerfile linting
+lint:yaml:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/yaml.results ${SCRIPT_DIR}/test_yaml_junit.sh > junit-yaml.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-yaml.xml
+      - lint-results/
+    reports:
+      junit: junit-yaml.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "**/*.yaml"
+        - "**/*.yml"
+        - "**/Dockerfile"
+        - "**/*.Dockerfile"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Verify lint results against expected values
+# This job runs after all lint jobs to detect any changes in lint behavior
+verify:results:
+  stage: test
+  image: ${LINT_IMAGE}
+  needs:
+    - job: lint:c
+      optional: true
+    - job: lint:bash
+      optional: true
+    - job: lint:make
+      optional: true
+    - job: lint:python
+      optional: true
+    - job: lint:yaml
+      optional: true
+  variables:
+    SCRIPT_DIR: /work/tools/lint/scripts
+  before_script:
+    - |
+      # Determine script directory based on context location
+      # New structure: .agent/tools/lint/scripts
+      if [ -d "${CI_PROJECT_DIR}/.agent/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/.agent/tools/lint/scripts"
+      elif [ -d "${CONTEXT_DIR}/.agent/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/.agent/tools/lint/scripts"
+      # Legacy structure: tools/lint/scripts
+      elif [ -d "${CONTEXT_DIR}/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/tools/lint/scripts"
+      elif [ -d "${CI_PROJECT_DIR}/tools/lint/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/tools/lint/scripts"
+      # Legacy path for backward compatibility
+      elif [ -d "${CONTEXT_DIR}/coding-convention/scripts" ]; then
+        export SCRIPT_DIR="${CONTEXT_DIR}/coding-convention/scripts"
+      elif [ -d "${CI_PROJECT_DIR}/coding-convention/scripts" ]; then
+        export SCRIPT_DIR="${CI_PROJECT_DIR}/coding-convention/scripts"
+      fi
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - |
+      # Collect results from lint jobs
+      mkdir -p /tmp/lint-results
+      for lang in c bash make python yaml; do
+        if [ -f "lint-results/${lang}.results" ]; then
+          cp "lint-results/${lang}.results" "/tmp/lint-results/${lang}.results"
+        fi
+      done
+    - |
+      # Run verification
+      RESULT_DIR=/tmp/lint-results ${SCRIPT_DIR}/verify_results.sh all > junit-verify.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-verify.xml
+    reports:
+      junit: junit-verify.xml
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  allow_failure: true

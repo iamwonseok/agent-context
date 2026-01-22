@@ -1,0 +1,144 @@
+# Include agent context rules
+# Agent context is managed in .agent/ directory
+# For detailed rules and workflows, see .agent/skills/ and .agent/workflows/
+
+# Project-specific rules below
+# Add your custom rules here
+
+# Agent-Context Project Rules
+
+## Language Policy
+- **Code and documentation: English only**
+- Comments, variables, functions, commits: English
+- Korean allowed only in user messages
+
+## Output Style
+- **ASCII only, no emojis/unicode icons**
+- Use: `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`
+- Checkmarks: `[x]` or `(v)` not `✓`
+- Crosses: `[ ]` or `(x)` not `✗`
+- Arrows: `->` not `→`
+- Borders: `---` or `===` not `━━━`
+
+## Agent Behavior
+
+### Session Start
+1. Check `git status` and `git branch`
+2. Ensure on feature branch (NOT main)
+3. If on main, create/checkout feature branch before work
+4. Read `.agent/skills/git-workflow/references/multi-agent-rules.md` for git rules
+
+### Before Starting Work
+| Task Type | Read First |
+|-----------|------------|
+| New feature | `.agent/workflows/feature.md` |
+| Bug fix | `.agent/workflows/bug-fix.md` |
+| Hotfix | `.agent/workflows/hotfix.md` |
+| Refactoring | `.agent/workflows/refactor.md` |
+| Large/complex task | `.agent/skills/plan/design-solution/SKILL.md` |
+
+### Before Committing
+1. Read `.agent/skills/integrate/commit-changes/SKILL.md` for message format
+2. Review `git diff --staged`
+3. Write commit message immediately (not later)
+
+### Before Finishing
+1. Read `.agent/skills/integrate/create-merge-request/SKILL.md`
+2. Ensure all tests pass
+3. Create MR/PR, don't merge directly to main
+
+### Concurrent Work
+- Multiple agents on different tasks -> Use git worktree
+- See `.agent/skills/git-workflow/references/worktree-guide.md`
+
+## Project Overview
+Workflow + CI/CD template for agent-driven development.
+
+### Directory Structure
+```
+project/
+├── .agent/                    # Agent-context framework (do not modify)
+│   ├── skills/                # Workflow building blocks
+│   ├── workflows/             # Workflow combinations
+│   ├── tools/                 # CLI tools (lint, pm)
+│   ├── coding-convention/     # Language rule docs
+│   └── plan/                  # Framework plans (internal)
+│
+├── plan/                      # YOUR project plans
+│   └── *.md                   # Implementation plans
+│
+└── configs/                   # Tool configurations
+```
+
+### Plan Directories
+| Directory | Purpose |
+|-----------|---------|
+| `.agent/plan/` | Agent-context framework plans (do not modify) |
+| `plan/` | Your project implementation plans |
+
+For writing plans, see `.agent/skills/plan/design-solution/SKILL.md`.
+
+## Skills & Workflows
+
+### Skills (`.agent/skills/`)
+Organized into 5 categories:
+- `analyze/` - Understand situation (parse-requirement, inspect-codebase, ...)
+- `plan/` - Design approach (design-solution, breakdown-work, ...)
+- `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
+- `validate/` - Verify quality (run-tests, check-style, review-code, ...)
+- `integrate/` - Deliver results (commit-changes, create-merge-request, ...)
+- `git-workflow/` - Manage branches (cross-cutting)
+
+### Workflows (`.agent/workflows/`)
+Skill combinations for scenarios:
+- `feature.md` - Full feature development
+- `bug-fix.md` - Standard bug fix
+- `hotfix.md` - Emergency fix
+- `refactor.md` - Code refactoring
+
+### Quality Gates
+| Gate | Criteria |
+|------|----------|
+| Lint | 0 violations |
+| Test | All pass, ≥80% coverage |
+| Review | 0 critical issues |
+
+## Bash Scripts
+
+### Structure
+- Start with `#!/bin/bash`
+- Use `set -e`
+- Variables: SCRIPT_DIR, TEST_DIR, PROJECT_ROOT
+
+### JUnit Pattern
+- Source `junit_helper.sh`
+- Use CHECK_RESULT global
+- `check_*_rule()` with case statements
+- Iterate pass/fail directories
+- Call `junit_testsuite()` for XML
+
+### Test Files
+- Prefix: rule ID (e.g., `C-01-01_tab.c`)
+- `pass/`: Should pass
+- `fail/`: Should detect violation
+
+### Output Format
+```
+==========================================
+{Language} Coding Convention Test Summary
+==========================================
+Total: {N} | Passed: {N} | Failed: {N}
+```
+
+## CI/CD
+- GitLab CI
+- Nexus Registry for images
+- JUnit XML as artifacts
+
+## Rule ID Prefixes
+- C: C-XX-XX
+- Bash: Bash-XX-XX
+- Make: Make-XX-XX
+- Python: Py-XX-XX
+- YAML: YAML-XX-XX
+- Dockerfile: Docker-XX-XX

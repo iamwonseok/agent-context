@@ -1,0 +1,30 @@
+# Development environment (local testing only)
+_dev/
+
+# Project configuration (user-specific settings)
+.project.yaml
+
+# Editor and IDE
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Agent workflow
+.context/
+.worktrees/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

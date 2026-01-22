@@ -1,0 +1,229 @@
+# Agent-Context Development Repository
+#
+# This IS the agent-context source repository.
+# - Modifying skills/, workflows/, tools/ IS allowed here
+# - _dev/ contains development documents (plan/, design/)
+# - For testing: cd _dev && .agent/setup.sh
+#
+# For design philosophy, see why.md (will be at root after migration)
+
+# Agent-Context Project Rules
+
+## IMPORTANT: This is a Development Repository
+
+This repository is where agent-context is developed.
+Unlike user projects, you CAN modify:
+- `skills/` - Atomic skills
+- `workflows/` - Workflow definitions
+- `tools/` - CLI tools
+- `templates/` - User project templates
+
+Development documents are in `_dev/`:
+- `_dev/plan/` - Agent-context framework plans (becomes `.agent/plan/` when deployed)
+- `_dev/design/` - Design documents
+- `_dev/.agent -> ../` - Symlink for testing
+
+### Plan Directory Convention
+| Location | Purpose |
+|----------|---------|
+| `_dev/plan/` (this repo) | Framework development plans |
+| `.agent/plan/` (user project) | Framework plans (deployed from _dev/plan/) |
+| `plan/` (user project) | User's project-specific plans |
+
+## Design Philosophy
+
+Read `why.md` for the full rationale. Key principles:
+
+1. **Simplicity Over Completeness** - Simple solutions that work > Complex solutions that might work better
+2. **User Autonomy** - Warnings over blocking, provide `--force` escape hatches
+3. **Feedback Over Enforcement** - Teach through clear feedback, not hard blocks
+4. **Composability** - Small focused skills, workflows as compositions
+5. **State Through Artifacts** - Git + files, not databases or complex state machines
+
+## Avoiding Over-Engineering
+
+### Before Adding Complexity, Ask:
+- Has the simple solution failed multiple times?
+- Are users consistently making the same mistake?
+- Is the pain documented with real examples?
+- Have simpler alternatives been tried?
+
+### Complexity Budget (Max Lines)
+| Component | Limit |
+|-----------|-------|
+| Single skill | 200 lines |
+| Workflow | 100 lines |
+| CLI command | 100 lines |
+| Helper library | 300 lines |
+
+### Patterns to Avoid
+- Complex state machines (use simple flags instead)
+- Hard blocking without `--force` option
+- Custom DSLs (use standard YAML/Markdown)
+- Deep nesting (max 2 levels)
+- Implicit dependencies (be explicit)
+
+### Enforcement Strategy
+- **Phase 1 (2 weeks)**: Warnings only
+- **Phase 2 (2 weeks)**: Soft enforcement (`--force` to override)
+- **Phase 3 (ongoing)**: Hard enforcement where proven necessary
+
+### When Implementing Features
+1. Write SKILL.md documentation first
+2. Implement minimal version (warnings only)
+3. Gather real usage feedback
+4. Add enforcement gradually
+5. Always keep escape hatches
+
+## Language Policy
+- **Code and documentation: English only**
+- Comments, variables, functions, commits: English
+- Korean allowed only in user messages
+
+## Output Style
+- **No Korean characters in code/docs**
+- Unicode symbols allowed (arrows, box chars, block elements, math symbols)
+  - Allowed: `→`, `├`, `└`, `│`, `─`, `█`, `░`, `×`, `±`
+- No icon-style Unicode:
+  - No checkmarks: use `[x]`, `[ ]` instead of `✓`, `✗`
+  - No stars: use numbers instead of `★`
+  - No emoji: use `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]` instead of ⚠️✅🔴
+
+## Agent Behavior
+
+### Session Start
+1. Check `git status` and `git branch`
+2. Ensure on feature branch (NOT main)
+3. If on main, create/checkout feature branch before work
+4. Read `skills/git-workflow/references/multi-agent-rules.md` for git rules
+
+### Before Starting Work
+| Task Type | Read First |
+|-----------|------------|
+| New feature | `workflows/feature.md` |
+| Bug fix | `workflows/bug-fix.md` |
+| Hotfix | `workflows/hotfix.md` |
+| Refactoring | `workflows/refactor.md` |
+| Large/complex task | `skills/plan/design-solution/SKILL.md` |
+
+### After Modifying Files
+1. Run related tests if they exist
+2. Check `skills/_tests/` for test scripts
+3. Fix any test failures before committing
+
+### Before Committing
+1. Read `skills/integrate/commit-changes/SKILL.md` for message format
+2. Review `git diff --staged`
+3. Write commit message immediately (not later)
+
+### Before Finishing
+1. Read `skills/integrate/create-merge-request/SKILL.md`
+2. Ensure all tests pass
+3. Create MR/PR, don't merge directly to main
+
+### After Merge
+- Delete merged feature branches from local
+- Keep branches still in use (worktree, unmerged)
+
+### Concurrent Work
+- Multiple agents on different tasks -> Use git worktree
+- See `skills/git-workflow/references/worktree-guide.md`
+
+## Project Overview
+Workflow + CI/CD template for agent-driven development.
+
+### Directory Structure (After Migration)
+```
+agent-context/                  # This repo = deployable unit
+├── skills/                     # Atomic skills (building blocks)
+├── workflows/                  # Workflow definitions (combinations)
+├── tools/                      # CLI tools
+│   ├── agent/                  # Main CLI
+│   ├── pm/                     # JIRA/GitLab API
+│   └── lint/                   # Code quality
+├── templates/                  # User project templates
+│   └── plan/                   # Project plan directory template
+├── coding-convention/          # Language rule docs
+├── setup.sh                    # Installation script
+├── why.md                      # Design philosophy
+│
+└── _dev/                       # Development only
+    ├── .agent -> ../           # Symlink for testing
+    ├── plan/                   # Framework implementation plans
+    └── design/                 # Design documents
+```
+
+### User Project Structure (After Setup)
+```
+user-project/
+├── .agent/                     # Agent-context framework (installed)
+│   ├── plan/                   # Framework plans (from _dev/plan/)
+│   └── ...
+│
+└── plan/                       # User's project plans (from templates/plan/)
+```
+
+## Skills & Workflows
+
+### Skills (`skills/`)
+Organized into 5 categories:
+- `analyze/` - Understand situation (parse-requirement, inspect-codebase, ...)
+- `plan/` - Design approach (design-solution, breakdown-work, ...)
+- `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
+- `validate/` - Verify quality (run-tests, check-style, review-code, ...)
+- `integrate/` - Deliver results (commit-changes, create-merge-request, ...)
+- `git-workflow/` - Manage branches (cross-cutting)
+
+### Workflows (`workflows/`)
+Skill combinations for scenarios:
+- `feature.md` - Full feature development
+- `bug-fix.md` - Standard bug fix
+- `hotfix.md` - Emergency fix
+- `refactor.md` - Code refactoring
+
+### Quality Gates
+| Gate | Criteria |
+|------|----------|
+| Lint | 0 violations |
+| Test | All pass, ≥80% coverage |
+| Review | 0 critical issues |
+
+## Bash Scripts
+
+### Structure
+- Start with `#!/bin/bash`
+- Use `set -e`
+- Variables: SCRIPT_DIR, TEST_DIR, PROJECT_ROOT
+
+### JUnit Pattern
+- Source `junit_helper.sh`
+- Use CHECK_RESULT global
+- `check_*_rule()` with case statements
+- Iterate pass/fail directories
+- Call `junit_testsuite()` for XML
+
+### Test Files
+- Prefix: rule ID (e.g., `C-01-01_tab.c`)
+- `pass/`: Should pass
+- `fail/`: Should detect violation
+
+### Output Format
+```
+==========================================
+{Language} Coding Convention Test Summary
+==========================================
+Total: {N} | Passed: {N} | Failed: {N}
+```
+
+## CI/CD
+- GitLab CI
+- Nexus Registry for images
+- JUnit XML as artifacts
+
+## Rule ID Prefixes
+- C: C-XX-XX
+- Bash: Bash-XX-XX
+- Make: Make-XX-XX
+- Python: Py-XX-XX
+- YAML: YAML-XX-XX
+- Dockerfile: Docker-XX-XX

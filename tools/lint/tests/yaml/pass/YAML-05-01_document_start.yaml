@@ -1,0 +1,10 @@
+# YAML-05-01: Document start marker - PASS
+# Tool: yamllint (document-start)
+---
+name: myapp
+version: "1.0.0"
+description: "Application with document start marker"
+
+config:
+  debug: false
+  log_level: info

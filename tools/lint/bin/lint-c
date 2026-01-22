@@ -1,0 +1,185 @@
+#!/bin/bash
+# lint-c - C/C++ Coding Convention Checker
+#
+# Usage:
+#   lint-c                     # Check *.c, *.h in current directory
+#   lint-c .                   # Same as above
+#   lint-c path/file.c         # Check specific file
+#   lint-c path/               # Check directory (non-recursive)
+#   lint-c path/ -R            # Check directory recursively
+#   lint-c . --junit           # Output JUnit XML to stdout
+#   lint-c . --junit -o f.xml  # Output JUnit XML to file
+#   lint-c . -q                # Quiet mode (errors only)
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+RULES_DIR="${SCRIPT_DIR}/../scripts/rules"
+
+# Source rules
+source "${RULES_DIR}/c_rules.sh"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+# Default options
+RECURSIVE=false
+JUNIT_OUTPUT=false
+JUNIT_FILE=""
+QUIET=false
+TARGET="."
+
+# Parse arguments
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-R|--recursive)
+			RECURSIVE=true
+			shift
+			;;
+		--junit)
+			JUNIT_OUTPUT=true
+			shift
+			;;
+		-o|--output)
+			JUNIT_FILE="$2"
+			shift 2
+			;;
+		-q|--quiet)
+			QUIET=true
+			shift
+			;;
+		-h|--help)
+			echo "Usage: lint-c [OPTIONS] [PATH]"
+			echo ""
+			echo "Check C/C++ files for coding convention violations."
+			echo ""
+			echo "Arguments:"
+			echo "  PATH                 File or directory to check (default: .)"
+			echo ""
+			echo "Options:"
+			echo "  -R, --recursive      Check directories recursively"
+			echo "  --junit              Output JUnit XML format"
+			echo "  -o, --output FILE    Write output to file (with --junit)"
+			echo "  -q, --quiet          Quiet mode (show errors only)"
+			echo "  -h, --help           Show this help"
+			echo ""
+			echo "Examples:"
+			echo "  lint-c                     # Check current directory"
+			echo "  lint-c src/               # Check src/ directory"
+			echo "  lint-c src/ -R            # Check src/ recursively"
+			echo "  lint-c file.c             # Check single file"
+			echo "  lint-c . --junit -o r.xml # Output JUnit to file"
+			exit 0
+			;;
+		-*)
+			echo "Unknown option: $1" >&2
+			exit 1
+			;;
+		*)
+			POSITIONAL+=("$1")
+			shift
+			;;
+	esac
+done
+
+# Set target
+if [[ ${#POSITIONAL[@]} -gt 0 ]]; then
+	TARGET="${POSITIONAL[0]}"
+fi
+
+# Collect files
+FILES=()
+if [[ -f "${TARGET}" ]]; then
+	FILES=("${TARGET}")
+elif [[ -d "${TARGET}" ]]; then
+	if [[ "${RECURSIVE}" == true ]]; then
+		while IFS= read -r -d '' file; do
+			FILES+=("${file}")
+		done < <(find "${TARGET}" -type f \( -name "*.c" -o -name "*.h" -o -name "*.cpp" -o -name "*.hpp" \) -print0 2>/dev/null)
+	else
+		for file in "${TARGET}"/*.c "${TARGET}"/*.h "${TARGET}"/*.cpp "${TARGET}"/*.hpp; do
+			[[ -f "${file}" ]] && FILES+=("${file}")
+		done
+	fi
+else
+	echo -e "${RED}Error: ${TARGET} not found${NC}" >&2
+	exit 1
+fi
+
+if [[ ${#FILES[@]} -eq 0 ]]; then
+	echo -e "${YELLOW}No C/C++ files found${NC}" >&2
+	exit 0
+fi
+
+# Run checks
+PASS_COUNT=0
+FAIL_COUNT=0
+TEST_CASES=""
+
+if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
+	echo -e "${BOLD}${CYAN}Checking ${#FILES[@]} C/C++ file(s)...${NC}"
+	echo ""
+fi
+
+for file in "${FILES[@]}"; do
+	filename=$(basename "${file}")
+	
+	if check_c_file "${file}"; then
+		PASS_COUNT=$((PASS_COUNT + 1))
+		if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
+			echo -e "${GREEN}[PASS]${NC} ${file}"
+		fi
+		if [[ "${JUNIT_OUTPUT}" == true ]]; then
+			TEST_CASES+="    <testcase classname=\"c.lint\" name=\"${filename}\" time=\"0.01\"/>"$'\n'
+		fi
+	else
+		FAIL_COUNT=$((FAIL_COUNT + 1))
+		if [[ "${JUNIT_OUTPUT}" == false ]]; then
+			echo -e "${RED}[FAIL]${NC} ${file}"
+			echo -e "${DIM}${CHECK_RESULT}${NC}"
+		fi
+		if [[ "${JUNIT_OUTPUT}" == true ]]; then
+			escaped_result=$(echo "${CHECK_RESULT}" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+			TEST_CASES+="    <testcase classname=\"c.lint\" name=\"${filename}\" time=\"0.01\">"$'\n'
+			TEST_CASES+="      <failure message=\"Coding convention violation\" type=\"LintError\">"$'\n'
+			TEST_CASES+="        <![CDATA[${CHECK_RESULT}]]>"$'\n'
+			TEST_CASES+="      </failure>"$'\n'
+			TEST_CASES+="    </testcase>"$'\n'
+		fi
+	fi
+done
+
+TOTAL=$((PASS_COUNT + FAIL_COUNT))
+
+# Output results
+if [[ "${JUNIT_OUTPUT}" == true ]]; then
+	timestamp=$(date -Iseconds)
+	junit_output="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<testsuites>
+  <testsuite name=\"CodingConvention.C\" tests=\"${TOTAL}\" failures=\"${FAIL_COUNT}\" errors=\"0\" skipped=\"0\" timestamp=\"${timestamp}\" time=\"1\">
+${TEST_CASES}  </testsuite>
+</testsuites>"
+	
+	if [[ -n "${JUNIT_FILE}" ]]; then
+		echo "${junit_output}" > "${JUNIT_FILE}"
+		echo -e "${GREEN}JUnit XML written to ${JUNIT_FILE}${NC}" >&2
+	else
+		echo "${junit_output}"
+	fi
+else
+	echo ""
+	echo -e "${BOLD}========================================${NC}"
+	echo -e "${BOLD}C/C++ Lint Summary${NC}"
+	echo -e "${BOLD}========================================${NC}"
+	echo -e "Total: ${TOTAL} | ${GREEN}Passed: ${PASS_COUNT}${NC} | ${RED}Failed: ${FAIL_COUNT}${NC}"
+fi
+
+# Exit with error if any failures
+[[ ${FAIL_COUNT} -eq 0 ]]

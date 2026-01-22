@@ -1,0 +1,321 @@
+#!/bin/bash
+# Context CLI - Coding convention management tool
+# https://github.com/yourorg/agent-context
+
+set -euo pipefail
+
+VERSION="0.1.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Determine context directory (local > global)
+get_context_dir() {
+    if [[ -d "${PWD}/.context" ]]; then
+        echo "${PWD}/.context"
+    elif [[ -d "${HOME}/.context" ]]; then
+        echo "${HOME}/.context"
+    else
+        echo ""
+    fi
+}
+
+# Get source context directory (for init command)
+get_source_context_dir() {
+    # If running from installed location (~/.context/coding-convention/bin/context)
+    if [[ -d "${HOME}/.context/coding-convention" ]]; then
+        echo "${HOME}/.context/coding-convention"
+    # If running from git clone (coding-convention/bin/context)
+    elif [[ -d "${SCRIPT_DIR}/.." ]]; then
+        echo "$(cd "${SCRIPT_DIR}/.." && pwd)"
+    else
+        echo ""
+    fi
+}
+
+# Print usage
+usage() {
+    cat << EOF
+Context CLI v${VERSION}
+Coding convention management tool
+
+Usage: context <command> [options]
+
+Commands:
+    init [--link]     Initialize .context in current project
+                      --link: Create symlinks instead of copying
+    test [lang]       Run linting tests (c|bash|python|make|yaml|all)
+    update            Update global ~/.context from git
+    path              Show current context directory path
+    list              List available config files
+    help              Show this help message
+    version           Show version
+
+Examples:
+    context init              # Copy configs to current project
+    context init --link       # Symlink configs to current project
+    context test              # Run all lint tests
+    context test python       # Run Python lint tests only
+    context path              # Show which context dir is being used
+
+Config Priority:
+    1. \$PWD/.context (local project)
+    2. ~/.context (global)
+
+EOF
+}
+
+# Initialize context in current project
+cmd_init() {
+    local use_link=false
+    if [[ "${1:-}" == "--link" ]]; then
+        use_link=true
+    fi
+
+    local source_dir
+    source_dir="$(get_source_context_dir)"
+
+    if [[ -z "${source_dir}" ]]; then
+        echo -e "${RED}Error: Cannot find source context directory${NC}"
+        echo "Please install context first: ./install.sh"
+        exit 1
+    fi
+
+    echo -e "${BLUE}Initializing context from: ${source_dir}${NC}"
+
+    # Config files to copy/link to project root (from configs/ directory)
+    local config_files=(
+        ".clang-format"
+        ".clang-tidy"
+        ".editorconfig"
+        ".yamllint.yml"
+        "pyproject.toml"
+    )
+
+    for file in "${config_files[@]}"; do
+        if [[ -f "${source_dir}/configs/${file}" ]]; then
+            if [[ -e "${PWD}/${file}" ]]; then
+                echo -e "${YELLOW}Skip: ${file} (already exists)${NC}"
+            elif [[ "${use_link}" == true ]]; then
+                ln -s "${source_dir}/configs/${file}" "${PWD}/${file}"
+                echo -e "${GREEN}Linked: ${file}${NC}"
+            else
+                cp "${source_dir}/configs/${file}" "${PWD}/${file}"
+                echo -e "${GREEN}Copied: ${file}${NC}"
+            fi
+        fi
+    done
+
+    # Create .context directory with docs
+    if [[ ! -d "${PWD}/.context" ]]; then
+        mkdir -p "${PWD}/.context"
+        if [[ -d "${source_dir}/docs" ]]; then
+            cp -r "${source_dir}/docs" "${PWD}/.context/"
+            echo -e "${GREEN}Copied: docs/${NC}"
+        fi
+        echo -e "${GREEN}Created: .context/${NC}"
+    else
+        echo -e "${YELLOW}Skip: .context/ (already exists)${NC}"
+    fi
+
+    echo ""
+    echo -e "${GREEN}Done! Config files initialized.${NC}"
+    echo "You can customize files in your project root."
+}
+
+# Run linting tests
+cmd_test() {
+    local lang="${1:-all}"
+    local context_dir
+    context_dir="$(get_context_dir)"
+
+    if [[ -z "${context_dir}" ]]; then
+        echo -e "${RED}Error: No context directory found${NC}"
+        echo "Run 'context init' first or install globally"
+        exit 1
+    fi
+
+    echo -e "${BLUE}Using context: ${context_dir}${NC}"
+    echo ""
+
+    # Find test scripts directory
+    local test_scripts=""
+    if [[ -d "${context_dir}/coding-convention/scripts" ]]; then
+        test_scripts="${context_dir}/coding-convention/scripts"
+    elif [[ -d "${SCRIPT_DIR}/../scripts" ]]; then
+        test_scripts="$(cd "${SCRIPT_DIR}/../scripts" && pwd)"
+    fi
+
+    if [[ -z "${test_scripts}" || ! -d "${test_scripts}" ]]; then
+        echo -e "${RED}Error: Test scripts not found${NC}"
+        exit 1
+    fi
+
+    case "${lang}" in
+        c)
+            bash "${test_scripts}/test_c.sh"
+            ;;
+        bash)
+            bash "${test_scripts}/test_bash.sh"
+            ;;
+        python)
+            bash "${test_scripts}/test_python.sh"
+            ;;
+        make)
+            bash "${test_scripts}/test_make.sh"
+            ;;
+        yaml)
+            bash "${test_scripts}/test_yaml.sh"
+            ;;
+        all)
+            bash "${test_scripts}/test_c.sh"
+            bash "${test_scripts}/test_bash.sh"
+            bash "${test_scripts}/test_python.sh"
+            bash "${test_scripts}/test_make.sh"
+            bash "${test_scripts}/test_yaml.sh"
+            ;;
+        *)
+            echo -e "${RED}Unknown language: ${lang}${NC}"
+            echo "Available: c, bash, python, make, yaml, all"
+            exit 1
+            ;;
+    esac
+}
+
+# Update global context from git
+cmd_update() {
+    if [[ ! -d "${HOME}/.context" ]]; then
+        echo -e "${RED}Error: Global context not installed${NC}"
+        echo "Run install.sh first"
+        exit 1
+    fi
+
+    if [[ ! -d "${HOME}/.context/.git" ]]; then
+        echo -e "${YELLOW}Warning: ~/.context is not a git repository${NC}"
+        echo "Cannot update via git pull"
+        exit 1
+    fi
+
+    echo -e "${BLUE}Updating ~/.context...${NC}"
+    cd "${HOME}/.context"
+    git pull --ff-only
+    echo -e "${GREEN}Done!${NC}"
+}
+
+# Show current context path
+cmd_path() {
+    local context_dir
+    context_dir="$(get_context_dir)"
+
+    if [[ -z "${context_dir}" ]]; then
+        echo -e "${RED}No context directory found${NC}"
+        exit 1
+    fi
+
+    echo "${context_dir}"
+}
+
+# List available config files
+cmd_list() {
+    local context_dir
+    context_dir="$(get_context_dir)"
+
+    if [[ -z "${context_dir}" ]]; then
+        context_dir="$(get_source_context_dir)"
+    fi
+
+    if [[ -z "${context_dir}" ]]; then
+        echo -e "${RED}No context directory found${NC}"
+        exit 1
+    fi
+
+    # Determine config directory
+    local config_dir=""
+    if [[ -d "${context_dir}/coding-convention/configs" ]]; then
+        config_dir="${context_dir}/coding-convention/configs"
+    elif [[ -d "${context_dir}/configs" ]]; then
+        config_dir="${context_dir}/configs"
+    fi
+
+    echo -e "${BLUE}Config files in: ${config_dir:-${context_dir}}${NC}"
+    echo ""
+
+    local config_files=(
+        ".clang-format"
+        ".clang-tidy"
+        ".editorconfig"
+        ".yamllint.yml"
+        "pyproject.toml"
+    )
+
+    for file in "${config_files[@]}"; do
+        if [[ -n "${config_dir}" && -f "${config_dir}/${file}" ]]; then
+            echo -e "  ${GREEN}[PASS]${NC} ${file}"
+        elif [[ -f "${context_dir}/${file}" ]]; then
+            echo -e "  ${GREEN}[PASS]${NC} ${file}"
+        else
+            echo -e "  ${RED}[FAIL]${NC} ${file}"
+        fi
+    done
+
+    echo ""
+    # Check for docs in various locations
+    local docs_dir=""
+    if [[ -d "${context_dir}/coding-convention/docs" ]]; then
+        docs_dir="${context_dir}/coding-convention/docs"
+    elif [[ -d "${context_dir}/docs" ]]; then
+        docs_dir="${context_dir}/docs"
+    fi
+
+    if [[ -n "${docs_dir}" ]]; then
+        echo -e "${BLUE}Documentation:${NC}"
+        for doc in "${docs_dir}"/*.md; do
+            if [[ -f "${doc}" ]]; then
+                echo "  $(basename "${doc}")"
+            fi
+        done
+    fi
+}
+
+# Main
+main() {
+    local cmd="${1:-help}"
+    shift || true
+
+    case "${cmd}" in
+        init)
+            cmd_init "$@"
+            ;;
+        test)
+            cmd_test "$@"
+            ;;
+        update)
+            cmd_update
+            ;;
+        path)
+            cmd_path
+            ;;
+        list)
+            cmd_list
+            ;;
+        help|--help|-h)
+            usage
+            ;;
+        version|--version|-v)
+            echo "context v${VERSION}"
+            ;;
+        *)
+            echo -e "${RED}Unknown command: ${cmd}${NC}"
+            echo ""
+            usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
