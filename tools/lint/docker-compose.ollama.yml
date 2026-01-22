@@ -1,0 +1,32 @@
+# Docker Compose for Ollama AI Code Review
+# Usage:
+#   docker-compose -f docker-compose.ollama.yml up -d
+#   docker-compose -f docker-compose.ollama.yml exec ollama ollama pull qwen2.5-coder:14b
+#
+# Hardware Requirements (CPU-only, no GPU):
+#   - Qwen 2.5-Coder 7B:  ~8GB RAM, fast inference
+#   - Qwen 2.5-Coder 14B: ~16GB RAM, balanced (recommended)
+#   - Qwen 2.5-Coder 32B: ~35GB RAM, highest accuracy
+
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-code-review
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+      - ./:/workspace:ro
+    environment:
+      # CPU optimization for Intel Xeon with AVX-512
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=1
+    restart: unless-stopped
+    # No GPU configuration - CPU only
+    # AVX-512 is automatically detected and used by llama.cpp
+
+volumes:
+  ollama_models:
+    name: ollama_models

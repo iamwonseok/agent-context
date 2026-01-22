@@ -1,0 +1,358 @@
+# BASH Lint Expected Output
+# Generated: 2026-01-23T01:11:13+0900
+
+$ ./bin/lint-bash tests/bash/fail/Bash-01-01_wrong_shebang.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-01-01_wrong_shebang.sh
+[NG] Bash-01-01: Invalid shebang
+1:#!/bin/sh
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: No functions or local used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-03-01_unbraced_var.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-03-01_unbraced_var.sh
+[OK] Bash-01-01: Correct shebang
+[NG] Bash-03-01: Unbraced variable found
+9:	local path="/tmp/$name"
+12:	echo "Name: $name"
+13:	echo "Path: $path"
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-03-02_no_local.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-03-02_no_local.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[NG] Bash-03-02: Function without local variables
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-04-01_unquoted_vars.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-04-01_unquoted_vars.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[NG] Bash-04-01: Unquoted variable found
+11:	if [[ -f ${file_path} ]]; then
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-06-05_single_bracket.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-06-05_single_bracket.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[NG] Bash-06-05: Single bracket [ ] found
+10:	if [ -z "${value}" ]; then
+15:	if [ "${value}" = "test" ]; then
+17:	elif [ "${value}" != "skip" ]; then
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-07-01_backticks.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-07-01_backticks.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[NG] Bash-07-01: Backticks found
+12:	current_date=`date +%Y-%m-%d`
+13:	hostname=`hostname`
+14:	script_dir=`cd "\`dirname "$0"\`" && pwd`
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[NG] Bash-10-02: Pipe without pipefail
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-08-02_stdout_error.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-08-02_stdout_error.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[NG] Bash-04-01: Unquoted variable found
+28:	if [[ $# -lt 1 ]]; then
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[NG] Bash-08-02: Error not to stderr
+15:		echo "Error: Input is required"
+20:		echo "Error: File not found: ${input}"
+29:		echo "Error: Usage: $0 <file>"
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-10-01_cd_no_check.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-10-01_cd_no_check.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[NG] Bash-10-01: cd return not checked
+10:	cd "${target_dir}"
+19:	cd "${dir}"
+25:	cd "${work_dir}"
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/fail/Bash-10-02_no_pipefail.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/fail/Bash-10-02_no_pipefail.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[NG] Bash-10-02: Pipe without pipefail
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-01-01_shebang.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-01-01_shebang.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-03-01_braced_var.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-03-01_braced_var.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-03-02_local_keyword.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-03-02_local_keyword.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-04-01_quoted_vars.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-04-01_quoted_vars.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-06-05_double_bracket.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-06-05_double_bracket.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-07-01_dollar_paren.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/pass/Bash-07-01_dollar_paren.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[NG] Bash-10-02: Pipe without pipefail
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-08-02_stderr.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/pass/Bash-08-02_stderr.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[NG] Bash-04-01: Unquoted variable found
+32:	if [[ $# -lt 1 ]]; then
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: No cd or return checked
+[OK] Bash-10-02: No pipes or pipefail set
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-10-01_cd_check.sh
+Checking 1 Bash script(s)...
+
+[FAIL] tests/bash/pass/Bash-10-01_cd_check.sh
+[OK] Bash-01-01: Correct shebang
+[OK] Bash-03-01: Variables are braced
+[OK] Bash-03-02: local keyword used
+[OK] Bash-04-01: Variables are quoted
+[OK] Bash-06-05: Using [[ ]]
+[OK] Bash-07-01: Using $()
+[OK] Bash-08-02: Errors go to stderr
+[OK] Bash-10-01: cd return checked
+[NG] Bash-10-02: Pipe without pipefail
+
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-bash tests/bash/pass/Bash-10-02_pipefail.sh
+Checking 1 Bash script(s)...
+
+[PASS] tests/bash/pass/Bash-10-02_pipefail.sh
+
+========================================
+Bash Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+

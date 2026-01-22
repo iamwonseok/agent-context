@@ -1,0 +1,328 @@
+#!/bin/bash
+# Project Management CLI
+# Jira/GitLab integration for development workflows
+
+set -e
+
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
+
+# Source libraries
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/jira.sh"
+source "$LIB_DIR/gitlab.sh"
+source "$LIB_DIR/workflow.sh"
+
+# Version
+VERSION="1.0.0"
+
+# Help message
+show_help() {
+    cat << EOF
+pm - Project Management CLI v${VERSION}
+
+USAGE:
+    pm <command> [options]
+
+COMMANDS:
+    config show             Show current configuration
+    config init             Create .project.yaml
+
+    jira me                 Show current Jira user
+    jira issue list         List Jira issues
+    jira issue view KEY     View issue details
+    jira issue create TITLE Create new issue
+
+    gitlab me               Show current GitLab user
+    gitlab mr list          List merge requests
+    gitlab mr view IID      View MR details
+    gitlab mr create        Create merge request
+    gitlab issue list       List GitLab issues
+
+    create TITLE            Create new feature/task
+    finish                  Finish current feature/task
+
+OPTIONS:
+    -h, --help              Show this help
+    -v, --version           Show version
+
+EXAMPLES:
+    pm config show
+    pm jira issue list
+    pm create "Add UART driver"
+    pm create "Fix DMA timeout" --type Bug --workflow bugfix
+    pm finish
+    pm finish --draft --skip-tests
+
+For more information, see: tools/pm/README.md
+EOF
+}
+
+# Parse arguments
+cmd_config() {
+    case "$1" in
+        show)
+            load_config || exit 1
+            print_config
+            ;;
+        init)
+            local force=false
+            shift
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -f|--force) force=true ;;
+                esac
+                shift
+            done
+            
+            if [[ -f ".project.yaml" ]] && [[ "$force" != "true" ]]; then
+                echo "[ERROR] .project.yaml already exists. Use --force to overwrite." >&2
+                exit 1
+            fi
+            create_default_config ".project.yaml"
+            ;;
+        *)
+            echo "[ERROR] Unknown config command: $1" >&2
+            echo "Usage: pm config <show|init>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_jira() {
+    load_config || exit 1
+    
+    case "$1" in
+        me)
+            jira_me
+            ;;
+        issue)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local jql=""
+                    local limit=20
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            --jql) jql="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    jira_issue_list "$jql" "$limit"
+                    ;;
+                view)
+                    jira_issue_view "$2"
+                    ;;
+                create)
+                    shift
+                    local summary=""
+                    local type="Task"
+                    local description=""
+                    
+                    # First positional arg is summary
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        summary="$1"
+                        shift
+                    fi
+                    
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -t|--type) type="$2"; shift ;;
+                            -d|--description) description="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    
+                    jira_issue_create "$summary" "$type" "$description"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown jira issue command: $1" >&2
+                    echo "Usage: pm jira issue <list|view|create>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        *)
+            echo "[ERROR] Unknown jira command: $1" >&2
+            echo "Usage: pm jira <me|issue>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_gitlab() {
+    load_config || exit 1
+    
+    case "$1" in
+        me)
+            gitlab_me
+            ;;
+        mr)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local state="opened"
+                    local limit=20
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--state) state="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    gitlab_mr_list "$state" "$limit"
+                    ;;
+                view)
+                    gitlab_mr_view "$2"
+                    ;;
+                create)
+                    shift
+                    local source=""
+                    local target="main"
+                    local title=""
+                    local description=""
+                    local draft="false"
+                    
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--source) source="$2"; shift ;;
+                            -t|--target) target="$2"; shift ;;
+                            --title) title="$2"; shift ;;
+                            -d|--description) description="$2"; shift ;;
+                            --draft) draft="true" ;;
+                        esac
+                        shift
+                    done
+                    
+                    if [[ -z "$source" ]] || [[ -z "$title" ]]; then
+                        echo "[ERROR] --source and --title required" >&2
+                        exit 1
+                    fi
+                    
+                    gitlab_mr_create "$source" "$target" "$title" "$description" "$draft"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown gitlab mr command: $1" >&2
+                    echo "Usage: pm gitlab mr <list|view|create>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        issue)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local state="opened"
+                    local limit=20
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--state) state="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    gitlab_issue_list "$state" "$limit"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown gitlab issue command: $1" >&2
+                    echo "Usage: pm gitlab issue <list>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        *)
+            echo "[ERROR] Unknown gitlab command: $1" >&2
+            echo "Usage: pm gitlab <me|mr|issue>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_create() {
+    load_config || exit 1
+    
+    local title=""
+    local type="Task"
+    local workflow="feature"
+    
+    # First positional arg is title
+    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+        title="$1"
+        shift
+    fi
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--type) type="$2"; shift ;;
+            -w|--workflow) workflow="$2"; shift ;;
+        esac
+        shift
+    done
+    
+    pm_create "$title" "$type" "$workflow"
+}
+
+cmd_finish() {
+    load_config || exit 1
+    
+    local target=""
+    local skip_lint="false"
+    local skip_tests="false"
+    local draft="false"
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--target) target="$2"; shift ;;
+            --skip-lint) skip_lint="true" ;;
+            --skip-tests) skip_tests="true" ;;
+            --draft) draft="true" ;;
+        esac
+        shift
+    done
+    
+    pm_finish "$target" "$skip_lint" "$skip_tests" "$draft"
+}
+
+# Main
+main() {
+    case "$1" in
+        -h|--help|help|"")
+            show_help
+            ;;
+        -v|--version)
+            echo "pm version $VERSION"
+            ;;
+        config)
+            shift
+            cmd_config "$@"
+            ;;
+        jira)
+            shift
+            cmd_jira "$@"
+            ;;
+        gitlab)
+            shift
+            cmd_gitlab "$@"
+            ;;
+        create)
+            shift
+            cmd_create "$@"
+            ;;
+        finish)
+            shift
+            cmd_finish "$@"
+            ;;
+        *)
+            echo "[ERROR] Unknown command: $1" >&2
+            echo "Run 'pm --help' for usage." >&2
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

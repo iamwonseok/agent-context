@@ -1,0 +1,13 @@
+# YAML-03-04: Use true/false for booleans - FAIL (uses yes/no, on/off)
+# Tool: yamllint (truthy)
+---
+features:
+  debug: yes
+  logging: no
+  metrics: on
+
+settings:
+  enabled: Yes
+  disabled: No
+  auto_start: ON
+  manual_stop: OFF

@@ -1,0 +1,429 @@
+# C Lint Expected Output
+# Generated: 2026-01-23T01:11:12+0900
+
+$ ./bin/lint-c tests/c/fail/C-01-01_space_indent.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-01_space_indent.c
+[NG] C-01-01: Space indentation found
+8:    int value = 0;
+9:    if (value == 0) {
+10:        printf("Zero
+");
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-02_switch_case_indent.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-02_switch_case_indent.c
+[OK] C-01-01: Tab indentation
+[NG] C-01-02: Case indented more than switch
+9:		case 1:
+12:		case 2:
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-11_brace_same_line.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-11_brace_same_line.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[NG] C-01-11: Function brace on same line
+6:void first_function(void) {
+10:int second_function(int value) {
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-12_control_brace.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-12_control_brace.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[NG] C-01-12: Control statement brace on new line
+8:	if (value > 0)
+13:	for (int i = 0; i < 10; i++)
+[OK] C-01-13: else on same line as }
+[NG] C-01-14: Missing braces for control statement
+8:	if (value > 0)
+13:	for (int i = 0; i < 10; i++)
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-13_else_new_line.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-13_else_new_line.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[NG] C-01-13: else on separate line from }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-14_no_braces.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-14_no_braces.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[NG] C-01-12: Control statement brace on new line
+8:	if (value > 0)
+11:	for (int i = 0; i < 10; i++)
+14:	while (value > 0)
+[OK] C-01-13: else on same line as }
+[NG] C-01-14: Missing braces for control statement
+8:	if (value > 0)
+11:	for (int i = 0; i < 10; i++)
+14:	while (value > 0)
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-15_assign_in_if.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-15_assign_in_if.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[NG] C-01-15: Assignment in if condition
+11:	if ((ptr = malloc(100)) == NULL) {
+16:	if ((value = get_value()) > 0) {
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-01-18_pointer_left.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-01-18_pointer_left.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[NG] C-01-18: Pointer on left side
+8:	int* ptr;
+9:	char* str;
+10:	void* data;
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-02-05_macro_no_do_while.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-02-05_macro_no_do_while.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[NG] C-01-12: Control statement brace on new line
+18:	if (ptr == NULL)
+[OK] C-01-13: else on same line as }
+[NG] C-01-14: Missing braces for control statement
+18:	if (ptr == NULL)
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[NG] C-02-05: Multi-statement macro without do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-02-08_macro_no_parentheses.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-02-08_macro_no_parentheses.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[NG] C-02-08: Macro parameter not parenthesized
+6:#define SQUARE(x)      x * x
+9:#define DOUBLE(x)      x + x
+[OK] C-03-04: snake_case identifiers
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/fail/C-03-04_camel_case.c
+Checking 1 C/C++ file(s)...
+
+[FAIL] tests/c/fail/C-03-04_camel_case.c
+[OK] C-01-01: Tab indentation
+[OK] C-01-02: Case indentation
+[OK] C-01-11: Function brace on new line
+[OK] C-01-12: Control statement brace on same line
+[OK] C-01-13: else on same line as }
+[OK] C-01-14: Braces for control statements
+[OK] C-01-15: No assignment in if condition
+[OK] C-01-18: Pointer on right side
+[OK] C-02-05: Macro uses do-while(0)
+[OK] C-02-08: Macro parameters parenthesized
+[NG] C-03-04: camelCase identifier found
+11:	int itemCount;
+12:	char *itemName;
+15:static int globalCounter = 0;
+
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-01_tab_indent.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-01_tab_indent.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-02_switch_case_indent.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-02_switch_case_indent.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-11_brace_newline.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-11_brace_newline.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-12_control_brace.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-12_control_brace.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-13_else_same_line.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-13_else_same_line.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-14_always_braces.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-14_always_braces.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-15_no_assign_in_if.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-15_no_assign_in_if.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-01-18_pointer_right.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-01-18_pointer_right.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-02-05_macro_do_while.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-02-05_macro_do_while.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-02-08_macro_parentheses.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-02-08_macro_parentheses.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-c tests/c/pass/C-03-04_snake_case.c
+Checking 1 C/C++ file(s)...
+
+[PASS] tests/c/pass/C-03-04_snake_case.c
+
+========================================
+C/C++ Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+

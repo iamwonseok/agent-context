@@ -1,0 +1,115 @@
+#!/bin/bash
+# lint-python - Python Coding Convention Checker
+#
+# Usage: lint-python [OPTIONS] [PATH]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/../scripts/rules/python_rules.sh"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+RECURSIVE=false
+JUNIT_OUTPUT=false
+JUNIT_FILE=""
+QUIET=false
+TARGET="."
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-R|--recursive) RECURSIVE=true; shift ;;
+		--junit) JUNIT_OUTPUT=true; shift ;;
+		-o|--output) JUNIT_FILE="$2"; shift 2 ;;
+		-q|--quiet) QUIET=true; shift ;;
+		-h|--help)
+			echo "Usage: lint-python [OPTIONS] [PATH]"
+			echo ""
+			echo "Check Python files for coding convention violations."
+			echo ""
+			echo "Options:"
+			echo "  -R, --recursive      Check directories recursively"
+			echo "  --junit              Output JUnit XML format"
+			echo "  -o, --output FILE    Write output to file"
+			echo "  -q, --quiet          Quiet mode"
+			echo "  -h, --help           Show this help"
+			exit 0
+			;;
+		-*) echo "Unknown option: $1" >&2; exit 1 ;;
+		*) POSITIONAL+=("$1"); shift ;;
+	esac
+done
+
+[[ ${#POSITIONAL[@]} -gt 0 ]] && TARGET="${POSITIONAL[0]}"
+
+FILES=()
+if [[ -f "${TARGET}" ]]; then
+	FILES=("${TARGET}")
+elif [[ -d "${TARGET}" ]]; then
+	if [[ "${RECURSIVE}" == true ]]; then
+		while IFS= read -r -d '' file; do
+			FILES+=("${file}")
+		done < <(find "${TARGET}" -type f -name "*.py" -print0 2>/dev/null)
+	else
+		for file in "${TARGET}"/*.py; do
+			[[ -f "${file}" ]] && FILES+=("${file}")
+		done
+	fi
+else
+	echo -e "${RED}Error: ${TARGET} not found${NC}" >&2
+	exit 1
+fi
+
+if [[ ${#FILES[@]} -eq 0 ]]; then
+	echo -e "${YELLOW}No Python files found${NC}" >&2
+	exit 0
+fi
+
+PASS_COUNT=0
+FAIL_COUNT=0
+TEST_CASES=""
+
+[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${BOLD}${CYAN}Checking ${#FILES[@]} Python file(s)...${NC}\n"
+
+for file in "${FILES[@]}"; do
+	filename=$(basename "${file}")
+	
+	if check_python_file "${file}"; then
+		PASS_COUNT=$((PASS_COUNT + 1))
+		[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${GREEN}[PASS]${NC} ${file}"
+		[[ "${JUNIT_OUTPUT}" == true ]] && TEST_CASES+="    <testcase classname=\"python.lint\" name=\"${filename}\" time=\"0.01\"/>"$'\n'
+	else
+		FAIL_COUNT=$((FAIL_COUNT + 1))
+		if [[ "${JUNIT_OUTPUT}" == false ]]; then
+			echo -e "${RED}[FAIL]${NC} ${file}"
+			echo -e "${DIM}${CHECK_RESULT}${NC}"
+		else
+			TEST_CASES+="    <testcase classname=\"python.lint\" name=\"${filename}\" time=\"0.01\"><failure message=\"Lint error\"><![CDATA[${CHECK_RESULT}]]></failure></testcase>"$'\n'
+		fi
+	fi
+done
+
+TOTAL=$((PASS_COUNT + FAIL_COUNT))
+
+if [[ "${JUNIT_OUTPUT}" == true ]]; then
+	junit_output="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<testsuites>
+  <testsuite name=\"CodingConvention.Python\" tests=\"${TOTAL}\" failures=\"${FAIL_COUNT}\" errors=\"0\" timestamp=\"$(date -Iseconds)\" time=\"1\">
+${TEST_CASES}  </testsuite>
+</testsuites>"
+	[[ -n "${JUNIT_FILE}" ]] && echo "${junit_output}" > "${JUNIT_FILE}" && echo -e "${GREEN}Written to ${JUNIT_FILE}${NC}" >&2 || echo "${junit_output}"
+else
+	echo -e "\n${BOLD}========================================${NC}"
+	echo -e "${BOLD}Python Lint Summary${NC}"
+	echo -e "${BOLD}========================================${NC}"
+	echo -e "Total: ${TOTAL} | ${GREEN}Passed: ${PASS_COUNT}${NC} | ${RED}Failed: ${FAIL_COUNT}${NC}"
+fi
+
+[[ ${FAIL_COUNT} -eq 0 ]]

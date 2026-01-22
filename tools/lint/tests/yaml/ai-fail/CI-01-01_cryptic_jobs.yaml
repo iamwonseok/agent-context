@@ -1,0 +1,38 @@
+---
+# CI-01-01: Job names should be descriptive (FAIL)
+# AI Review: Job names are cryptic and unclear
+
+stages:
+  - stage1
+  - stage2
+  - stage3
+  - stage4
+
+# Bad: Cryptic job names
+job1:
+  stage: stage1
+  script:
+    - yamllint .
+
+job2:
+  stage: stage2
+  script:
+    - docker build -t myapp .
+
+test:
+  stage: stage3
+  script:
+    - pytest tests/unit/
+
+test2:
+  stage: stage3
+  script:
+    - pytest tests/integration/
+
+# Bad: Single letter or abbreviated names
+d:
+  stage: stage4
+  script:
+    - kubectl apply -f k8s/staging/
+  environment:
+    name: staging

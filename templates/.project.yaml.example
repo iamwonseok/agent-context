@@ -1,0 +1,28 @@
+# Project Configuration Example
+# Copy this file to .project.yaml and edit with your settings
+#
+# See: project-management/README.md
+
+jira:
+  base_url: https://fadutec.atlassian.net
+  project_key: SVI           # or SPF, etc.
+  email: your-email@fadutec.com
+
+gitlab:
+  base_url: https://gitlab.fadutec.dev
+  project: soc-ip/agentic    # namespace/project
+
+branch:
+  feature_prefix: feat/
+  bugfix_prefix: fix/
+  hotfix_prefix: hotfix/
+
+# Authentication:
+# Option 1: Environment variables (recommended)
+#   export JIRA_TOKEN="your-token"
+#   export JIRA_EMAIL="your-email"
+#   export GITLAB_TOKEN="your-token"
+#
+# Option 2: Secret files (gitignored)
+#   .secrets/atlassian-api-token
+#   .secrets/gitlab-api-token

@@ -1,0 +1,12 @@
+#YAML-04-01: Space after comment hash - FAIL (missing space)
+#Tool: yamllint (comments)
+---
+#This comment has no space
+server:
+  host: localhost  #Inline comment without space
+  port: 8080  #Another comment without space
+
+#Section comment without space
+database:
+  #Connection settings
+  host: db.example.com

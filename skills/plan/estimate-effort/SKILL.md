@@ -1,0 +1,200 @@
+---
+name: estimate-effort
+category: plan
+description: Estimate effort for tasks and features
+version: 1.0.0
+role: developer
+inputs:
+  - Task description
+  - Historical data (optional)
+outputs:
+  - Effort estimate
+  - Confidence level
+  - Assumptions
+---
+
+# Estimate Effort
+
+## When to Use
+
+- Sprint planning
+- Project estimation
+- Resource allocation
+- Deadline negotiation
+
+## Prerequisites
+
+- [ ] Clear task description
+- [ ] Understanding of scope
+- [ ] Knowledge of technology
+
+## Workflow
+
+### 1. Understand the Task
+
+Before estimating, clarify:
+- What exactly needs to be done?
+- What's in scope? Out of scope?
+- What are the acceptance criteria?
+- Are there unknowns?
+
+### 2. Choose Estimation Method
+
+| Method | Best For |
+|--------|----------|
+| T-Shirt Sizing | Quick relative sizing |
+| Story Points | Agile teams, velocity tracking |
+| Time-based | Fixed deadlines, contracts |
+| Three-point | Uncertainty handling |
+
+### 3. T-Shirt Sizing
+
+| Size | Typical Duration | Complexity |
+|------|------------------|------------|
+| XS | < 2 hours | Trivial, known solution |
+| S | 2-4 hours | Simple, clear scope |
+| M | 4-8 hours | Moderate, some unknowns |
+| L | 1-2 days | Complex, requires research |
+| XL | 3-5 days | Very complex, high risk |
+| XXL | > 1 week | Needs breakdown |
+
+### 4. Three-Point Estimation
+
+```
+Estimate = (Optimistic + 4×Likely + Pessimistic) / 6
+```
+
+Example:
+- Optimistic: 2 hours (everything goes right)
+- Likely: 4 hours (normal conditions)
+- Pessimistic: 10 hours (problems occur)
+- **Estimate: (2 + 16 + 10) / 6 = 4.7 hours**
+
+### 5. Consider Factors
+
+| Factor | Multiplier |
+|--------|------------|
+| New technology | 1.5x |
+| Legacy code | 1.3x |
+| External dependency | 1.2x |
+| First time doing | 2x |
+| Unclear requirements | 1.5x |
+| Testing included | 1.3x |
+| Documentation | 1.1x |
+
+### 6. Apply Confidence Level
+
+| Confidence | Variance | When |
+|------------|----------|------|
+| High (90%) | ±20% | Done similar before |
+| Medium (70%) | ±50% | Understood, some unknowns |
+| Low (50%) | ±100% | New territory |
+
+### 7. Document Estimate
+
+```markdown
+## Effort Estimate: {task-id}
+
+### Task
+Add user profile image upload
+
+### Estimate
+- **Size**: M (Medium)
+- **Duration**: 6 hours
+- **Confidence**: Medium (70%)
+
+### Breakdown
+| Component | Estimate |
+|-----------|----------|
+| API endpoint | 2h |
+| Storage service | 2h |
+| Image processing | 1h |
+| Tests | 1h |
+| **Total** | **6h** |
+
+### Assumptions
+- Using existing S3 bucket
+- Max file size 5MB
+- JPEG/PNG only
+- No cropping required
+
+### Risks
+- Image processing library may need research (+2h)
+- S3 permissions may need IT help (+delay)
+
+### Confidence Justification
+Done similar upload feature 6 months ago,
+but image processing is new.
+```
+
+## Outputs
+
+| Output | Format | Description |
+|--------|--------|-------------|
+| Estimate | Hours/Days/Points | Primary estimate |
+| Confidence | High/Med/Low | Certainty level |
+| Range | Min-Max | Possible variance |
+| Assumptions | List | What estimate assumes |
+| Risks | List | What could change estimate |
+
+## Common Mistakes
+
+| Mistake | Solution |
+|---------|----------|
+| Forgetting testing | Always include test time |
+| Ignoring meetings | Add 20% overhead |
+| Optimism bias | Use pessimistic anchor |
+| Single number | Always give range |
+| No assumptions | Document everything |
+
+## Reference Data
+
+### By Task Type
+
+| Task Type | Typical Range |
+|-----------|---------------|
+| Bug fix (simple) | 1-4 hours |
+| Bug fix (complex) | 4-16 hours |
+| New feature (small) | 4-8 hours |
+| New feature (medium) | 1-3 days |
+| Refactoring | 2-8 hours |
+| API endpoint | 2-6 hours |
+| Database migration | 2-8 hours |
+
+## Examples
+
+### Example 1: Simple Bug Fix
+
+```
+Task: "Fix null pointer in user lookup"
+
+Estimate: S (2-4 hours)
+Confidence: High
+- 1h: Reproduce and investigate
+- 1h: Fix and test
+- 1h: Code review, deploy
+```
+
+### Example 2: New Feature
+
+```
+Task: "Add two-factor authentication"
+
+Estimate: L (8-16 hours)
+Confidence: Medium
+- Research 2FA libraries: 2h
+- Backend implementation: 4h
+- Frontend UI: 4h
+- Testing: 4h
+- Documentation: 2h
+
+Risks: Security review may add 1 day
+```
+
+## Notes
+
+- Estimate relative to known tasks
+- Track actuals to improve future estimates
+- Re-estimate when scope changes
+- Communicate uncertainty clearly
+- It's okay to say "I don't know yet"

@@ -1,0 +1,88 @@
+# GitLab CI/CD Configuration
+# Coding Convention Test Framework for agent-context repository
+#
+# This project uses its own .agent/tools/lint/ci-templates/lint.yml template.
+# Other projects can include this template via:
+#
+#   include:
+#     - project: 'yourgroup/agent-context'
+#       ref: main
+#       file: '/.agent/tools/lint/ci-templates/lint.yml'
+#
+---
+include:
+  - local: '.agent/tools/lint/ci-templates/lint.yml'
+
+stages:
+  - build
+  - test
+  - report
+
+variables:
+  # Override CONTEXT_DIR for self-testing (this repo is the context)
+  CONTEXT_DIR: ${CI_PROJECT_DIR}
+  # Nexus Docker Registry
+  NEXUS_REGISTRY: nexus.soc-vnv.o:5000
+  LINT_IMAGE: ${NEXUS_REGISTRY}/coding-convention-test:v1.0
+
+# Build and push Docker image to Nexus (manual trigger only)
+# Run this job when Dockerfile changes
+build:image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - cd .agent/tools/lint/tests
+    - docker build -t ${LINT_IMAGE} .
+    - docker push ${LINT_IMAGE}
+  rules:
+    # Manual trigger only - run when Dockerfile is updated
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - .agent/tools/lint/tests/Dockerfile
+      when: manual
+      allow_failure: true
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - .agent/tools/lint/tests/Dockerfile
+      when: manual
+      allow_failure: true
+    # Allow manual trigger anytime
+    - when: manual
+      allow_failure: true
+
+# All lint jobs (lint:c, lint:bash, lint:python, lint:make, lint:yaml)
+# are automatically included via ci-templates/lint.yml
+# They use the pre-built image from Nexus Registry
+
+# Optional: Combined report generation
+report:
+  stage: report
+  image: ${LINT_IMAGE}
+  needs:
+    - job: lint:c
+      optional: true
+    - job: lint:c:ai
+      optional: true
+    - job: lint:bash
+      optional: true
+    - job: lint:python
+      optional: true
+    - job: lint:make
+      optional: true
+    - job: lint:yaml
+      optional: true
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p out
+    - .agent/tools/lint/scripts/generate_report.sh > out/report.md || true
+  artifacts:
+    when: always
+    paths:
+      - out/report.md
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

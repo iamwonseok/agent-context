@@ -1,0 +1,271 @@
+# YAML Lint Expected Output
+# Generated: 2026-01-23T01:11:16+0900
+
+$ ./bin/lint-yaml tests/yaml/fail/YAML-01-01_wrong_indent.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/YAML-01-01_wrong_indent.yaml
+[NG] YAML-01-01: Indentation > 2 spaces (       5 chars)
+[OK] YAML-03-01: No duplicate keys
+[OK] YAML-03-04: Using true/false
+[OK] YAML-04-01: Space after comment
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/YAML-03-01_duplicate_keys.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/YAML-03-01_duplicate_keys.yaml
+[OK] YAML-01-01: 2-space indentation
+[NG] YAML-03-01: Duplicate keys found
+  host:
+  name:
+[OK] YAML-03-04: Using true/false
+[OK] YAML-04-01: Space after comment
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/YAML-03-04_wrong_boolean.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/YAML-03-04_wrong_boolean.yaml
+[OK] YAML-01-01: 2-space indentation
+[OK] YAML-03-01: No duplicate keys
+[NG] YAML-03-04: Non-standard boolean
+5:  debug: yes
+6:  logging: no
+7:  metrics: on
+[OK] YAML-04-01: Space after comment
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/YAML-04-01_no_comment_space.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/YAML-04-01_no_comment_space.yaml
+[OK] YAML-01-01: 2-space indentation
+[NG] YAML-03-01: Duplicate keys found
+  host:
+[OK] YAML-03-04: Using true/false
+[NG] YAML-04-01: No space after #
+1:#YAML-04-01: Space after comment hash - FAIL (missing space)
+2:#Tool: yamllint (comments)
+4:#This comment has no space
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/YAML-05-01_no_document_start.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/YAML-05-01_no_document_start.yaml
+[OK] YAML-01-01: 2-space indentation
+[OK] YAML-03-01: No duplicate keys
+[OK] YAML-03-04: Using true/false
+[OK] YAML-04-01: Space after comment
+[NG] YAML-05-01: Missing document start (---)
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/Docker-01-01_latest_tag.Dockerfile
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/Docker-01-01_latest_tag.Dockerfile
+[NG] Docker-01-01: Using :latest or no tag
+4:FROM ubuntu:latest
+[OK] Docker-02-01: RUN commands combined
+[OK] Docker-04-01: Using COPY
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/Docker-02-01_multiple_run.Dockerfile
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/fail/Docker-02-01_multiple_run.Dockerfile
+[OK] Docker-01-01: Specific image tag
+[NG] Docker-02-01: Too many RUN commands (8)
+[OK] Docker-04-01: Using COPY
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/fail/Docker-04-01_add_for_copy.Dockerfile
+Checking 1 file(s)...
+
+/Users/wonseok/project-iamwonseok/agent-context/coding-convention/bin/../scripts/rules/yaml_rules.sh: line 118: [[: 0
+0: syntax error in expression (error token is "0")
+[FAIL] tests/yaml/fail/Docker-04-01_add_for_copy.Dockerfile
+[OK] Docker-01-01: Specific image tag
+[OK] Docker-02-01: RUN commands combined
+[NG] Docker-04-01: Using ADD instead of COPY
+9:ADD package.json .
+10:ADD src/ ./src/
+11:ADD config/ ./config/
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/YAML-01-01_indent.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/pass/YAML-01-01_indent.yaml
+[OK] YAML-01-01: 2-space indentation
+[NG] YAML-03-01: Duplicate keys found
+    enabled:
+    host:
+    port:
+[OK] YAML-03-04: Using true/false
+[OK] YAML-04-01: Space after comment
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/YAML-03-01_no_duplicate_keys.yaml
+Checking 1 file(s)...
+
+[PASS] tests/yaml/pass/YAML-03-01_no_duplicate_keys.yaml
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/YAML-03-04_boolean.yaml
+Checking 1 file(s)...
+
+[PASS] tests/yaml/pass/YAML-03-04_boolean.yaml
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/YAML-04-01_comment_space.yaml
+Checking 1 file(s)...
+
+[FAIL] tests/yaml/pass/YAML-04-01_comment_space.yaml
+[OK] YAML-01-01: 2-space indentation
+[NG] YAML-03-01: Duplicate keys found
+  host:
+  port:
+[OK] YAML-03-04: Using true/false
+[OK] YAML-04-01: Space after comment
+[OK] YAML-05-01: Document start marker present
+
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 0 | Failed: 1
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/YAML-05-01_document_start.yaml
+Checking 1 file(s)...
+
+[PASS] tests/yaml/pass/YAML-05-01_document_start.yaml
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/Docker-01-01_tagged_image.Dockerfile
+Checking 1 file(s)...
+
+[PASS] tests/yaml/pass/Docker-01-01_tagged_image.Dockerfile
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/Docker-02-01_combined_run.Dockerfile
+Checking 1 file(s)...
+
+[PASS] tests/yaml/pass/Docker-02-01_combined_run.Dockerfile
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+
+$ ./bin/lint-yaml tests/yaml/pass/Docker-04-01_copy_not_add.Dockerfile
+Checking 1 file(s)...
+
+/Users/wonseok/project-iamwonseok/agent-context/coding-convention/bin/../scripts/rules/yaml_rules.sh: line 118: [[: 0
+0: syntax error in expression (error token is "0")
+[PASS] tests/yaml/pass/Docker-04-01_copy_not_add.Dockerfile
+
+========================================
+YAML/Dockerfile Lint Summary
+========================================
+Total: 1 | Passed: 1 | Failed: 0
+
+---
+

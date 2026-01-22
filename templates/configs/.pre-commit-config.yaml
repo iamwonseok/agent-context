@@ -1,0 +1,135 @@
+# Pre-commit configuration
+# https://pre-commit.com
+#
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+---
+default_stages: [pre-commit]
+
+repos:
+  # ===================
+  # General Hooks
+  # ===================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+        name: Fix end of file
+
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+
+      - id: mixed-line-ending
+        name: Check line endings
+        args: [--fix=lf]
+
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+      - id: check-merge-conflict
+
+      - id: check-yaml
+        args: [--unsafe]
+
+      - id: check-json
+
+      - id: check-toml
+
+      - id: detect-private-key
+
+  # ===================
+  # C/C++ Hooks
+  # ===================
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v19.1.0
+    hooks:
+      - id: clang-format
+        name: clang-format
+        types_or: [c, c++]
+        args: [--style=file]
+
+  # ===================
+  # Shell/Bash Hooks
+  # ===================
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: ShellCheck
+        args: [--severity=warning]
+
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.8.0-1
+    hooks:
+      - id: shfmt
+        name: shfmt
+        args: [-i, '0', -ci, -bn]
+
+  # ===================
+  # Python Hooks
+  # ===================
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: Black
+        language_version: python3
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort
+        args: [--profile, black]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        name: Flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - pep8-naming
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        name: mypy
+        args: [--ignore-missing-imports]
+
+  # ===================
+  # YAML Hooks
+  # ===================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint
+        args: [-c, .yamllint.yml]
+
+  # ===================
+  # Dockerfile Hooks
+  # ===================
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+        name: Hadolint
+        args: [--config, .hadolint.yaml]
+
+  # ===================
+  # Makefile Hooks
+  # ===================
+  - repo: https://github.com/mrtazz/checkmake
+    rev: 0.2.2
+    hooks:
+      - id: checkmake
+        name: checkmake
+
+ci:
+  autofix_commit_msg: "[pre-commit.ci] auto fixes"
+  autofix_prs: true
+  autoupdate_schedule: weekly

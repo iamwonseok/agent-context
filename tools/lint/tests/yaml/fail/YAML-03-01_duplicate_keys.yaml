@@ -1,0 +1,12 @@
+# YAML-03-01: No duplicate keys - FAIL
+# Tool: yamllint (key-duplicates)
+---
+config:
+  name: myapp
+  version: "1.0.0"
+  name: myapp-duplicate
+
+server:
+  host: localhost
+  port: 8080
+  host: 127.0.0.1
