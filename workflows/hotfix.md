@@ -1,6 +1,7 @@
 ---
 name: hotfix
 description: Emergency production fix
+role: developer
 skills:
   - git-workflow (worktree)
   - execute/write-code

@@ -1,6 +1,7 @@
 ---
 name: feature
 description: Full feature development workflow
+role: developer
 skills:
   - analyze/parse-requirement
   - plan/design-solution

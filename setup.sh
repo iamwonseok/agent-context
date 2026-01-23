@@ -74,10 +74,14 @@ fi
 if [[ "$(basename "$AGENT_DIR")" == ".agent" ]]; then
     # Called from .agent/ (symlink or copied)
     PROJECT_ROOT="$(dirname "$AGENT_DIR")"
-else
+elif [[ "$AGENT_DIR" == "$(pwd)" ]]; then
     # Called from repo root directly (development mode)
+    # Both AGENT_DIR and PROJECT_ROOT point to the same place
     PROJECT_ROOT="$(pwd)"
-    AGENT_DIR="$PROJECT_ROOT"
+else
+    # Called from external location (e.g., /path/to/agent-context/setup.sh)
+    # AGENT_DIR is the script's location, PROJECT_ROOT is current directory
+    PROJECT_ROOT="$(pwd)"
 fi
 
 echo "========================================="
@@ -88,18 +92,18 @@ echo "Agent dir: ${AGENT_DIR}"
 echo "Project root: ${PROJECT_ROOT}"
 echo ""
 
-# Resolve agent context path for templates
+# Resolve agent context path for templates (supports both files and directories)
 resolve_template_path() {
     local template_name="$1"
     
-    # Check local first
-    if [[ -f "${AGENT_DIR}/templates/${template_name}" ]]; then
+    # Check local first (file or directory)
+    if [[ -e "${AGENT_DIR}/templates/${template_name}" ]]; then
         echo "${AGENT_DIR}/templates/${template_name}"
         return 0
     fi
     
-    # Check global
-    if [[ -f "$HOME/.agent/templates/${template_name}" ]]; then
+    # Check global (file or directory)
+    if [[ -e "$HOME/.agent/templates/${template_name}" ]]; then
         echo "$HOME/.agent/templates/${template_name}"
         return 0
     fi
@@ -182,7 +186,21 @@ else
     fi
 fi
 
-# 5. .project.yaml configuration
+# 5. plan/ directory handling
+if [[ ! -d "${PROJECT_ROOT}/plan" ]]; then
+    # Check for plan template directory
+    if [[ -d "${AGENT_DIR}/templates/plan" ]]; then
+        echo "[INFO] Creating plan/ directory from template"
+        cp -r "${AGENT_DIR}/templates/plan" "${PROJECT_ROOT}/plan"
+    elif [[ -d "$HOME/.agent/templates/plan" ]]; then
+        echo "[INFO] Creating plan/ directory from global template"
+        cp -r "$HOME/.agent/templates/plan" "${PROJECT_ROOT}/plan"
+    fi
+else
+    echo "[INFO] plan/ already exists, skipping"
+fi
+
+# 6. .project.yaml configuration
 if [[ "$NON_INTERACTIVE" == "true" ]]; then
     echo "[INFO] Non-interactive mode: skipping .project.yaml configuration"
     echo "[INFO] You can configure later by editing .project.yaml"
