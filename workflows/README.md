@@ -6,10 +6,10 @@ Skill combinations for common development scenarios.
 
 | Workflow | Use Case |
 |----------|----------|
-| [feature.md](feature.md) | New feature development |
-| [bug-fix.md](bug-fix.md) | Bug fix |
-| [hotfix.md](hotfix.md) | Emergency production fix |
-| [refactor.md](refactor.md) | Code refactoring |
+| [developer/feature.md](developer/feature.md) | New feature development |
+| [developer/bug-fix.md](developer/bug-fix.md) | Bug fix |
+| [developer/hotfix.md](developer/hotfix.md) | Emergency production fix |
+| [developer/refactor.md](developer/refactor.md) | Code refactoring |
 
 ## Manager Workflows
 
@@ -49,10 +49,11 @@ skills:
 ```
 workflows/
 ├── README.md
-├── feature.md
-├── bug-fix.md
-├── hotfix.md
-├── refactor.md
+├── developer/
+│   ├── feature.md
+│   ├── bug-fix.md
+│   ├── hotfix.md
+│   └── refactor.md
 └── manager/
     ├── initiative.md
     ├── epic.md
