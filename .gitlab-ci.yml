@@ -1,17 +1,17 @@
 # GitLab CI/CD Configuration
 # Coding Convention Test Framework for agent-context repository
 #
-# This project uses its own .agent/tools/lint/ci-templates/lint.yml template.
+# This project uses its own tools/lint/ci-templates/lint.yml template.
 # Other projects can include this template via:
 #
 #   include:
 #     - project: 'yourgroup/agent-context'
 #       ref: main
-#       file: '/.agent/tools/lint/ci-templates/lint.yml'
+#       file: '/tools/lint/ci-templates/lint.yml'
 #
 ---
 include:
-  - local: '.agent/tools/lint/ci-templates/lint.yml'
+  - local: 'tools/lint/ci-templates/lint.yml'
 
 stages:
   - build
@@ -35,19 +35,19 @@ build:image:
   variables:
     DOCKER_TLS_CERTDIR: ""
   script:
-    - cd .agent/tools/lint/tests
+    - cd tools/lint/tests
     - docker build -t ${LINT_IMAGE} .
     - docker push ${LINT_IMAGE}
   rules:
     # Manual trigger only - run when Dockerfile is updated
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - .agent/tools/lint/tests/Dockerfile
+        - tools/lint/tests/Dockerfile
       when: manual
       allow_failure: true
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
-        - .agent/tools/lint/tests/Dockerfile
+        - tools/lint/tests/Dockerfile
       when: manual
       allow_failure: true
     # Allow manual trigger anytime
@@ -78,7 +78,7 @@ report:
   script:
     - cd ${CI_PROJECT_DIR}
     - mkdir -p out
-    - .agent/tools/lint/scripts/generate_report.sh > out/report.md || true
+    - tools/lint/scripts/generate_report.sh > out/report.md || true
   artifacts:
     when: always
     paths:
