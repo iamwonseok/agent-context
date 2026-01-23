@@ -60,14 +60,6 @@ Skills: /path/to/agent-context/skills
   (v) Mentions: plan
   ...
 
---- References ---
-
-  [git-workflow/references]
-  (v) Exists: branch-naming.md
-  (v) Exists: merge-strategies.md
-  (v) Exists: worktree-guide.md
-  ...
-
 --- Scripts ---
 
   [integrate/create-merge-request/scripts/pre-merge-check.sh]

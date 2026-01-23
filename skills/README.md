@@ -32,12 +32,6 @@ Skills are organized into 5 categories based on workflow phase:
 | `integrate/commit-changes` | Write commit message |
 | `integrate/create-merge-request` | Create merge request |
 
-### Cross-cutting Skills
-
-| Skill | Purpose |
-|-------|---------|
-| [git-workflow](git-workflow/) | Manage branches |
-
 ## Skill Format
 
 Each skill has `SKILL.md` with:
@@ -106,9 +100,8 @@ skills/
 │   ├── run-tests/
 │   ├── check-style/
 │   └── ...
-├── integrate/
-│   ├── README.md
-│   ├── commit-changes/
-│   └── ...
-└── git-workflow/      (cross-cutting)
+└── integrate/
+    ├── README.md
+    ├── commit-changes/
+    └── ...
 ```

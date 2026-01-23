@@ -4,7 +4,6 @@ description: Code refactoring workflow
 role: developer
 skills:
   - plan/design-solution
-  - git-workflow
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -24,19 +23,14 @@ skills:
 
 ## Prerequisites
 
-- [ ] Single agent? -> Use branch
-- [ ] Multi-agent concurrent? -> Use worktree (see [multi-agent-rules](../skills/git-workflow/references/multi-agent-rules.md))
+- [ ] Refactor branch created from main
+- [ ] Tests exist for code being refactored
 
 ## Flow
 
 ```
 +---------------------+
 |  design-solution    | <- Plan refactoring scope
-+---------+-----------+
-          |
-          v
-+---------------------+
-|    git-workflow     | <- Create refactor branch
 +---------+-----------+
           |
           v
@@ -112,14 +106,11 @@ Task: "Extract repository pattern from services"
    -> List files to change
    -> Define refactoring steps
 
-2. git-workflow
-   -> git checkout -b refactor/PROJ-789-repository
-
-3. write-code
+2. write-code
    -> Verify existing tests cover behavior
    -> Add tests if missing
 
-4. Loop (small steps):
+3. Loop (small steps):
    -> Extract BaseRepository
    -> run-tests -> Pass
    -> commit-changes: "refactor: add BaseRepository"
@@ -132,19 +123,19 @@ Task: "Extract repository pattern from services"
    -> run-tests -> Pass
    -> commit-changes: "refactor: use repository in OrderService"
 
-5. check-style
+4. check-style
    -> Final lint check
 
-6. review-code
+5. review-code
    -> Verify no behavior change
    -> Check code quality improved
 
-7. verify-requirements
+6. verify-requirements
    -> Check plan/refactor-repository.md
    -> All goals achieved?
    -> No missing items?
 
-8. create-merge-request
+7. create-merge-request
    -> MR, merge
 ```
 

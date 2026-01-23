@@ -5,7 +5,6 @@ role: developer
 skills:
   - analyze/parse-requirement
   - plan/design-solution
-  - git-workflow
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -25,8 +24,8 @@ skills:
 
 ## Prerequisites
 
-- [ ] Single agent? -> Use branch
-- [ ] Multi-agent concurrent? -> Use worktree (see [multi-agent-rules](../skills/git-workflow/references/multi-agent-rules.md))
+- [ ] Feature branch created from main
+- [ ] Requirements document available (if any)
 
 ## Flow
 
@@ -38,11 +37,6 @@ skills:
           v
 +---------------------+
 |  design-solution    | <- Plan tasks
-+---------+-----------+
-          |
-          v
-+---------------------+
-|    git-workflow     | <- Create branch
 +---------+-----------+
           |
           v
@@ -113,22 +107,19 @@ User: "Add SPI flash driver"
    -> Break into tasks: SPI init, read, write, erase
    -> Output: plan/spi-flash-plan.md
 
-3. git-workflow
-   -> git checkout -b feat/PROJ-123-spi-flash
-
-4. For each task:
+3. For each task:
    write-code   -> Write tests, then code
    check-style  -> make lint
    run-tests    -> make test
    review-code  -> Check quality
    commit-changes -> git commit -m "feat(flash): ..."
 
-5. verify-requirements
+4. verify-requirements
    -> Re-read design/spi-flash.md
    -> Check all requirements met
    -> Confirm no gaps
 
-6. create-merge-request
+5. create-merge-request
    -> Push, create MR, merge
 ```
 
