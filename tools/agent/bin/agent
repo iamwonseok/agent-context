@@ -17,6 +17,10 @@ source "$LIB_DIR/git-strategy.sh"
 source "$LIB_DIR/branch.sh"
 source "$LIB_DIR/context.sh"
 source "$LIB_DIR/checks.sh"
+source "$LIB_DIR/markdown.sh"
+source "$LIB_DIR/upload.sh"
+source "$LIB_DIR/permissions.sh"
+source "$LIB_DIR/executor.sh"
 
 # Version
 VERSION="0.1.0"
