@@ -66,7 +66,6 @@ integrate/create-merge-request
 integrate/merge-changes
 integrate/notify-stakeholders
 integrate/publish-report
-git-workflow
 "
 
 # 1. SKILL.md Structure
@@ -154,7 +153,7 @@ test_readme() {
     fi
     
     # Check for category mentions
-    for category in analyze plan execute validate integrate git-workflow; do
+    for category in analyze plan execute validate integrate; do
         if grep -q "$category" "$readme" 2>/dev/null; then
             test_pass "Mentions: ${category}"
         else

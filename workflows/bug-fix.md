@@ -3,7 +3,6 @@ name: bug-fix
 description: Standard bug fix workflow
 role: developer
 skills:
-  - git-workflow
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -22,17 +21,12 @@ skills:
 
 ## Prerequisites
 
-- [ ] Single agent? -> Use branch
-- [ ] Multi-agent concurrent? -> Use worktree (see [multi-agent-rules](../skills/git-workflow/references/multi-agent-rules.md))
+- [ ] Fix branch created from main
+- [ ] Bug can be reproduced
 
 ## Flow
 
 ```
-+---------------------+
-|    git-workflow     | <- Create fix branch
-+---------+-----------+
-          |
-          v
 +---------------------+
 |    write-code       | <- Write failing test, then fix
 +---------+-----------+
@@ -76,31 +70,28 @@ skills:
 ```
 Issue: "I2C read fails on repeated start"
 
-1. git-workflow
-   -> git checkout -b fix/PROJ-456-i2c-repeated-start
-
-2. write-code
+1. write-code
    -> Write test: test_i2c_repeated_start()
    -> Run: FAIL (reproduces bug)
    -> Fix code
    -> Run: PASS
 
-3. check-style
+2. check-style
    -> make lint
    -> Pass
 
-4. run-tests
+3. run-tests
    -> make test
    -> All pass
 
-5. review-code
+4. review-code
    -> Check fix is correct
    -> No side effects
 
-6. commit-changes
+5. commit-changes
    -> git commit -m "fix(i2c): handle repeated start condition"
 
-7. create-merge-request
+6. create-merge-request
    -> Push, MR, merge
 ```
 

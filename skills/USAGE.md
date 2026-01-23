@@ -102,16 +102,7 @@ AI: Breaking into tasks...
     Output: plan/uart-driver-plan.md
 ```
 
-### Step 4: Git Workflow
-
-```
-Read: skills/git-workflow/SKILL.md
-
-AI: Creating branch...
-    git checkout -b feat/PROJ-123-uart-driver
-```
-
-### Step 5: Implementation Loop
+### Step 4: Implementation Loop
 
 For each task, repeat:
 
@@ -141,7 +132,7 @@ For each task, repeat:
     git commit -m "feat(uart): add ring buffer"
 ```
 
-### Step 6: Create Merge Request
+### Step 5: Create Merge Request
 
 ```
 Read: skills/integrate/create-merge-request/SKILL.md
@@ -166,13 +157,7 @@ AI: Running pre-merge checks...
 
 Bug fix, not production -> `workflows/bug-fix.md`
 
-### Step 2: Git Workflow
-
-```
-git checkout -b fix/PROJ-456-dma-timeout
-```
-
-### Step 3: Write Code (TDD)
+### Step 2: Write Code (TDD)
 
 ```
 // Write failing test (reproduces bug)
@@ -193,7 +178,7 @@ int dma_transfer(uint8_t *buf, size_t len) {
 // Run: PASS
 ```
 
-### Step 4: Check Style -> Run Tests -> Review -> Commit
+### Step 3: Check Style -> Run Tests -> Review -> Commit
 
 ```
 [check-style]    make lint -> Pass
@@ -202,7 +187,7 @@ int dma_transfer(uint8_t *buf, size_t len) {
 [commit-changes] git commit -m "fix(dma): adjust timeout for large transfers"
 ```
 
-### Step 5: Finish
+### Step 4: Finish
 
 ```
 git push -u origin fix/PROJ-456-dma-timeout
@@ -219,15 +204,7 @@ gh pr create --title "fix(dma): adjust timeout for large transfers"
 
 Production issue -> `workflows/hotfix.md`
 
-### Step 2: Git Workflow (Worktree)
-
-```
-# Keep current work, create isolated worktree
-git worktree add ../hotfix -b hotfix/1.2.3 main
-cd ../hotfix
-```
-
-### Step 3: Quick Fix
+### Step 2: Quick Fix
 
 ```
 [write-code]     Quick test + fix
@@ -236,20 +213,12 @@ cd ../hotfix
 [commit-changes] git commit -m "fix: watchdog feed in main loop"
 ```
 
-### Step 4: Fast Finish
+### Step 3: Fast Finish
 
 ```
 git push -u origin hotfix/1.2.3
 gh pr create --title "fix: watchdog feed in main loop" --label urgent
 # Fast-track merge
-```
-
-### Step 5: Cleanup
-
-```
-cd ../project
-git worktree remove ../hotfix
-# Continue previous work
 ```
 
 ---

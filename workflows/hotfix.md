@@ -3,7 +3,6 @@ name: hotfix
 description: Emergency production fix
 role: developer
 skills:
-  - git-workflow (worktree)
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -22,12 +21,6 @@ skills:
 ## Flow
 
 ```
-+---------------------+
-|    git-workflow     | <- Worktree from main
-|     (worktree)      |
-+---------+-----------+
-          |
-          v
 +---------------------+
 |    write-code       | <- Quick test + fix
 +---------+-----------+
@@ -50,11 +43,6 @@ skills:
           v
 +------------------------+
 | create-merge-request   | <- Fast merge
-+-----------+------------+
-            |
-            v
-+------------------------+
-|       cleanup          | <- Remove worktree
 +------------------------+
 ```
 
@@ -71,39 +59,29 @@ Review can be async (post-merge).
 ```
 Alert: "Production down! Auth failing"
 
-1. git-workflow (worktree)
-   -> Keep current work untouched
-   -> git worktree add ../hotfix -b hotfix/1.2.3 main
-   -> cd ../hotfix
-
-2. write-code
+1. write-code
    -> Quick test to reproduce
    -> Fix the issue
    -> Verify fix
 
-3. check-style
+2. check-style
    -> Quick check: flake8 src/auth.py
 
-4. run-tests
+3. run-tests
    -> Run auth tests: pytest tests/test_auth.py
 
-5. commit-changes
+4. commit-changes
    -> git commit -m "fix: auth token validation"
 
-6. create-merge-request
+5. create-merge-request
    -> git push -u origin hotfix/1.2.3
    -> Create MR with "urgent" label
    -> Fast-track merge
-
-7. cleanup
-   -> cd ../project
-   -> git worktree remove ../hotfix
-   -> Continue previous work
 ```
 
 ## Notes
 
-- Use worktree to preserve current work
+- Create hotfix branch from main
 - Minimal fix only
 - Review can happen after merge
 - Document post-mortem later

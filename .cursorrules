@@ -95,7 +95,6 @@ Read `why.md` for the full rationale. Key principles:
 1. Check `git status` and `git branch`
 2. Ensure on feature branch (NOT main)
 3. If on main, create/checkout feature branch before work
-4. Read `skills/git-workflow/references/multi-agent-rules.md` for git rules
 
 ### Before Starting Work
 | Task Type | Read First |
@@ -127,7 +126,7 @@ Read `why.md` for the full rationale. Key principles:
 
 ### Concurrent Work
 - Multiple agents on different tasks -> Use git worktree
-- See `skills/git-workflow/references/worktree-guide.md`
+- Each agent works on separate branch
 
 ## Project Overview
 Workflow + CI/CD template for agent-driven development.
@@ -172,7 +171,6 @@ Organized into 5 categories:
 - `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
 - `validate/` - Verify quality (run-tests, check-style, review-code, ...)
 - `integrate/` - Deliver results (commit-changes, create-merge-request, ...)
-- `git-workflow/` - Manage branches (cross-cutting)
 
 ### Workflows (`workflows/`)
 Skill combinations for scenarios:
