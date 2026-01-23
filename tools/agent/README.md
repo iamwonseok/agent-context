@@ -236,7 +236,13 @@ agent dev submit
 │   ├── roles.sh        # Role management
 │   ├── git-strategy.sh # Git operations
 │   ├── branch.sh       # Branch/worktree commands
-│   └── context.sh      # Context management
+│   ├── context.sh      # Context management
+│   ├── checks.sh       # Quality checks
+│   ├── markdown.sh     # Markdown generation
+│   ├── upload.sh       # JIRA/GitLab upload
+│   ├── permissions.sh  # Permission model
+│   ├── executor.sh     # Execution model
+│   └── init.sh         # Project initialization
 ├── templates/
 │   ├── try.yaml        # Context template
 │   └── attempt.yaml    # Attempt template
