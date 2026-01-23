@@ -1,6 +1,7 @@
 ---
 name: bug-fix
 description: Standard bug fix workflow
+role: developer
 skills:
   - git-workflow
   - execute/write-code

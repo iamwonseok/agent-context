@@ -1,6 +1,7 @@
 ---
 name: refactor
 description: Code refactoring workflow
+role: developer
 skills:
   - plan/design-solution
   - git-workflow
