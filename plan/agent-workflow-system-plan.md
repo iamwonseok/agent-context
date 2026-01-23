@@ -1347,6 +1347,158 @@ agent dev submit
 
 ---
 
+## Detailed Task Checklist (Updated: 2026-01-24)
+
+### Task 0: 레포 구조 마이그레이션 (Phase 0) - **완료**
+
+- [x] `.agent/` 내용을 루트로 이동
+- [x] `setup.sh` 수정
+- [x] 경로 해석 로직 추가
+- [x] `.gitignore` 업데이트
+- [x] 문서 업데이트
+
+> **Note**: `_dev/` 디렉터리는 테스트 시에만 임시 생성/삭제하는 방식으로 운영
+
+---
+
+### Task 1: Atomic Skills 구조 설계 - **완료**
+
+- [x] Skills 디렉터리 구조 재설계 (5개 카테고리)
+- [x] Skill template 작성 (`_template/SKILL.md`)
+
+---
+
+### Task 2-6: Skill 상세 구현 - **완료**
+
+- [x] `analyze/` - 5개 skills
+- [x] `plan/` - 5개 skills
+- [x] `execute/` - 5개 skills
+- [x] `validate/` - 5개 skills (+ references/)
+- [x] `integrate/` - 5개 skills (+ scripts/)
+
+---
+
+### Task 7: Developer Workflows 재설계 - **완료**
+
+**완료일**: 2026-01-24
+
+- [x] `workflows/developer/` 디렉터리 생성
+- [x] `feature.md` 이동 → `developer/feature.md`
+- [x] `bug-fix.md` 이동 → `developer/bug-fix.md`
+- [x] `hotfix.md` 이동 → `developer/hotfix.md`
+- [x] `refactor.md` 이동 → `developer/refactor.md`
+- [x] 루트의 기존 `*.md` 파일 제거
+- [x] `workflows/README.md` 업데이트
+
+---
+
+### Task 8: Manager Workflows 구현 - **완료**
+
+- [x] `workflows/manager/` 디렉터리 존재
+- [x] `initiative.md` 존재
+- [x] `epic.md` 존재
+- [x] `task-assignment.md` 존재
+- [x] `monitoring.md` 존재
+- [x] `approval.md` 존재
+
+---
+
+### Task 9: Agent CLI 기본 구조 - **완료**
+
+- [x] CLI entry point (`bin/agent`)
+- [x] Command parser (`lib/parser.sh`)
+- [x] Role 자동 추론 (`lib/roles.sh`)
+- [x] Help 시스템
+
+---
+
+### Task 10: Git Strategy - **완료**
+
+- [x] Interactive Mode (Branch) - `lib/branch.sh`
+- [x] Detached Mode (Worktree) - `lib/git-strategy.sh`
+- [x] Rebase Support - `dev_sync`
+
+---
+
+### Task 11: Context 관리 기능 - **완료**
+
+- [x] `.context/` 디렉터리 구조 - `lib/context.sh`
+- [x] `try.yaml` 템플릿
+- [x] Attempt 기록
+- [x] Summary 생성
+
+---
+
+### Task 12: Issue 연동 및 로그 업로드 - **완료**
+
+- [x] Context → Markdown 변환 - `lib/markdown.sh`
+- [x] JIRA comment 업로드 - `lib/upload.sh`
+- [x] GitLab issue note 업로드
+- [x] Issue N/A 케이스 처리
+
+---
+
+### Task 13: Human/Agent 실행 모델 - **완료**
+
+- [x] Executor type 정의 - `lib/executor.sh`
+- [x] Permission 모델 구현 - `lib/permissions.sh`
+- [x] Human 대기 상태 처리
+
+---
+
+### Task 14: Bootstrap 스크립트 - **완료**
+
+- [x] `bootstrap.sh` 존재
+- [x] OS 감지 로직 (macOS, Ubuntu, RHEL)
+
+---
+
+### Task 15: Project Setup 및 Config - **완료**
+
+- [x] `agent init` 명령 구현 - `lib/init.sh`
+- [x] Git hooks 설치 자동화
+- [x] Secrets 설정 검증
+
+---
+
+### Task 16: 문서화 - **완료**
+
+**완료일**: 2026-01-24
+
+- [x] `docs/` 디렉터리 생성 (uftrace 스타일)
+- [x] CLI 명령어별 문서 생성
+  - [x] `docs/agent.md` - 메인 CLI 개요
+  - [x] `docs/agent-dev.md` - Developer 명령어
+  - [x] `docs/agent-mgr.md` - Manager 명령어
+  - [x] `docs/agent-init.md` - 초기화
+- [x] `docs/README.md` - 문서 인덱스
+- [x] Workflows README 업데이트
+
+---
+
+### Task 17: Manager CLI 실제 구현 - **완료**
+
+**완료일**: 2026-01-24
+
+- [x] `mgr_pending` 구현 - pm CLI 연동
+- [x] `mgr_review` 구현 - MR 상세 조회 + 코멘트 추가
+- [x] `mgr_approve` 구현 - MR 승인 (권한 검사 포함)
+- [x] `mgr_status` 구현 - Initiative/Epic/Task 상태 조회
+- [x] `tools/agent/lib/manager.sh` 생성
+- [x] pm CLI 연동 테스트
+
+---
+
+## Completed Work Summary (2026-01-24)
+
+| 작업 | 상태 | 비고 |
+|------|------|------|
+| Workflows 구조 변경 (Task 7) | **완료** | developer/, manager/ 분리 |
+| Manager CLI 구현 (Task 17) | **완료** | lib/manager.sh 생성 |
+| docs/ 생성 (Task 16) | **완료** | uftrace 스타일 5개 문서 |
+
+---
+
 **Created**: 2026-01-23 | **Author**: Agent
 **Updated**: 2026-01-23 | 구조 마이그레이션 계획 추가
 **Approved**: Pending
