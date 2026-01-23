@@ -619,26 +619,5 @@ dev_cleanup() {
     echo "[OK] Cleanup complete for $task_id"
 }
 
-# Manager placeholder commands
-mgr_pending() {
-    echo "[TODO] List pending MRs"
-    echo "This feature will use pm CLI to fetch pending MRs from GitLab."
-}
-
-mgr_review() {
-    local mr_id="$1"
-    echo "[TODO] Review MR: $mr_id"
-    echo "This feature will show MR details using pm CLI."
-}
-
-mgr_approve() {
-    local mr_id="$1"
-    echo "[TODO] Approve MR: $mr_id"
-    echo "This feature will approve MR using pm CLI."
-}
-
-mgr_status() {
-    local id="$1"
-    echo "[TODO] Status for: $id"
-    echo "This feature will show initiative/epic/task status."
-}
+# Manager commands are in manager.sh
+# Loaded via agent CLI main script
