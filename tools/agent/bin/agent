@@ -22,6 +22,7 @@ source "$LIB_DIR/upload.sh"
 source "$LIB_DIR/permissions.sh"
 source "$LIB_DIR/executor.sh"
 source "$LIB_DIR/init.sh"
+source "$LIB_DIR/manager.sh"
 
 # Version
 VERSION="0.1.0"
