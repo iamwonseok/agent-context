@@ -10,14 +10,19 @@
 #   lint-c . --junit           # Output JUnit XML to stdout
 #   lint-c . --junit -o f.xml  # Output JUnit XML to file
 #   lint-c . -q                # Quiet mode (errors only)
+#   lint-c . --external-only   # External tools only (clang-format, clang-tidy)
+#   lint-c . --regex-only      # Regex rules only (original behavior)
+#   lint-c --check-tools       # Show tool availability
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RULES_DIR="${SCRIPT_DIR}/../scripts/rules"
+LIB_DIR="${SCRIPT_DIR}/../lib"
 
-# Source rules
+# Source libraries
 source "${RULES_DIR}/c_rules.sh"
+source "${LIB_DIR}/executor.sh"
 
 # Colors
 RED='\033[0;31m'
@@ -34,6 +39,7 @@ JUNIT_OUTPUT=false
 JUNIT_FILE=""
 QUIET=false
 TARGET="."
+MODE="hybrid"  # hybrid, external, regex
 
 # Parse arguments
 POSITIONAL=()
@@ -55,6 +61,18 @@ while [[ $# -gt 0 ]]; do
 			QUIET=true
 			shift
 			;;
+		--external-only)
+			MODE="external"
+			shift
+			;;
+		--regex-only)
+			MODE="regex"
+			shift
+			;;
+		--check-tools)
+			check_tools_status c
+			exit 0
+			;;
 		-h|--help)
 			echo "Usage: lint-c [OPTIONS] [PATH]"
 			echo ""
@@ -68,6 +86,9 @@ while [[ $# -gt 0 ]]; do
 			echo "  --junit              Output JUnit XML format"
 			echo "  -o, --output FILE    Write output to file (with --junit)"
 			echo "  -q, --quiet          Quiet mode (show errors only)"
+			echo "  --external-only      Use external tools only (clang-format, clang-tidy)"
+			echo "  --regex-only         Use regex rules only (original behavior)"
+			echo "  --check-tools        Show external tool availability"
 			echo "  -h, --help           Show this help"
 			echo ""
 			echo "Examples:"
@@ -118,6 +139,10 @@ if [[ ${#FILES[@]} -eq 0 ]]; then
 	exit 0
 fi
 
+# Find configuration files
+CLANG_FORMAT_CONFIG=$(find_config ".clang-format" "$(pwd)") || true
+CLANG_TIDY_CONFIG=$(find_config ".clang-tidy" "$(pwd)") || true
+
 # Run checks
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -125,13 +150,50 @@ TEST_CASES=""
 
 if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
 	echo -e "${BOLD}${CYAN}Checking ${#FILES[@]} C/C++ file(s)...${NC}"
+	echo -e "${DIM}Mode: ${MODE}${NC}"
+	if [[ -n "${CLANG_FORMAT_CONFIG}" ]]; then
+		echo -e "${DIM}clang-format config: ${CLANG_FORMAT_CONFIG}${NC}"
+	fi
+	if [[ -n "${CLANG_TIDY_CONFIG}" ]]; then
+		echo -e "${DIM}clang-tidy config: ${CLANG_TIDY_CONFIG}${NC}"
+	fi
 	echo ""
 fi
 
 for file in "${FILES[@]}"; do
 	filename=$(basename "${file}")
+	file_failed=false
+	file_errors=""
 
-	if check_c_file "${file}"; then
+	# 1st Pass: External tools (if enabled)
+	if [[ "${MODE}" == "hybrid" || "${MODE}" == "external" ]]; then
+		# clang-format check
+		if run_clang_format "${file}" "${CLANG_FORMAT_CONFIG}"; then
+			: # pass
+		elif [[ $? -ne 127 ]]; then
+			file_failed=true
+			file_errors+="[clang-format] ${TOOL_OUTPUT}"$'\n'
+		fi
+
+		# clang-tidy check
+		if run_clang_tidy "${file}" "${CLANG_TIDY_CONFIG}"; then
+			: # pass
+		elif [[ $? -ne 127 ]]; then
+			file_failed=true
+			file_errors+="[clang-tidy] ${TOOL_OUTPUT}"$'\n'
+		fi
+	fi
+
+	# 2nd Pass: Regex rules (if enabled)
+	if [[ "${MODE}" == "hybrid" || "${MODE}" == "regex" ]]; then
+		if ! check_c_file "${file}"; then
+			file_failed=true
+			file_errors+="[regex] ${CHECK_RESULT}"$'\n'
+		fi
+	fi
+
+	# Record results
+	if [[ "${file_failed}" == false ]]; then
 		PASS_COUNT=$((PASS_COUNT + 1))
 		if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
 			echo -e "${GREEN}[PASS]${NC} ${file}"
@@ -143,13 +205,13 @@ for file in "${FILES[@]}"; do
 		FAIL_COUNT=$((FAIL_COUNT + 1))
 		if [[ "${JUNIT_OUTPUT}" == false ]]; then
 			echo -e "${RED}[FAIL]${NC} ${file}"
-			echo -e "${DIM}${CHECK_RESULT}${NC}"
+			echo -e "${DIM}${file_errors}${NC}"
 		fi
 		if [[ "${JUNIT_OUTPUT}" == true ]]; then
-			escaped_result=$(echo "${CHECK_RESULT}" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+			escaped_result=$(echo "${file_errors}" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
 			TEST_CASES+="    <testcase classname=\"c.lint\" name=\"${filename}\" time=\"0.01\">"$'\n'
 			TEST_CASES+="      <failure message=\"Coding convention violation\" type=\"LintError\">"$'\n'
-			TEST_CASES+="        <![CDATA[${CHECK_RESULT}]]>"$'\n'
+			TEST_CASES+="        <![CDATA[${file_errors}]]>"$'\n'
 			TEST_CASES+="      </failure>"$'\n'
 			TEST_CASES+="    </testcase>"$'\n'
 		fi

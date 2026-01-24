@@ -26,6 +26,62 @@ sudo apt update && sudo apt install -y git curl
 # Download from: https://git-scm.com/download/win
 ```
 
+## Lint Tools (Optional)
+
+For enhanced code quality checking, install external lint tools.
+Without these, basic regex-based checking still works.
+
+### C/C++
+
+```bash
+# macOS
+brew install llvm
+# Add to PATH: export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+
+# Ubuntu/Debian
+sudo apt install clang-format clang-tidy
+```
+
+### Python
+
+```bash
+pip install flake8 black isort mypy
+```
+
+### Bash
+
+```bash
+# macOS
+brew install shellcheck
+
+# Ubuntu/Debian
+sudo apt install shellcheck
+```
+
+### YAML / Dockerfile
+
+```bash
+# yamllint
+pip install yamllint
+
+# hadolint (Dockerfile)
+# macOS
+brew install hadolint
+
+# Ubuntu/Debian (via Docker)
+docker pull hadolint/hadolint
+# Or download binary from: https://github.com/hadolint/hadolint/releases
+```
+
+### Verify Installation
+
+```bash
+lint c --check-tools
+lint python --check-tools
+lint bash --check-tools
+lint yaml --check-tools
+```
+
 ## Quick Start
 
 ### 1. Check Prerequisites

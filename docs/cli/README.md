@@ -10,6 +10,7 @@ Command-line interface documentation for agent-context tools.
 | [agent-dev.md](agent-dev.md) | `agent dev` | Developer commands |
 | [agent-mgr.md](agent-mgr.md) | `agent mgr` | Manager commands |
 | [agent-init.md](agent-init.md) | `agent init` | Project initialization |
+| [lint.md](lint.md) | `lint` | Code quality checker |
 
 ## Quick Reference
 
@@ -29,6 +30,16 @@ agent dev submit             # Create MR/PR
 agent mgr pending            # List pending MRs
 agent mgr review <mr-id>     # Review MR details
 agent mgr approve <mr-id>    # Approve MR
+```
+
+### Lint Commands
+
+```bash
+lint c file.c                # Check C/C++ file
+lint python script.py        # Check Python file
+lint bash script.sh          # Check Bash script
+lint yaml config.yaml        # Check YAML file
+lint c --check-tools         # Show tool availability
 ```
 
 ## Related
