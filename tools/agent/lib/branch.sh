@@ -162,18 +162,31 @@ dev_switch() {
     local project_root
     project_root=$(find_project_root) || return 1
 
+    local from_branch
+    from_branch=$(get_current_branch 2>/dev/null) || from_branch=""
+
     # Check if it's a worktree
     local worktree_path="$project_root/$WORKTREE_ROOT/$target"
     if [[ -d "$worktree_path" ]]; then
+        handoff_save_interactive "$project_root" "$from_branch"
         echo "Switching to worktree: $target"
         cd "$worktree_path" || return 1
         echo "Now in: $(pwd)"
+        local new_root
+        new_root=$(find_project_root 2>/dev/null) || new_root="$(pwd)"
+        local to_branch
+        to_branch=$(get_current_branch 2>/dev/null) || to_branch=""
+        handoff_show_and_cleanup "$new_root" "$to_branch"
         return 0
     fi
 
     # Otherwise, treat as branch
+    handoff_save_interactive "$project_root" "$from_branch"
     echo "Switching to branch: $target"
     git checkout "$target" || return 1
+    local to_branch
+    to_branch=$(get_current_branch 2>/dev/null) || to_branch=""
+    handoff_show_and_cleanup "$project_root" "$to_branch"
 }
 
 # Show current status

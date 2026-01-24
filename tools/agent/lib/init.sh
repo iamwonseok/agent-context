@@ -158,6 +158,55 @@ HOOK
     else
         echo "  [SKIP] commit-msg hook already exists"
     fi
+
+    # Post-checkout hook for branch handoff notes (optional UX helper)
+    local post_checkout="${hooks_dir}/post-checkout"
+    if [[ ! -f "$post_checkout" ]]; then
+        cat > "$post_checkout" << 'HOOK'
+#!/bin/bash
+# Agent post-checkout hook
+# Shows and removes a branch handoff note on checkout.
+
+# Skip if SKIP_HOOKS is set
+if [[ -n "$SKIP_HOOKS" ]]; then
+    exit 0
+fi
+
+project_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+
+if [[ -z "$branch" ]] || [[ "$branch" == "HEAD" ]]; then
+    exit 0
+fi
+
+safe="${branch//\//__}"
+file_new="${project_root}/.context/handoff-${safe}.md"
+
+if [[ -f "$file_new" ]]; then
+    echo ""
+    echo "=================================================="
+    echo "Handoff note for branch: $branch"
+    echo "File: $(basename "$file_new")"
+    echo "=================================================="
+    cat "$file_new"
+    echo "=================================================="
+    archive_dir="${project_root}/.context/handoff-archive"
+    mkdir -p "$archive_dir" 2>/dev/null || true
+    ts=$(date -u +"%Y%m%dT%H%M%SZ")
+    dest="${archive_dir}/handoff-${safe}-${ts}.md"
+    mv "$file_new" "$dest" 2>/dev/null || {
+        cp "$file_new" "$dest" 2>/dev/null || true
+        rm -f "$file_new" 2>/dev/null || true
+    }
+fi
+
+exit 0
+HOOK
+        chmod +x "$post_checkout"
+        echo "  [OK] Installed post-checkout hook"
+    else
+        echo "  [SKIP] post-checkout hook already exists"
+    fi
 }
 
 # Main init function

@@ -16,6 +16,7 @@ source "$LIB_DIR/roles.sh"
 source "$LIB_DIR/git-strategy.sh"
 source "$LIB_DIR/branch.sh"
 source "$LIB_DIR/context.sh"
+source "$LIB_DIR/handoff.sh"
 source "$LIB_DIR/checks.sh"
 source "$LIB_DIR/markdown.sh"
 source "$LIB_DIR/upload.sh"
@@ -44,6 +45,7 @@ DEVELOPER COMMANDS (agent dev):
     start <task-id> --detached  Start in detached mode (worktree)
     list                    List active tasks (branches/worktrees)
     switch <branch>         Switch to another branch/worktree
+    handoff <save|show>     Save/show handoff note for a branch
     status                  Show current work status
     check                   Run quality checks (lint, test, intent)
     verify                  Verify requirements and generate report
@@ -97,6 +99,9 @@ cmd_dev() {
             ;;
         switch)
             dev_switch "$@"
+            ;;
+        handoff)
+            dev_handoff "$@"
             ;;
         status|"")
             dev_status "$@"

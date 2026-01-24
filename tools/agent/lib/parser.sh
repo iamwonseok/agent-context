@@ -119,6 +119,7 @@ COMMANDS:
 
     list                    List active tasks
     switch <branch>         Switch to branch or worktree
+    handoff <save|show>     Save/show a handoff note for a branch
     status                  Show current work status
 
     check                   Run quality checks (lint, test, intent)
