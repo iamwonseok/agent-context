@@ -1,0 +1,69 @@
+# Docker Compose for agent-context tests
+# Usage:
+#   docker compose -f tests/docker-compose.test.yml build
+#   docker compose -f tests/docker-compose.test.yml run smoke
+#   docker compose -f tests/docker-compose.test.yml run local-git
+#   docker compose -f tests/docker-compose.test.yml run e2e  # requires tokens
+
+services:
+  # Build base test image
+  test-base:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test
+    image: agent-context-test:latest
+
+  # Stage 1: Smoke tests (no remote, no tokens)
+  smoke:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - smoke-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/smoke/test_smoke.sh"]
+
+  # Stage 2: Local Git tests (bare repo as remote)
+  local-git:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - local-git-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/local-git/test_local_git.sh"]
+
+  # Stage 3: E2E tests (requires GitLab/JIRA tokens)
+  e2e:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - e2e-workspace:/workspace
+    working_dir: /agent-context
+    environment:
+      - GITLAB_API_TOKEN=${GITLAB_API_TOKEN:-}
+      - GITLAB_URL=${GITLAB_URL:-}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN:-}
+      - JIRA_URL=${JIRA_URL:-}
+    command: ["bash", "/agent-context/tests/e2e/test_e2e.sh"]
+
+  # Run all tests (1-2 stages only, no tokens required)
+  all:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - all-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/run-tests.sh", "--stages=1,2"]
+
+volumes:
+  smoke-workspace:
+  local-git-workspace:
+  e2e-workspace:
+  all-workspace:

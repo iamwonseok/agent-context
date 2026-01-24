@@ -3,14 +3,19 @@
 #
 # See: project-management/README.md
 
+# Issue Tracker (optional - choose one or both)
 jira:
-  base_url: https://fadutec.atlassian.net
-  project_key: SVI           # or SPF, etc.
-  email: your-email@fadutec.com
+  base_url: https://your-org.atlassian.net
+  project_key: PROJ
+  email: your-email@example.com
 
+# Git Platform (choose one: gitlab or github)
 gitlab:
-  base_url: https://gitlab.fadutec.dev
-  project: soc-ip/agentic    # namespace/project
+  base_url: https://gitlab.example.com
+  project: namespace/project    # e.g., myorg/myrepo
+
+github:
+  repo: owner/repo              # e.g., myorg/myrepo
 
 branch:
   feature_prefix: feat/
@@ -18,11 +23,13 @@ branch:
   hotfix_prefix: hotfix/
 
 # Authentication:
-# Option 1: Environment variables (recommended)
+# Option 1: Environment variables (recommended for CI)
 #   export JIRA_TOKEN="your-token"
 #   export JIRA_EMAIL="your-email"
 #   export GITLAB_TOKEN="your-token"
+#   export GITHUB_TOKEN="your-token"
 #
-# Option 2: Secret files (gitignored)
+# Option 2: Secret files (gitignored, recommended for local dev)
 #   .secrets/atlassian-api-token
 #   .secrets/gitlab-api-token
+#   .secrets/github-api-token

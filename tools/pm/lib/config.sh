@@ -46,15 +46,21 @@ load_config() {
     PROJECT_ROOT=$(find_project_root) || return 1
     CONFIG_FILE="$PROJECT_ROOT/.project.yaml"
     
-    # Jira config
+    # Load config from file
     if [[ -f "$CONFIG_FILE" ]]; then
+        # Jira config
         JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" "jira.base_url")
         JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" "jira.project_key")
         JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "jira.email")
         
+        # GitLab config
         GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" "gitlab.base_url")
         GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" "gitlab.project")
         
+        # GitHub config
+        GITHUB_REPO=$(yaml_get "$CONFIG_FILE" "github.repo")
+        
+        # Branch prefixes
         BRANCH_FEATURE_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.feature_prefix")
         BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.bugfix_prefix")
         BRANCH_HOTFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.hotfix_prefix")
@@ -77,9 +83,15 @@ load_config() {
         GITLAB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/gitlab-api-token")
     fi
     
+    # GitHub
+    if [[ -z "$GITHUB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/github-api-token" ]]; then
+        GITHUB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/github-api-token")
+    fi
+    
     export PROJECT_ROOT CONFIG_FILE
     export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN
+    export GITHUB_REPO GITHUB_TOKEN
     export BRANCH_FEATURE_PREFIX BRANCH_BUGFIX_PREFIX BRANCH_HOTFIX_PREFIX
 }
 
@@ -91,6 +103,11 @@ jira_configured() {
 # Check if GitLab is configured
 gitlab_configured() {
     [[ -n "$GITLAB_BASE_URL" ]] && [[ -n "$GITLAB_TOKEN" ]] && [[ -n "$GITLAB_PROJECT" ]]
+}
+
+# Check if GitHub is configured
+github_configured() {
+    [[ -n "$GITHUB_TOKEN" ]] && [[ -n "$GITHUB_REPO" ]]
 }
 
 # Print configuration
@@ -119,6 +136,14 @@ print_config() {
         echo "  (not configured)"
     fi
     echo ""
+    echo "[GitHub]"
+    if github_configured; then
+        echo "  Repo:  $GITHUB_REPO"
+        echo "  Token: (set)"
+    else
+        echo "  (not configured)"
+    fi
+    echo ""
     echo "[Branch Prefixes]"
     echo "  Feature: $BRANCH_FEATURE_PREFIX"
     echo "  Bugfix:  $BRANCH_BUGFIX_PREFIX"
@@ -133,14 +158,19 @@ create_default_config() {
 # Project Configuration
 # See: project-management/README.md
 
+# Issue Tracker (optional)
 jira:
   base_url: https://your-domain.atlassian.net
   project_key: PROJ
   email: your-email@example.com
 
+# Git Platform (choose one: gitlab or github)
 gitlab:
   base_url: https://gitlab.example.com
   project: namespace/project
+
+github:
+  repo: owner/repo
 
 branch:
   feature_prefix: feat/

@@ -25,3 +25,10 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test artifacts
+tests/workspace/
+tests/*.log
+
+# Local secrets (never commit) - root only
+/.secrets/

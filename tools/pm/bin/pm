@@ -12,6 +12,7 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/jira.sh"
 source "$LIB_DIR/gitlab.sh"
+source "$LIB_DIR/github.sh"
 source "$LIB_DIR/workflow.sh"
 
 # Version
@@ -39,6 +40,12 @@ COMMANDS:
     gitlab mr view IID      View MR details
     gitlab mr create        Create merge request
     gitlab issue list       List GitLab issues
+
+    github me               Show current GitHub user
+    github pr list          List pull requests
+    github pr view NUM      View PR details
+    github pr create        Create pull request
+    github issue list       List GitHub issues
 
     create TITLE            Create new feature/task
     finish                  Finish current feature/task
@@ -243,6 +250,96 @@ cmd_gitlab() {
     esac
 }
 
+cmd_github() {
+    load_config || exit 1
+    
+    case "$1" in
+        me)
+            github_me
+            ;;
+        pr)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local state="open"
+                    local limit=20
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--state) state="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    github_pr_list "$state" "$limit"
+                    ;;
+                view)
+                    github_pr_view "$2"
+                    ;;
+                create)
+                    shift
+                    local head=""
+                    local base="main"
+                    local title=""
+                    local body=""
+                    local draft="false"
+                    
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -h|--head) head="$2"; shift ;;
+                            -b|--base) base="$2"; shift ;;
+                            --title) title="$2"; shift ;;
+                            -d|--body) body="$2"; shift ;;
+                            --draft) draft="true" ;;
+                        esac
+                        shift
+                    done
+                    
+                    if [[ -z "$head" ]] || [[ -z "$title" ]]; then
+                        echo "[ERROR] --head and --title required" >&2
+                        exit 1
+                    fi
+                    
+                    github_pr_create "$head" "$base" "$title" "$body" "$draft"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown github pr command: $1" >&2
+                    echo "Usage: pm github pr <list|view|create>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        issue)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local state="open"
+                    local limit=20
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--state) state="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    github_issue_list "$state" "$limit"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown github issue command: $1" >&2
+                    echo "Usage: pm github issue <list>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        *)
+            echo "[ERROR] Unknown github command: $1" >&2
+            echo "Usage: pm github <me|pr|issue>" >&2
+            exit 1
+            ;;
+    esac
+}
+
 cmd_create() {
     load_config || exit 1
     
@@ -308,6 +405,10 @@ main() {
         gitlab)
             shift
             cmd_gitlab "$@"
+            ;;
+        github)
+            shift
+            cmd_github "$@"
             ;;
         create)
             shift
