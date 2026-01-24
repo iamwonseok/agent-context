@@ -422,6 +422,9 @@ agent (CLI)
 
 ### Phase 3: 선택적 기능 추가 (Week 6-12, 조건부)
 
+> **Note**: Phase 3 상세 내용은 [future-work.md](future-work.md)로 이동되었습니다.
+> Phase 2 완료 후 일괄 리뷰 예정입니다.
+
 **목표**: Advanced Features (사용자 피드백 후 결정)
 
 #### Task 3.1: Automated Execution
