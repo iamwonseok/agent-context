@@ -18,6 +18,7 @@ source "$LIB_DIR/workflow.sh"
 source "$LIB_DIR/provider.sh"
 source "$LIB_DIR/milestone.sh"
 source "$LIB_DIR/label.sh"
+source "$LIB_DIR/wiki.sh"
 
 # Version
 VERSION="1.0.0"
@@ -92,6 +93,11 @@ COMMANDS:
     label list              List labels (auto-select: GitLab/GitHub)
     label create NAME       Create label
     label delete NAME       Delete label
+    wiki list               List wiki pages (GitLab only)
+    wiki view SLUG          View wiki page content
+    wiki create TITLE       Create wiki page
+    wiki update SLUG        Update wiki page
+    wiki delete SLUG        Delete wiki page
     doc create TITLE        Create document (Confluence)
     doc list                List documents
     provider show           Show current provider configuration
@@ -1165,6 +1171,142 @@ cmd_label() {
     esac
 }
 
+cmd_wiki() {
+    load_config || exit 1
+
+    case "$1" in
+        list)
+            shift
+            local limit=20
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_wiki_list "$limit"
+            ;;
+        view)
+            shift
+            local slug=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                slug="$1"
+            fi
+
+            if [[ -z "$slug" ]]; then
+                echo "[ERROR] Wiki slug required" >&2
+                echo "Usage: pm wiki view <SLUG>" >&2
+                exit 1
+            fi
+
+            unified_wiki_view "$slug"
+            ;;
+        create)
+            shift
+            local title=""
+            local content=""
+            local file=""
+
+            # First positional arg is title
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                title="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -c|--content) content="$2"; shift ;;
+                    -f|--file)
+                        file="$2"
+                        if [[ -f "$file" ]]; then
+                            content=$(cat "$file")
+                        else
+                            echo "[ERROR] File not found: $file" >&2
+                            exit 1
+                        fi
+                        shift
+                        ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$title" ]]; then
+                echo "[ERROR] Title required" >&2
+                echo "Usage: pm wiki create TITLE [-c|--content TEXT] [-f|--file PATH]" >&2
+                exit 1
+            fi
+
+            unified_wiki_create "$title" "$content"
+            ;;
+        update)
+            shift
+            local slug=""
+            local content=""
+            local title=""
+            local file=""
+
+            # First positional arg is slug
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                slug="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -c|--content) content="$2"; shift ;;
+                    -t|--title) title="$2"; shift ;;
+                    -f|--file)
+                        file="$2"
+                        if [[ -f "$file" ]]; then
+                            content=$(cat "$file")
+                        else
+                            echo "[ERROR] File not found: $file" >&2
+                            exit 1
+                        fi
+                        shift
+                        ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$slug" ]]; then
+                echo "[ERROR] Wiki slug required" >&2
+                echo "Usage: pm wiki update SLUG [-c|--content TEXT] [-f|--file PATH] [-t|--title TITLE]" >&2
+                exit 1
+            fi
+
+            if [[ -z "$content" ]]; then
+                echo "[ERROR] Content required (use --content or --file)" >&2
+                exit 1
+            fi
+
+            unified_wiki_update "$slug" "$content" "$title"
+            ;;
+        delete)
+            shift
+            local slug=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                slug="$1"
+            fi
+
+            if [[ -z "$slug" ]]; then
+                echo "[ERROR] Wiki slug required" >&2
+                echo "Usage: pm wiki delete <SLUG>" >&2
+                exit 1
+            fi
+
+            unified_wiki_delete "$slug"
+            ;;
+        *)
+            echo "[ERROR] Unknown wiki command: $1" >&2
+            echo "Usage: pm wiki <list|view|create|update|delete>" >&2
+            exit 1
+            ;;
+    esac
+}
+
 cmd_provider() {
     load_config || exit 1
 
@@ -1274,6 +1416,10 @@ main() {
         label)
             shift
             cmd_label "$@"
+            ;;
+        wiki)
+            shift
+            cmd_wiki "$@"
             ;;
         doc)
             shift
