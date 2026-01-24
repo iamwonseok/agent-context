@@ -37,11 +37,21 @@ COMMANDS:
     jira issue view KEY     View issue details
     jira issue create TITLE Create new issue
     jira issue assign KEY EMAIL  Assign issue to user
+    jira issue update KEY [OPTIONS]  Update issue fields
     jira issue transition KEY STATUS  Transition issue status
+    jira sprint list [BOARD_ID]  List sprints
+    jira sprint move KEY SPRINT_ID  Move issue to sprint
+    jira workflow list      List workflows
+    jira workflow transitions KEY  Show available transitions
+    jira workflow statuses  List all statuses
     jira bulk-create --csv FILE  Bulk create issues from CSV
 
     confluence me           Show current Confluence user
     confluence space list   List spaces
+    confluence space view KEY  View space details
+    confluence space create --key KEY --name NAME  Create space
+    confluence space permissions KEY  View space permissions
+    confluence space delete KEY --force  Delete space (dangerous!)
     confluence page list    List pages in space
     confluence page view ID View page details
     confluence page text ID View page as plain text
@@ -216,9 +226,80 @@ cmd_jira() {
 
                     jira_transition "$key" "$status"
                     ;;
+                update)
+                    shift
+                    local key=""
+
+                    # First positional arg is key
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                        shift
+                    fi
+
+                    jira_issue_update "$key" "$@"
+                    ;;
                 *)
                     echo "[ERROR] Unknown jira issue command: $1" >&2
-                    echo "Usage: pm jira issue <list|view|create|assign|transition>" >&2
+                    echo "Usage: pm jira issue <list|view|create|assign|update|transition>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        sprint)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local board_id=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        board_id="$1"
+                    fi
+                    jira_sprint_list "$board_id"
+                    ;;
+                move)
+                    shift
+                    local key=""
+                    local sprint_id=""
+
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                        shift
+                    fi
+
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        sprint_id="$1"
+                        shift
+                    fi
+
+                    jira_issue_move_to_sprint "$key" "$sprint_id"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown jira sprint command: $1" >&2
+                    echo "Usage: pm jira sprint <list|move>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        workflow)
+            shift
+            case "$1" in
+                list)
+                    jira_workflow_list
+                    ;;
+                transitions)
+                    shift
+                    local key=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                    fi
+                    jira_workflow_transitions "$key"
+                    ;;
+                statuses)
+                    jira_workflow_statuses
+                    ;;
+                *)
+                    echo "[ERROR] Unknown jira workflow command: $1" >&2
+                    echo "Usage: pm jira workflow <list|transitions|statuses>" >&2
                     exit 1
                     ;;
             esac
@@ -244,7 +325,7 @@ cmd_jira() {
             ;;
         *)
             echo "[ERROR] Unknown jira command: $1" >&2
-            echo "Usage: pm jira <me|user|issue|bulk-create>" >&2
+            echo "Usage: pm jira <me|user|issue|sprint|workflow|bulk-create>" >&2
             exit 1
             ;;
     esac
@@ -271,9 +352,58 @@ cmd_confluence() {
                     done
                     confluence_space_list "$limit"
                     ;;
+                view)
+                    shift
+                    local key=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                    fi
+                    confluence_space_view "$key"
+                    ;;
+                create)
+                    shift
+                    local key=""
+                    local name=""
+                    local description=""
+
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -k|--key) key="$2"; shift ;;
+                            -n|--name) name="$2"; shift ;;
+                            -d|--description) description="$2"; shift ;;
+                        esac
+                        shift
+                    done
+
+                    confluence_space_create "$key" "$name" "$description"
+                    ;;
+                permissions)
+                    shift
+                    local key=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                    fi
+                    confluence_space_permissions "$key"
+                    ;;
+                delete)
+                    shift
+                    local key=""
+                    local force=""
+
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                        shift
+                    fi
+
+                    if [[ "$1" == "--force" ]]; then
+                        force="--force"
+                    fi
+
+                    confluence_space_delete "$key" "$force"
+                    ;;
                 *)
                     echo "[ERROR] Unknown confluence space command: $1" >&2
-                    echo "Usage: pm confluence space <list>" >&2
+                    echo "Usage: pm confluence space <list|view|create|permissions|delete>" >&2
                     exit 1
                     ;;
             esac

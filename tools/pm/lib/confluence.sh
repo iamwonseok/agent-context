@@ -452,3 +452,163 @@ confluence_search() {
     total=$(echo "$response" | jq -r '.totalSize // .size // (.results | length)')
     echo "Total: $total results"
 }
+
+# Create space
+confluence_space_create() {
+    local key="$1"
+    local name="$2"
+    local description="$3"
+
+    if [[ -z "$key" ]] || [[ -z "$name" ]]; then
+        echo "[ERROR] Space key and name required" >&2
+        return 1
+    fi
+
+    if ! confluence_configured; then
+        echo "[ERROR] Confluence not configured" >&2
+        return 1
+    fi
+
+    local payload
+    payload=$(jq -n \
+        --arg key "$key" \
+        --arg name "$name" \
+        --arg desc "${description:-}" \
+        '{
+            key: $key,
+            name: $name,
+            description: {
+                plain: {
+                    value: $desc,
+                    representation: "plain"
+                }
+            }
+        }')
+
+    local response
+    response=$(confluence_api POST "/space" "$payload")
+
+    local space_key
+    space_key=$(echo "$response" | jq -r '.key')
+
+    if [[ -z "$space_key" ]] || [[ "$space_key" == "null" ]]; then
+        echo "[ERROR] Failed to create space:" >&2
+        echo "$response" | jq -r '.message // .' >&2
+        return 1
+    fi
+
+    echo "(v) Created space: $name (Key: $space_key)"
+
+    local base_url
+    base_url=$(resolve_confluence_url)
+    local web_link
+    web_link=$(echo "$response" | jq -r '._links.webui // empty')
+    if [[ -n "$web_link" ]]; then
+        echo "URL: ${base_url}${web_link}"
+    fi
+}
+
+# View space details
+confluence_space_view() {
+    local key="$1"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Space key required" >&2
+        return 1
+    fi
+
+    if ! confluence_configured; then
+        echo "[ERROR] Confluence not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(confluence_api GET "/space/${key}?expand=description.plain,homepage")
+
+    local error_msg
+    error_msg=$(echo "$response" | jq -r '.message // empty' 2>/dev/null)
+    if [[ -n "$error_msg" ]]; then
+        echo "[ERROR] $error_msg" >&2
+        return 1
+    fi
+
+    echo "============================================================"
+    echo "Space: $(echo "$response" | jq -r '.name')"
+    echo "============================================================"
+    echo "Key:         $(echo "$response" | jq -r '.key')"
+    echo "Type:        $(echo "$response" | jq -r '.type')"
+    echo "Status:      $(echo "$response" | jq -r '.status // "N/A"')"
+    echo "Homepage ID: $(echo "$response" | jq -r '.homepage.id // "N/A"')"
+    echo "------------------------------------------------------------"
+    echo "Description:"
+    echo "$response" | jq -r '.description.plain.value // "(No description)"'
+    echo "============================================================"
+}
+
+# Get space permissions
+confluence_space_permissions() {
+    local key="$1"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Space key required" >&2
+        return 1
+    fi
+
+    if ! confluence_configured; then
+        echo "[ERROR] Confluence not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(confluence_api GET "/space/${key}/permission")
+
+    echo "=========================================="
+    echo "Permissions for space: $key"
+    echo "=========================================="
+
+    # Cloud v2 API format
+    if echo "$response" | jq -e '.results' > /dev/null 2>&1; then
+        echo "$response" | jq -r '.results[] | "[\(.operation.operation)] \(.principal.type): \(.principal.displayName // .principal.id)"'
+    else
+        # Try alternative format
+        echo "$response" | jq -r '.[] | "[\(.type)] \(.subjects // "N/A")"' 2>/dev/null || \
+        echo "[WARN] Could not parse permissions response"
+    fi
+}
+
+# Delete space (dangerous!)
+confluence_space_delete() {
+    local key="$1"
+    local force="$2"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Space key required" >&2
+        return 1
+    fi
+
+    if [[ "$force" != "--force" ]]; then
+        echo "[WARN] This will delete space '$key' and ALL its content!"
+        echo "Use: pm confluence space delete $key --force"
+        return 1
+    fi
+
+    if ! confluence_configured; then
+        echo "[ERROR] Confluence not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(confluence_api DELETE "/space/${key}")
+
+    if [[ -z "$response" ]]; then
+        echo "(v) Deleted space: $key"
+    else
+        local error_msg
+        error_msg=$(echo "$response" | jq -r '.message // empty' 2>/dev/null)
+        if [[ -n "$error_msg" ]]; then
+            echo "[ERROR] $error_msg" >&2
+            return 1
+        fi
+        echo "(v) Deleted space: $key"
+    fi
+}
