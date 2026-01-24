@@ -641,6 +641,39 @@ git commit -m "test"  # Hook 없음
 
 ---
 
+#### Task 2-3: Handoff Archive 정리 명령어 (선택)
+
+**Deps**: None (독립적)
+
+**Work**:
+- [ ] `agent dev cleanup --handoff-archive` 옵션 추가
+- [ ] `--older-than=<days>` 옵션 지원 (기본값: 30일)
+- [ ] MR 머지된 브랜치의 아카이브 자동 식별
+
+**Files**:
+- `tools/agent/lib/handoff.sh` (수정, ~30 LOC 추가)
+
+**구현 스펙**:
+```bash
+# 30일 이상 된 아카이브 삭제
+agent dev cleanup --handoff-archive
+
+# 지정 기간 이상 된 아카이브 삭제
+agent dev cleanup --handoff-archive --older-than=7d
+
+# Dry-run (삭제할 파일 목록만 출력)
+agent dev cleanup --handoff-archive --dry-run
+```
+
+**Done when**:
+- [ ] 아카이브 정리 동작 확인
+- [ ] Dry-run 모드 동작
+- [ ] 기본값 30일 적용
+
+**Priority**: Low (수동 삭제로 대체 가능)
+
+---
+
 ## Implementation Phases
 
 ### Phase 0: 문서 정비 (P0)
@@ -684,6 +717,7 @@ git commit -m "test"  # Hook 없음
 **Tasks**:
 - Week 7: Manual only 테스트 (Task 2-1)
 - Week 8: P1 회귀 테스트 (Task 2-2)
+- Week 8 (선택): Handoff Archive 정리 (Task 2-3)
 
 **Success Criteria**:
 - [ ] 모든 테스트 통과
@@ -704,6 +738,7 @@ graph TD
     T13[Task 1-3: Alias]
     T21[Task 2-1: Manual 테스트]
     T22[Task 2-2: P1 회귀 테스트]
+    T23[Task 2-3: Handoff Archive 정리]
     
     T01 --> T02
     T01 & T02 & T03 --> T21
