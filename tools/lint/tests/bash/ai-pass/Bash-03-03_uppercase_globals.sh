@@ -11,7 +11,7 @@ main() {
 	# Good: Local variables in lowercase
 	local config_path="${CONFIG_FILE}"
 	local retry_count=0
-	
+
 	echo "Script directory: ${SCRIPT_DIR}"
 }
 

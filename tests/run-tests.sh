@@ -73,20 +73,20 @@ run_stage() {
     local stage_num="$1"
     local stage_name="$2"
     local stage_script="$3"
-    
+
     ((TOTAL_STAGES++)) || true
-    
+
     echo ""
     echo -e "${BLUE}------------------------------------------${NC}"
     echo -e "${BLUE}Stage ${stage_num}: ${stage_name}${NC}"
     echo -e "${BLUE}------------------------------------------${NC}"
-    
+
     if [ ! -f "$stage_script" ]; then
         echo -e "${RED}[ERROR]${NC} Script not found: $stage_script"
         ((FAILED_STAGES++)) || true
         return 1
     fi
-    
+
     if bash "$stage_script"; then
         echo -e "${GREEN}[STAGE ${stage_num} PASSED]${NC}"
         ((PASSED_STAGES++)) || true

@@ -22,7 +22,7 @@ find_project_root() {
 yaml_get() {
     local file="$1"
     local key="$2"
-    
+
     if command -v yq &>/dev/null; then
         yq -r "$key // empty" "$file" 2>/dev/null
     else
@@ -32,8 +32,8 @@ yaml_get() {
         local field="${key#*.}"
         awk -v section="$section" -v field="$field" '
             /^[a-z]/ { current_section = $1; gsub(/:/, "", current_section) }
-            current_section == section && $1 == field":" { 
-                gsub(/^[^:]+:[ ]*/, ""); 
+            current_section == section && $1 == field":" {
+                gsub(/^[^:]+:[ ]*/, "");
                 gsub(/^["'\'']|["'\'']$/, "");
                 print; exit
             }
@@ -45,49 +45,49 @@ yaml_get() {
 load_config() {
     PROJECT_ROOT=$(find_project_root) || return 1
     CONFIG_FILE="$PROJECT_ROOT/.project.yaml"
-    
+
     # Load config from file
     if [[ -f "$CONFIG_FILE" ]]; then
         # Jira config
         JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" "jira.base_url")
         JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" "jira.project_key")
         JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "jira.email")
-        
+
         # GitLab config
         GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" "gitlab.base_url")
         GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" "gitlab.project")
-        
+
         # GitHub config
         GITHUB_REPO=$(yaml_get "$CONFIG_FILE" "github.repo")
-        
+
         # Branch prefixes
         BRANCH_FEATURE_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.feature_prefix")
         BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.bugfix_prefix")
         BRANCH_HOTFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.hotfix_prefix")
     fi
-    
+
     # Defaults
     BRANCH_FEATURE_PREFIX="${BRANCH_FEATURE_PREFIX:-feat/}"
     BRANCH_BUGFIX_PREFIX="${BRANCH_BUGFIX_PREFIX:-fix/}"
     BRANCH_HOTFIX_PREFIX="${BRANCH_HOTFIX_PREFIX:-hotfix/}"
-    
+
     # Auth: Environment > .secrets files
     # Jira
     if [[ -z "$JIRA_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         JIRA_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
     fi
     JIRA_EMAIL="${JIRA_EMAIL:-$JIRA_EMAIL_CONFIG}"
-    
+
     # GitLab
     if [[ -z "$GITLAB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/gitlab-api-token" ]]; then
         GITLAB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/gitlab-api-token")
     fi
-    
+
     # GitHub
     if [[ -z "$GITHUB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/github-api-token" ]]; then
         GITHUB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/github-api-token")
     fi
-    
+
     export PROJECT_ROOT CONFIG_FILE
     export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN

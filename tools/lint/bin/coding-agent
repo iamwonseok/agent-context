@@ -69,7 +69,7 @@ class Tools:
         try:
             # Stage all changes
             subprocess.run(["git", "add", "-A"], cwd=self.workspace)
-            
+
             # Check if there are changes to commit
             status = subprocess.run(
                 ["git", "status", "--porcelain"],
@@ -77,7 +77,7 @@ class Tools:
             )
             if not status.stdout.strip():
                 return ToolResult(True, "No changes to commit")
-            
+
             # Commit
             result = subprocess.run(
                 ["git", "commit", "-m", message],
@@ -99,7 +99,7 @@ class Tools:
                     capture_output=True, text=True, cwd=self.workspace
                 )
                 branch = result.stdout.strip()
-            
+
             result = subprocess.run(
                 ["git", "push", "-u", "origin", branch],
                 capture_output=True, text=True, cwd=self.workspace
@@ -127,7 +127,7 @@ class Tools:
             full_path = self.workspace / filepath
             if not full_path.exists():
                 return ToolResult(False, "", f"File not found: {filepath}")
-            
+
             content = full_path.read_text()
             # Limit content size
             if len(content) > 10000:
@@ -152,11 +152,11 @@ class Tools:
             full_path = self.workspace / filepath
             if not full_path.exists():
                 return ToolResult(False, "", f"File not found: {filepath}")
-            
+
             content = full_path.read_text()
             if old_text not in content:
                 return ToolResult(False, "", f"Text not found in {filepath}")
-            
+
             new_content = content.replace(old_text, new_text, 1)
             full_path.write_text(new_content)
             return ToolResult(True, f"Edited {filepath}")
@@ -169,14 +169,14 @@ class Tools:
             full_path = self.workspace / directory
             if not full_path.exists():
                 return ToolResult(False, "", f"Directory not found: {directory}")
-            
+
             files = []
             for item in sorted(full_path.iterdir()):
                 if item.name.startswith('.'):
                     continue
                 prefix = "[D] " if item.is_dir() else "[F] "
                 files.append(f"{prefix}{item.name}")
-            
+
             return ToolResult(True, "\n".join(files) if files else "Empty directory")
         except Exception as e:
             return ToolResult(False, "", str(e))
@@ -188,7 +188,7 @@ class Tools:
         for d in dangerous:
             if d in command:
                 return ToolResult(False, "", f"Blocked dangerous command: {command}")
-        
+
         try:
             result = subprocess.run(
                 command, shell=True,
@@ -216,7 +216,7 @@ class Tools:
                 test_command = "make test"
             else:
                 test_command = "echo 'No test command detected'"
-        
+
         return self.shell_run(test_command)
 
     def search_code(self, pattern: str, file_pattern: str = "") -> ToolResult:
@@ -225,7 +225,7 @@ class Tools:
             cmd = ["grep", "-rn", pattern, "."]
             if file_pattern:
                 cmd = ["grep", "-rn", "--include", file_pattern, pattern, "."]
-            
+
             result = subprocess.run(
                 cmd, capture_output=True, text=True, cwd=self.workspace
             )
@@ -238,7 +238,7 @@ class Tools:
         """Create a GitLab merge request"""
         if not GITLAB_URL or not GITLAB_TOKEN:
             return ToolResult(False, "", "GitLab URL and TOKEN not configured")
-        
+
         try:
             # Get project ID from git remote
             result = subprocess.run(
@@ -246,14 +246,14 @@ class Tools:
                 capture_output=True, text=True, cwd=self.workspace
             )
             remote_url = result.stdout.strip()
-            
+
             # Extract project path from URL
             match = re.search(r'[:/]([^/]+/[^/]+?)(?:\.git)?$', remote_url)
             if not match:
                 return ToolResult(False, "", "Could not parse project path from remote URL")
-            
+
             project_path = match.group(1).replace("/", "%2F")
-            
+
             # Create MR via API
             api_url = f"{GITLAB_URL}/api/v4/projects/{project_path}/merge_requests"
             headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
@@ -264,7 +264,7 @@ class Tools:
                 "description": description,
                 "remove_source_branch": True
             }
-            
+
             response = requests.post(api_url, headers=headers, json=data)
             if response.status_code == 201:
                 mr_url = response.json().get("web_url", "")
@@ -636,7 +636,7 @@ def check_ollama():
 
 def main():
     global OLLAMA_MODEL
-    
+
     parser = argparse.ArgumentParser(description="Ollama-based Coding Agent")
     parser.add_argument("task", nargs="?", help="Task description")
     parser.add_argument("--workspace", "-w", default=".", help="Workspace directory")

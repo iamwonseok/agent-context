@@ -25,7 +25,7 @@ if [[ $# -gt 0 ]]; then
 	for file in "$@"; do
 		if [[ -f "${file}" && "${file}" =~ \.(c|h|cpp|hpp)$ ]]; then
 			filename=$(basename "${file}")
-			
+
 		if check_c_rule "${file}"; then
 			TEST_CASES+="$(junit_pass "c.check" "${filename}" "0.01" "${CHECK_RESULT}")"$'\n'
 			PASS_COUNT=$((PASS_COUNT + 1))

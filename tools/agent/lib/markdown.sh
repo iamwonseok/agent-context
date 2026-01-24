@@ -6,29 +6,29 @@
 # Usage: context_to_markdown <context_path>
 context_to_markdown() {
     local context_path="$1"
-    
+
     if [[ ! -d "$context_path" ]]; then
         echo "[ERROR] Context not found: $context_path" >&2
         return 1
     fi
-    
+
     local try_file="$context_path/try.yaml"
     local summary_file="$context_path/summary.yaml"
-    
+
     # Extract basic info from try.yaml
     local task_id=""
     local goal=""
     local started_at=""
     local status=""
     local branch=""
-    
+
     if [[ -f "$try_file" ]]; then
         task_id=$(grep "^task_id:" "$try_file" | sed 's/task_id: *//' | tr -d '"')
         started_at=$(grep "^started_at:" "$try_file" | sed 's/started_at: *//' | tr -d '"')
         status=$(grep "^status:" "$try_file" | sed 's/status: *//' | tr -d '"')
         branch=$(grep "^branch:" "$try_file" | sed 's/branch: *//' | tr -d '"')
     fi
-    
+
     # Start markdown output
     cat << EOF
 ## Work Context
@@ -41,15 +41,15 @@ context_to_markdown() {
 | Status | $status |
 
 EOF
-    
+
     # Include attempts summary
     local attempt_count
     attempt_count=$(ls -1 "$context_path/attempts/"attempt-*.yaml 2>/dev/null | wc -l | tr -d ' ')
-    
+
     if [[ "$attempt_count" -gt 0 ]]; then
         echo "### Attempts: $attempt_count"
         echo ""
-        
+
         for attempt_file in "$context_path/attempts/"attempt-*.yaml; do
             if [[ -f "$attempt_file" ]]; then
                 local attempt_num
@@ -58,13 +58,13 @@ EOF
                 attempt_status=$(grep "^status:" "$attempt_file" | sed 's/status: *//' | tr -d '"')
                 local desc
                 desc=$(grep "^description:" "$attempt_file" | sed 's/description: *//' | tr -d '"')
-                
+
                 echo "- **Attempt $attempt_num** ($attempt_status): $desc"
             fi
         done
         echo ""
     fi
-    
+
     # Include verification if exists
     if [[ -f "$context_path/verification.md" ]]; then
         echo "### Verification"
@@ -77,7 +77,7 @@ EOF
         echo "</details>"
         echo ""
     fi
-    
+
     # Include retrospective if exists
     if [[ -f "$context_path/retrospective.md" ]]; then
         echo "### Retrospective"
@@ -97,19 +97,19 @@ EOF
 generate_mr_description() {
     local context_path="$1"
     local title="${2:-}"
-    
+
     local try_file="$context_path/try.yaml"
     local task_id=""
-    
+
     if [[ -f "$try_file" ]]; then
         task_id=$(grep "^task_id:" "$try_file" | sed 's/task_id: *//' | tr -d '"')
     fi
-    
+
     # Get last commit message as title if not provided
     if [[ -z "$title" ]]; then
         title=$(git log -1 --format=%s 2>/dev/null) || title="$task_id"
     fi
-    
+
     cat << EOF
 ## Summary
 
@@ -138,7 +138,7 @@ EOF
 # Usage: generate_issue_comment <context_path>
 generate_issue_comment() {
     local context_path="$1"
-    
+
     cat << EOF
 ## Agent Work Log
 

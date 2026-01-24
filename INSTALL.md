@@ -98,20 +98,26 @@ This creates:
 ### Secrets Setup
 
 ```bash
-# JIRA API token
-echo "your-jira-token" > .secrets/atlassian-api-token
+# GitLab
+echo "glpat-xxx" > .secrets/gitlab-api-token
 
-# GitLab API token
-echo "your-gitlab-token" > .secrets/gitlab-api-token
+# GitHub
+echo "ghp_xxx" > .secrets/github-api-token
+
+# Atlassian (JIRA + Confluence - same token)
+echo "ATATT3xFfGF0xxx" > .secrets/atlassian-api-token
 ```
 
 Or use environment variables:
 
 ```bash
-export JIRA_TOKEN="your-jira-token"
-export JIRA_EMAIL="your-email"
 export GITLAB_TOKEN="your-gitlab-token"
+export GITHUB_TOKEN="your-github-token"
+export JIRA_TOKEN="your-atlassian-token"
+export JIRA_EMAIL="your-email"
 ```
+
+> **Detailed setup:** See `templates/.secrets/README.md` for token generation steps.
 
 ## Uninstallation
 

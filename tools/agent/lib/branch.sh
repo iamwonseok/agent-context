@@ -6,13 +6,13 @@
 # Creates: feat/TASK-123 branch and .context/TASK-123/ directory
 dev_start() {
     parse_start_options "$@" || return 1
-    
+
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     echo "Starting task: $TASK_ID"
     echo ""
-    
+
     if [[ "$DETACHED" == "true" ]]; then
         # Detached mode - use worktree
         start_detached "$project_root"
@@ -27,11 +27,11 @@ start_interactive() {
     local project_root="$1"
     local branch_name
     branch_name=$(generate_branch_name "$TASK_ID")
-    
+
     echo "[Mode] Interactive (branch)"
     echo "[Branch] $branch_name"
     echo ""
-    
+
     # Check if branch already exists
     if branch_exists "$branch_name"; then
         echo "[INFO] Branch $branch_name already exists"
@@ -40,12 +40,12 @@ start_interactive() {
     else
         # Ensure we're on the base branch first
         echo "Creating branch from $FROM_BRANCH..."
-        
+
         # Fetch latest if remote exists
         if remote_branch_exists "$FROM_BRANCH"; then
             git fetch origin "$FROM_BRANCH" 2>/dev/null || true
         fi
-        
+
         # Create and checkout new branch
         git checkout -b "$branch_name" "origin/$FROM_BRANCH" 2>/dev/null || \
         git checkout -b "$branch_name" "$FROM_BRANCH" || {
@@ -53,10 +53,10 @@ start_interactive() {
             return 1
         }
     fi
-    
+
     # Initialize context
     init_context "$project_root" "$TASK_ID" "interactive"
-    
+
     echo ""
     echo "=================================================="
     echo "[OK] Task $TASK_ID started"
@@ -80,32 +80,32 @@ start_detached() {
     local worktree_path="$project_root/$WORKTREE_ROOT/$worktree_name"
     local branch_name
     branch_name=$(generate_branch_name "$TASK_ID")
-    
+
     # Add try suffix to branch if specified
     if [[ -n "$TRY_NAME" ]]; then
         branch_name="${branch_name}-${TRY_NAME}"
     fi
-    
+
     echo "[Mode] Detached (worktree)"
     echo "[Worktree] $worktree_path"
     echo "[Branch] $branch_name"
     echo ""
-    
+
     # Create worktree root if needed
     mkdir -p "$project_root/$WORKTREE_ROOT"
-    
+
     # Check if worktree already exists
     if [[ -d "$worktree_path" ]]; then
         echo "[INFO] Worktree already exists: $worktree_path"
         echo "Use 'agent dev switch $worktree_name' to switch to it."
         return 0
     fi
-    
+
     # Fetch latest base branch
     if remote_branch_exists "$FROM_BRANCH"; then
         git fetch origin "$FROM_BRANCH" 2>/dev/null || true
     fi
-    
+
     # Create worktree with new branch
     echo "Creating worktree..."
     git worktree add -b "$branch_name" "$worktree_path" "origin/$FROM_BRANCH" 2>/dev/null || \
@@ -113,10 +113,10 @@ start_detached() {
         echo "[ERROR] Failed to create worktree" >&2
         return 1
     }
-    
+
     # Initialize context (inside worktree)
     init_context "$worktree_path" "$TASK_ID" "detached"
-    
+
     echo ""
     echo "=================================================="
     echo "[OK] Task $TASK_ID started (detached)"
@@ -136,12 +136,12 @@ start_detached() {
 dev_list() {
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     echo "=================================================="
     echo "Active Tasks"
     echo "=================================================="
     echo ""
-    
+
     list_task_branches
     echo ""
     list_worktrees "$project_root"
@@ -152,16 +152,16 @@ dev_list() {
 # Switch to another branch or worktree
 dev_switch() {
     local target="$1"
-    
+
     if [[ -z "$target" ]]; then
         echo "[ERROR] Target branch or worktree required" >&2
         echo "Usage: agent dev switch <branch|worktree>" >&2
         return 1
     fi
-    
+
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     # Check if it's a worktree
     local worktree_path="$project_root/$WORKTREE_ROOT/$target"
     if [[ -d "$worktree_path" ]]; then
@@ -170,7 +170,7 @@ dev_switch() {
         echo "Now in: $(pwd)"
         return 0
     fi
-    
+
     # Otherwise, treat as branch
     echo "Switching to branch: $target"
     git checkout "$target" || return 1
@@ -186,21 +186,21 @@ dev_status() {
 dev_check() {
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     local context_path
     context_path=$(get_current_context 2>/dev/null) || context_path=""
-    
+
     # Run all checks
     run_all_checks "$project_root" "$context_path"
     local result=$?
-    
+
     # Update summary if context exists
     if [[ -n "$context_path" ]] && [[ -d "$context_path" ]]; then
         # Results are warnings only, continue either way
         echo ""
         echo "[INFO] Check results saved to context"
     fi
-    
+
     return $result
 }
 
@@ -208,25 +208,25 @@ dev_check() {
 dev_verify() {
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     local context_path
     context_path=$(get_current_context 2>/dev/null) || {
         echo "[WARN] No active context found"
         echo "[INFO] Generating verification in current directory"
         context_path="."
     }
-    
+
     local task_id
     task_id=$(extract_task_from_branch "$(get_current_branch)") || task_id="unknown"
-    
+
     local verification_file="$context_path/verification.md"
     local template_file="$TEMPLATES_DIR/verification.md"
-    
+
     echo "=================================================="
     echo "Generating Verification Report"
     echo "=================================================="
     echo ""
-    
+
     if [[ -f "$verification_file" ]]; then
         echo "[INFO] verification.md already exists: $verification_file"
         echo ""
@@ -236,14 +236,14 @@ dev_verify() {
             return 0
         fi
     fi
-    
+
     # Ensure context directory exists
     mkdir -p "$context_path"
-    
+
     # Generate from template
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    
+
     if [[ -f "$template_file" ]]; then
         sed -e "s/{{TASK_ID}}/$task_id/g" \
             -e "s/{{TIMESTAMP}}/$timestamp/g" \
@@ -274,12 +274,12 @@ Generated: $timestamp
 - [ ] NEEDS WORK: Gaps identified
 EOF
     fi
-    
+
     echo "[OK] Verification report created: $verification_file"
     echo ""
     echo "[NEXT] Edit the file to check off completed requirements"
     echo "       Then run 'agent dev retro' to create retrospective"
-    
+
     # Open in editor if available
     if [[ -n "${EDITOR:-}" ]]; then
         echo ""
@@ -294,25 +294,25 @@ EOF
 dev_retro() {
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     local context_path
     context_path=$(get_current_context 2>/dev/null) || {
         echo "[WARN] No active context found"
         echo "[INFO] Generating retrospective in current directory"
         context_path="."
     }
-    
+
     local task_id
     task_id=$(extract_task_from_branch "$(get_current_branch)") || task_id="unknown"
-    
+
     local retro_file="$context_path/retrospective.md"
     local template_file="$TEMPLATES_DIR/retrospective.md"
-    
+
     echo "=================================================="
     echo "Creating Retrospective"
     echo "=================================================="
     echo ""
-    
+
     if [[ -f "$retro_file" ]]; then
         echo "[INFO] retrospective.md already exists: $retro_file"
         echo ""
@@ -322,25 +322,25 @@ dev_retro() {
         fi
         return 0
     fi
-    
+
     # Ensure context directory exists
     mkdir -p "$context_path"
-    
+
     # Get commit history for this branch
     local commits
     commits=$(git log --oneline origin/main..HEAD 2>/dev/null) || \
     commits=$(git log --oneline -10 2>/dev/null) || \
     commits="(no commits found)"
-    
+
     # Generate from template
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    
+
     if [[ -f "$template_file" ]]; then
         sed -e "s/{{TASK_ID}}/$task_id/g" \
             -e "s/{{TIMESTAMP}}/$timestamp/g" \
             "$template_file" > "$retro_file"
-        
+
         # Replace commits placeholder
         # Use a temp file to handle multiline
         local temp_file
@@ -379,11 +379,11 @@ $commits
 - [ ] TODO: Follow-up tasks
 EOF
     fi
-    
+
     echo "[OK] Retrospective created: $retro_file"
     echo ""
     echo "[NEXT] Fill in the sections before running 'agent dev submit'"
-    
+
     # Open in editor if available
     if [[ -n "${EDITOR:-}" ]]; then
         echo ""
@@ -398,7 +398,7 @@ EOF
 dev_sync() {
     local action=""
     local base_branch="$DEFAULT_BASE_BRANCH"
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --continue)
@@ -416,7 +416,7 @@ dev_sync() {
         esac
         shift
     done
-    
+
     sync_with_base "$base_branch" "$action"
 }
 
@@ -425,7 +425,7 @@ dev_submit() {
     local sync_first=false
     local draft=false
     local force=false
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --sync)
@@ -440,28 +440,28 @@ dev_submit() {
         esac
         shift
     done
-    
+
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     local current_branch
     current_branch=$(get_current_branch)
-    
+
     local task_id
     task_id=$(extract_task_from_branch "$current_branch") || {
         echo "[WARN] Could not extract task ID from branch: $current_branch"
         task_id="N/A"
     }
-    
+
     echo "=================================================="
     echo "Submitting: $current_branch"
     echo "=================================================="
     echo ""
-    
+
     # Pre-submit checks (verification + retrospective)
     local context_path
     context_path=$(get_current_context 2>/dev/null) || context_path=""
-    
+
     if [[ -n "$context_path" ]] && [[ -d "$context_path" ]]; then
         echo "[Step 0/5] Pre-submit checks..."
         if ! run_submit_checks "$context_path" "$force"; then
@@ -471,7 +471,7 @@ dev_submit() {
         fi
         echo ""
     fi
-    
+
     # Sync first if requested
     if [[ "$sync_first" == "true" ]]; then
         echo "[Step 1/5] Syncing with base branch..."
@@ -481,7 +481,7 @@ dev_submit() {
         echo "[Step 1/5] Sync skipped (use --sync to sync before submit)"
         echo ""
     fi
-    
+
     # Push branch
     echo "[Step 2/5] Pushing branch..."
     git push -u origin "$current_branch" || {
@@ -489,7 +489,7 @@ dev_submit() {
         return 1
     }
     echo ""
-    
+
     # Create MR using pm CLI
     echo "[Step 3/5] Creating Merge Request..."
     local pm_cmd="$SCRIPT_DIR/../../pm/bin/pm"
@@ -500,12 +500,12 @@ dev_submit() {
             pm_cmd=""
         }
     fi
-    
+
     if [[ -n "$pm_cmd" ]]; then
         local commit_msg
         commit_msg=$(git log -1 --format=%s)
         local mr_title="$task_id: $commit_msg"
-        
+
         # Get context summary for MR description
         local context_path
         local mode
@@ -515,11 +515,11 @@ dev_submit() {
         else
             context_path="$project_root/.context/$task_id"
         fi
-        
+
         if [[ -f "$context_path/summary.yaml" ]]; then
             echo "  Including context summary in MR description..."
         fi
-        
+
         # Detect platform and create MR/PR
         local platform=""
         local config_output
@@ -529,7 +529,7 @@ dev_submit() {
         elif echo "$config_output" | grep -A3 "\[GitLab\]" | grep -q "Project:.*[a-zA-Z0-9]"; then
             platform="gitlab"
         fi
-        
+
         if [[ "$platform" == "github" ]]; then
             echo "  Creating GitHub Pull Request..."
             local pr_result
@@ -566,7 +566,7 @@ dev_submit() {
         fi
     fi
     echo ""
-    
+
     # Include verification and retrospective in MR
     echo "[Step 4/5] Including artifacts in MR..."
     if [[ -n "$context_path" ]]; then
@@ -578,11 +578,11 @@ dev_submit() {
         fi
     fi
     echo ""
-    
+
     # Archive context
     echo "[Step 5/5] Archiving context..."
     archive_context "$project_root" "$task_id"
-    
+
     echo ""
     echo "=================================================="
     echo "[OK] Submit complete"
@@ -595,28 +595,28 @@ dev_submit() {
 # Cleanup task
 dev_cleanup() {
     local task_id="$1"
-    
+
     if [[ -z "$task_id" ]]; then
         echo "[ERROR] Task ID required" >&2
         echo "Usage: agent dev cleanup <task-id>" >&2
         return 1
     fi
-    
+
     task_id=$(parse_task_id "$task_id")
-    
+
     local project_root
     project_root=$(find_project_root) || return 1
-    
+
     echo "Cleaning up task: $task_id"
     echo ""
-    
+
     local branch_name
     branch_name=$(generate_branch_name "$task_id")
-    
+
     # Check for worktrees first
     local worktree_pattern="$project_root/$WORKTREE_ROOT/${task_id}*"
     local found_worktrees=false
-    
+
     for wt in $worktree_pattern; do
         if [[ -d "$wt" ]]; then
             found_worktrees=true
@@ -630,11 +630,11 @@ dev_cleanup() {
             }
         fi
     done
-    
+
     # Remove branch if it exists and we're not on it
     local current_branch
     current_branch=$(get_current_branch)
-    
+
     if branch_exists "$branch_name" && [[ "$current_branch" != "$branch_name" ]]; then
         echo "Removing branch: $branch_name"
         git branch -D "$branch_name" 2>/dev/null || {
@@ -644,14 +644,14 @@ dev_cleanup() {
         echo "[WARN] Cannot remove current branch: $branch_name"
         echo "Switch to another branch first."
     fi
-    
+
     # Remove context
     local context_path="$project_root/.context/$task_id"
     if [[ -d "$context_path" ]]; then
         echo "Removing context: .context/$task_id"
         rm -rf "$context_path"
     fi
-    
+
     echo ""
     echo "[OK] Cleanup complete for $task_id"
 }

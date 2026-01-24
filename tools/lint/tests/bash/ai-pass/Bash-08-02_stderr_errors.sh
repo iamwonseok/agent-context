@@ -18,17 +18,17 @@ log_info() {
 
 main() {
 	local config_file="$1"
-	
+
 	if [[ -z "${config_file}" ]]; then
 		log_error "Config file not specified"
 		exit 1
 	fi
-	
+
 	if [[ ! -f "${config_file}" ]]; then
 		log_error "Config file not found: ${config_file}"
 		exit 1
 	fi
-	
+
 	log_info "Processing config file"
 }
 

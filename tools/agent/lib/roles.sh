@@ -26,7 +26,7 @@ detect_role() {
         esac
         return
     fi
-    
+
     # Default to developer
     CURRENT_ROLE="developer"
 }
@@ -58,14 +58,14 @@ get_role_display() {
 validate_role_command() {
     local command="$1"
     local required_role="$2"
-    
+
     detect_role
-    
+
     # Developer-only commands
     local dev_only="start code check commit"
     # Manager-only commands
     local mgr_only="approve merge assign"
-    
+
     case "$required_role" in
         developer)
             if ! is_developer; then
@@ -84,7 +84,7 @@ validate_role_command() {
 show_agent_config() {
     local project_root
     project_root=$(find_project_root 2>/dev/null) || project_root="(not found)"
-    
+
     echo "=================================================="
     echo "Agent Configuration"
     echo "=================================================="
@@ -112,19 +112,19 @@ show_agent_config() {
 # Initialize project for agent workflow
 agent_init() {
     echo "Initializing project for agent workflow..."
-    
+
     local project_root
     project_root=$(find_project_root 2>/dev/null) || {
         echo "[ERROR] Not in a git repository" >&2
         return 1
     }
-    
+
     # Create .context directory
     if [[ ! -d "$project_root/.context" ]]; then
         mkdir -p "$project_root/.context"
         echo "(v) Created .context/"
     fi
-    
+
     # Add to .gitignore if not already
     local gitignore="$project_root/.gitignore"
     if [[ -f "$gitignore" ]]; then
@@ -134,13 +134,13 @@ agent_init() {
             echo ".context/" >> "$gitignore"
             echo "(v) Added .context/ to .gitignore"
         fi
-        
+
         if ! grep -q "^\.worktrees/" "$gitignore" 2>/dev/null; then
             echo ".worktrees/" >> "$gitignore"
             echo "(v) Added .worktrees/ to .gitignore"
         fi
     fi
-    
+
     echo ""
     echo "Project initialized for agent workflow."
     echo "Run 'agent dev start <task-id>' to begin working."

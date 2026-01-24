@@ -41,7 +41,7 @@ if [[ "$GLOBAL_INSTALL" == "true" ]]; then
     echo "Agent Context Global Installation"
     echo "========================================="
     echo ""
-    
+
     if [[ -d "$HOME/.agent" ]]; then
         echo "[WARN] ~/.agent already exists"
         if [[ "$NON_INTERACTIVE" == "false" ]]; then
@@ -53,13 +53,13 @@ if [[ "$GLOBAL_INSTALL" == "true" ]]; then
         fi
         rm -rf "$HOME/.agent"
     fi
-    
+
     echo "[INFO] Installing to ~/.agent..."
     cp -r "$AGENT_DIR" "$HOME/.agent"
-    
+
     # Remove _dev if it exists (development only)
     rm -rf "$HOME/.agent/_dev" 2>/dev/null || true
-    
+
     echo "[OK] Installed to ~/.agent"
     echo ""
     echo "Add to your shell profile (~/.bashrc or ~/.zshrc):"
@@ -95,19 +95,19 @@ echo ""
 # Resolve agent context path for templates (supports both files and directories)
 resolve_template_path() {
     local template_name="$1"
-    
+
     # Check local first (file or directory)
     if [[ -e "${AGENT_DIR}/templates/${template_name}" ]]; then
         echo "${AGENT_DIR}/templates/${template_name}"
         return 0
     fi
-    
+
     # Check global (file or directory)
     if [[ -e "$HOME/.agent/templates/${template_name}" ]]; then
         echo "$HOME/.agent/templates/${template_name}"
         return 0
     fi
-    
+
     echo "[ERROR] Template not found: ${template_name}" >&2
     return 1
 }

@@ -10,17 +10,17 @@ log_error() {
 
 main() {
 	local config_file="$1"
-	
+
 	if [[ -z "${config_file}" ]]; then
 		echo "Error: Config file not specified"
 		exit 1
 	fi
-	
+
 	if [[ ! -f "${config_file}" ]]; then
 		echo "Error: Config file not found: ${config_file}"
 		exit 1
 	fi
-	
+
 	echo "Processing config file"
 }
 

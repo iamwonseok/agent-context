@@ -33,7 +33,7 @@ int process_user_registration(const char *name, const char *email, int age)
 	}
 
 	/* Database operation */
-	snprintf(query, sizeof(query), 
+	snprintf(query, sizeof(query),
 		"INSERT INTO users VALUES ('%s', '%s', %d)", name, email, age);
 	/* execute_query(query); */
 

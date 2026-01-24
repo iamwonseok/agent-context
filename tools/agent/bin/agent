@@ -34,7 +34,7 @@ agent - Workflow CLI v${VERSION}
 
 USAGE:
     agent [role] <action> [options]
-    
+
     Role can be omitted and will be auto-detected:
     - 'dev' for developer commands
     - 'mgr' for manager commands
@@ -87,7 +87,7 @@ EOF
 cmd_dev() {
     local action="$1"
     shift || true
-    
+
     case "$action" in
         start)
             dev_start "$@"
@@ -134,7 +134,7 @@ cmd_dev() {
 cmd_mgr() {
     local action="$1"
     shift || true
-    
+
     case "$action" in
         pending)
             mgr_pending "$@"
@@ -165,25 +165,25 @@ cmd_status() {
     echo "Agent Workflow Status"
     echo "=================================================="
     echo ""
-    
+
     # Current directory info
     local project_root
     project_root=$(find_project_root 2>/dev/null) || true
-    
+
     if [[ -z "$project_root" ]]; then
         echo "[WARN] Not in a git repository"
         return 1
     fi
-    
+
     echo "Project Root: $project_root"
     echo ""
-    
+
     # Git info
     echo "[Git]"
     local current_branch
     current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch="(detached)"
     echo "  Current Branch: $current_branch"
-    
+
     # Check if in worktree
     local git_dir
     git_dir=$(git rev-parse --git-dir 2>/dev/null)
@@ -194,7 +194,7 @@ cmd_status() {
         echo "  Mode: Interactive (branch)"
     fi
     echo ""
-    
+
     # Context info
     echo "[Active Tasks]"
     list_active_contexts "$project_root"
@@ -224,11 +224,11 @@ main() {
         show_help
         exit 0
     fi
-    
+
     # Parse first argument
     local first_arg="$1"
     shift
-    
+
     case "$first_arg" in
         -h|--help|help)
             show_help

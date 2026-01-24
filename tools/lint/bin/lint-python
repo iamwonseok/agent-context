@@ -80,7 +80,7 @@ TEST_CASES=""
 
 for file in "${FILES[@]}"; do
 	filename=$(basename "${file}")
-	
+
 	if check_python_file "${file}"; then
 		PASS_COUNT=$((PASS_COUNT + 1))
 		[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${GREEN}[PASS]${NC} ${file}"

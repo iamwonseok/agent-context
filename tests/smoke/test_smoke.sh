@@ -167,7 +167,7 @@ TASK_ID="TEST-001"
 # Try to start a task (may have limited functionality without full setup)
 if agent dev start "$TASK_ID" 2>&1; then
     test_pass "agent dev start $TASK_ID"
-    
+
     # Check branch created
     CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
     if echo "$CURRENT_BRANCH" | grep -q "$TASK_ID"; then
@@ -175,7 +175,7 @@ if agent dev start "$TASK_ID" 2>&1; then
     else
         test_fail "Branch should contain task ID (got: $CURRENT_BRANCH)"
     fi
-    
+
     # Check .context/ created
     if [ -d ".context" ] || [ -d ".context/$TASK_ID" ]; then
         test_pass ".context/ directory created"
