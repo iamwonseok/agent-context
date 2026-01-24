@@ -9,11 +9,10 @@
 
 - 가능한 것(현재 구현):
   - Jira 이슈 생성/조회: `pm jira issue create|list|view`
+  - Jira 사용자 검색: `pm jira user search <EMAIL>`
+  - Jira Assignee 할당: `pm jira issue assign <KEY> <EMAIL>`
+  - Jira 상태 전환: `pm jira issue transition <KEY> <STATUS>`
   - 개발 루프: `agent dev start/check/verify/retro/submit`
-  - (제한적) Jira 상태 전환: `pm finish` 또는 `agent dev submit` 과정에서 “In Review” 전환 시도
-- 갭(현재 CLI에 없음):
-  - “assignee 할당”을 CLI로 직접 수행하는 서브커맨드(`pm jira issue assign` 등)는 현재 노출되어 있지 않음
-  - 따라서 assignee 변경은 Jira UI에서 수행하거나, 별도 자동화(추가 구현)가 필요
 
 ## 전제/준비
 
@@ -50,12 +49,15 @@ pm jira issue list --jql "assignee = <ASSIGNEE_B> AND statusCategory = \"In Prog
 **판정 규칙**
 - 출력 결과에서 `<ASSIGNEE_X>`의 목록이 비어 있으면(또는 Total 0에 준하는 출력) 그 사람이 유휴 인력 후보입니다.
 
-### 2) (갭) 이슈에 assignee 할당
+### 2) 이슈에 assignee 할당
 
-현재 `pm` CLI에 “assignee 변경” 커맨드가 노출되어 있지 않으므로, 아래 중 하나로 진행합니다.
+```bash
+# 유휴 인력에게 이슈 할당
+pm jira issue assign <KEY> "<ASSIGNEE_EMAIL>"
+```
 
-- 선택지 A(권장, 수동): Jira UI에서 방금 생성한 `<KEY>`의 Assignee를 유휴 인력으로 지정
-- 선택지 B(확장 필요): `pm jira issue assign` 같은 커맨드를 추가 구현(이 문서 범위 밖)
+**기대 결과**
+- `(v) Assigned <KEY> to <ASSIGNEE_EMAIL> (<accountId>)`
 
 ### 3) 개발자가 작업 시작
 
@@ -133,8 +135,8 @@ jira issue list \
 
 # 판정: 결과가 0개인 사람이 유휴 인력
 
-# 3. Assignee 할당 (갭: CLI 미지원, UI 사용)
-# → Jira UI에서 Issue의 Assignee 필드 변경
+# 3. Assignee 할당 (pm CLI 사용)
+pm jira issue assign G6SOCTC-456 "<ASSIGNEE_EMAIL>"
 
 # 4. 개발자가 작업 시작
 git checkout -b fix/G6SOCTC-456 main
@@ -163,10 +165,10 @@ jira issue transition G6SOCTC-456 "In Review"
 
 ### UI Steps (플랫폼별 작업)
 
-**Jira UI에서 필수 작업**:
-- Issue 생성 (또는 jira-cli)
-- Assignee 할당 (현재 CLI 미지원)
-- 상태 전환 (또는 jira-cli)
+**Jira 작업** (모두 pm CLI로 가능):
+- Issue 생성: `pm jira issue create`
+- Assignee 할당: `pm jira issue assign`
+- 상태 전환: `pm jira issue transition`
 
 **GitLab/GitHub UI**:
 - MR/PR 생성 (또는 glab/gh CLI)
@@ -193,19 +195,22 @@ jira issue transition G6SOCTC-456 "In Review"
 
 ### UI Responsibilities (Platform-specific)
 
-**Jira UI** (일부 CLI 가능):
-- Issue 생성 (jira-cli로도 가능)
-- **Assignee 할당** (현재 CLI 미지원, UI 필수)
-- 상태 전환 (jira-cli로도 가능)
-- 우선순위/라벨 설정
+**Jira UI** (대부분 CLI로도 가능):
+- Issue 생성 (`pm jira issue create`)
+- Assignee 할당 (`pm jira issue assign`)
+- 상태 전환 (`pm jira issue transition`)
+- 우선순위/라벨 설정 (UI 권장)
 
 **GitLab/GitHub UI**:
 - MR/PR 리뷰/승인/머지
 - 인라인 코멘트
 - Draft → Ready 전환
 
-### 현재 갭 (추가 구현 필요)
+### 구현 완료 (이전 갭)
 
-- `pm jira issue assign <KEY> <ASSIGNEE>`: CLI로 assignee 할당
-- `pm jira issue transition <KEY> "<Status>"`: CLI로 상태 전환 (내부 함수는 존재)
+다음 기능들이 pm CLI에 추가되어 갭이 해소되었습니다:
+
+- `pm jira issue assign <KEY> <EMAIL>`: CLI로 assignee 할당
+- `pm jira issue transition <KEY> "<Status>"`: CLI로 상태 전환
+- `pm jira user search <EMAIL>`: email로 사용자 검색
 

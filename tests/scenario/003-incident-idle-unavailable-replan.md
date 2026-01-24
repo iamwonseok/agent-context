@@ -14,10 +14,12 @@
   - Jira 이슈 생성/조회: `pm jira issue create|list|view`
   - GitLab MR 생성 및 Jira “In Review” 전환 시도: `agent dev submit` 또는 `pm finish`
   - “진행 중인 작업 목록 확인”을 JQL로 근사: `pm jira issue list --jql ...`
-- 갭(현재 CLI에 없음, 수동/추가 구현 필요):
-  - Jira assignee 변경(재할당) 커맨드 미노출
-  - Jira due date/스프린트/커스텀 필드(days 계산 제외) 업데이트 커맨드 미노출
-  - `agent mgr`의 capacity/assign 등 “PM 자동 할당” 커맨드 미구현(문서상 로드맵)
+- 추가 구현됨:
+  - Jira assignee 할당: `pm jira issue assign <KEY> <EMAIL>`
+  - Jira 상태 전환: `pm jira issue transition <KEY> <STATUS>`
+- 갭(수동/추가 구현 필요):
+  - Jira due date/스프린트/커스텀 필드 업데이트 커맨드 미노출
+  - `agent mgr`의 capacity/assign 등 "PM 자동 할당" 커맨드 미구현(문서상 로드맵)
 
 ## 전제/준비
 
@@ -82,9 +84,13 @@ pm jira issue list --jql "assignee = <ASSIGNEE_B> AND statusCategory = \"In Prog
 - Links: MR/PR URL, runbook URL, dashboard URL
 ```
 
-### 4) (갭) Assignee 재할당
+### 4) Assignee 재할당
 
-- Jira UI에서 `<P1_KEY>`의 Assignee를 선택된 인원으로 변경
+```bash
+# P1 이슈에 선택된 인원 할당
+pm jira issue assign <P1_KEY> "<ASSIGNEE_EMAIL>"
+```
+
 - `<ONGOING_KEY>`는 pending 상태로 유지
 
 ### 5) 개발자가 P1 작업 시작
@@ -221,12 +227,15 @@ glab mr create --title "fix: payment callback delay"
 - 재계획 승인 받기
 - 영향 범위 공유
 
-### 현재 갭
+### 구현 완료 (이전 갭)
 
-완전 CLI 자동화를 위해 필요:
-- `pm jira issue transition <KEY> "<Status>"`
-- `pm jira issue assign <KEY> <ASSIGNEE>`
-- `pm jira issue update <KEY> --due-date <DATE> --labels <LABELS>`
+다음 기능들이 pm CLI에 추가되어 일부 갭이 해소되었습니다:
+- `pm jira issue transition <KEY> "<Status>"` ✅
+- `pm jira issue assign <KEY> <EMAIL>` ✅
+
+### 남은 갭
+
+- `pm jira issue update <KEY> --due-date <DATE> --labels <LABELS>` (미구현)
 
 **주의**: 재계획은 조직 정책/우선순위가 개입하므로, CLI 자동화보다는 **기록/문서화 중심** 접근이 철학에 부합
 
