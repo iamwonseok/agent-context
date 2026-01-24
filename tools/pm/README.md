@@ -135,6 +135,24 @@ pm gitlab mr create --source feat/test --title "Test MR"
 pm gitlab mr create --source feat/test --title "WIP" --draft
 pm gitlab issue list                # List issues
 pm gitlab issue list --state closed
+pm gitlab issue create "Title"      # Create issue
+pm gitlab issue create "Bug report" --description "Details here"
+```
+
+### GitHub
+
+```bash
+pm github me                        # Show current user
+pm github pr list                   # List open PRs
+pm github pr list --state closed    # List closed PRs
+pm github pr list --limit 50
+pm github pr view 123               # View PR details
+pm github pr create --head feat/test --title "Test PR"
+pm github pr create --head feat/test --title "WIP" --draft
+pm github issue list                # List issues
+pm github issue list --state closed
+pm github issue create "Title"      # Create issue
+pm github issue create "Bug report" --body "Details here"
 ```
 
 ### Workflow
@@ -242,6 +260,14 @@ For Confluence-only setup:
 1. Go to GitLab -> User Settings -> Access Tokens
 2. Create token with scopes: `api`, `read_api`, `read_repository`, `write_repository`
 3. Copy the token
+
+### GitHub Personal Access Token
+
+1. Go to GitHub -> Settings -> Developer settings -> Personal access tokens -> Tokens (classic)
+2. Click "Generate new token (classic)"
+3. Select scopes: `repo`, `read:user`
+4. Copy the token
+5. Store in `.secrets/github-api-token` or set `GITHUB_TOKEN` environment variable
 
 ## Troubleshooting
 

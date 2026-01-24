@@ -15,6 +15,7 @@ source "$LIB_DIR/confluence.sh"
 source "$LIB_DIR/gitlab.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/workflow.sh"
+source "$LIB_DIR/provider.sh"
 
 # Version
 VERSION="1.0.0"
@@ -67,12 +68,24 @@ COMMANDS:
     gitlab mr view IID      View MR details
     gitlab mr create        Create merge request
     gitlab issue list       List GitLab issues
+    gitlab issue create TITLE  Create GitLab issue
 
     github me               Show current GitHub user
     github pr list          List pull requests
     github pr view NUM      View PR details
     github pr create        Create pull request
     github issue list       List GitHub issues
+    github issue create TITLE  Create GitHub issue
+
+    # Unified commands (platform-agnostic)
+    issue create TITLE      Create issue (auto-select: JIRA/GitLab/GitHub)
+    issue list              List issues
+    review create           Create MR/PR (auto-select: GitLab/GitHub)
+    review list             List MRs/PRs
+    review view ID          View MR/PR details
+    doc create TITLE        Create document (Confluence)
+    doc list                List documents
+    provider show           Show current provider configuration
 
     create TITLE            Create new feature/task
     finish                  Finish current feature/task
@@ -619,9 +632,39 @@ cmd_gitlab() {
                     done
                     gitlab_issue_list "$state" "$limit"
                     ;;
+                create)
+                    shift
+                    local title=""
+                    local description=""
+
+                    # First positional arg is title
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        title="$1"
+                        shift
+                    fi
+
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -d|--description) description="$2"; shift ;;
+                        esac
+                        shift
+                    done
+
+                    if [[ -z "$title" ]]; then
+                        echo "[ERROR] Title required" >&2
+                        echo "Usage: pm gitlab issue create TITLE [-d|--description DESC]" >&2
+                        exit 1
+                    fi
+
+                    local iid
+                    iid=$(gitlab_issue_create "$title" "$description")
+                    if [[ -n "$iid" ]] && [[ "$iid" != "null" ]]; then
+                        echo "(v) GitLab issue: #$iid"
+                    fi
+                    ;;
                 *)
                     echo "[ERROR] Unknown gitlab issue command: $1" >&2
-                    echo "Usage: pm gitlab issue <list>" >&2
+                    echo "Usage: pm gitlab issue <list|create>" >&2
                     exit 1
                     ;;
             esac
@@ -709,9 +752,39 @@ cmd_github() {
                     done
                     github_issue_list "$state" "$limit"
                     ;;
+                create)
+                    shift
+                    local title=""
+                    local body=""
+
+                    # First positional arg is title
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        title="$1"
+                        shift
+                    fi
+
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -b|--body) body="$2"; shift ;;
+                        esac
+                        shift
+                    done
+
+                    if [[ -z "$title" ]]; then
+                        echo "[ERROR] Title required" >&2
+                        echo "Usage: pm github issue create TITLE [-b|--body BODY]" >&2
+                        exit 1
+                    fi
+
+                    local number
+                    number=$(github_issue_create "$title" "$body")
+                    if [[ -n "$number" ]] && [[ "$number" != "null" ]]; then
+                        echo "(v) GitHub issue: #$number"
+                    fi
+                    ;;
                 *)
                     echo "[ERROR] Unknown github issue command: $1" >&2
-                    echo "Usage: pm github issue <list>" >&2
+                    echo "Usage: pm github issue <list|create>" >&2
                     exit 1
                     ;;
             esac
@@ -723,6 +796,231 @@ cmd_github() {
             ;;
     esac
 }
+
+# ============================================================
+# Unified Commands (Platform-agnostic)
+# ============================================================
+
+cmd_issue() {
+    load_config || exit 1
+
+    case "$1" in
+        create)
+            shift
+            local title=""
+            local type="Task"
+            local description=""
+
+            # First positional arg is title
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                title="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -t|--type) type="$2"; shift ;;
+                    -d|--description) description="$2"; shift ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$title" ]]; then
+                echo "[ERROR] Title required" >&2
+                echo "Usage: pm issue create TITLE [-t|--type TYPE] [-d|--description DESC]" >&2
+                exit 1
+            fi
+
+            local result
+            result=$(unified_issue_create "$title" "$type" "$description")
+            if [[ -n "$result" ]]; then
+                echo "(v) Issue created: $result"
+            fi
+            ;;
+        list)
+            shift
+            local status="open"
+            local limit=20
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--status) status="$2"; shift ;;
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_issue_list "$status" "$limit"
+            ;;
+        *)
+            echo "[ERROR] Unknown issue command: $1" >&2
+            echo "Usage: pm issue <create|list>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_review() {
+    load_config || exit 1
+
+    case "$1" in
+        create)
+            shift
+            local source=""
+            local target="main"
+            local title=""
+            local description=""
+            local draft="false"
+
+            # Auto-detect source branch if not provided
+            if [[ -z "$source" ]]; then
+                source=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--source) source="$2"; shift ;;
+                    -t|--target) target="$2"; shift ;;
+                    --title) title="$2"; shift ;;
+                    -d|--description) description="$2"; shift ;;
+                    --draft) draft="true" ;;
+                esac
+                shift
+            done
+
+            # Auto-generate title from branch name if not provided
+            if [[ -z "$title" ]] && [[ -n "$source" ]]; then
+                title="$source"
+                # Remove prefix
+                for prefix in "feat/" "fix/" "hotfix/" "feature/" "bugfix/"; do
+                    if [[ "$title" == "$prefix"* ]]; then
+                        title="${title#$prefix}"
+                        break
+                    fi
+                done
+                # Convert hyphens to spaces
+                title=$(echo "$title" | sed 's/-/ /g')
+            fi
+
+            if [[ -z "$source" ]]; then
+                echo "[ERROR] Cannot determine source branch" >&2
+                echo "Usage: pm review create [--source BRANCH] [--title TITLE] [--draft]" >&2
+                exit 1
+            fi
+
+            unified_review_create "$source" "$target" "$title" "$description" "$draft"
+            ;;
+        list)
+            shift
+            local status="open"
+            local limit=20
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--status) status="$2"; shift ;;
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_review_list "$status" "$limit"
+            ;;
+        view)
+            shift
+            local id=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                id="$1"
+            fi
+
+            if [[ -z "$id" ]]; then
+                echo "[ERROR] ID required" >&2
+                echo "Usage: pm review view <ID>" >&2
+                exit 1
+            fi
+
+            unified_review_view "$id"
+            ;;
+        *)
+            echo "[ERROR] Unknown review command: $1" >&2
+            echo "Usage: pm review <create|list|view>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_doc() {
+    load_config || exit 1
+
+    case "$1" in
+        create)
+            shift
+            local title=""
+            local content=""
+            local space=""
+
+            # First positional arg is title
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                title="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -c|--content) content="$2"; shift ;;
+                    -s|--space) space="$2"; shift ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$title" ]]; then
+                echo "[ERROR] Title required" >&2
+                echo "Usage: pm doc create TITLE [-c|--content CONTENT] [-s|--space SPACE]" >&2
+                exit 1
+            fi
+
+            unified_doc_create "$title" "$content" "$space"
+            ;;
+        list)
+            shift
+            local space=""
+            local limit=25
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--space) space="$2"; shift ;;
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_doc_list "$space" "$limit"
+            ;;
+        *)
+            echo "[ERROR] Unknown doc command: $1" >&2
+            echo "Usage: pm doc <create|list>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_provider() {
+    load_config || exit 1
+
+    case "$1" in
+        show|"")
+            show_providers
+            ;;
+        *)
+            echo "[ERROR] Unknown provider command: $1" >&2
+            echo "Usage: pm provider <show>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# ============================================================
+# Legacy Workflow Commands
+# ============================================================
 
 cmd_create() {
     load_config || exit 1
@@ -798,6 +1096,24 @@ main() {
             shift
             cmd_github "$@"
             ;;
+        # Unified commands
+        issue)
+            shift
+            cmd_issue "$@"
+            ;;
+        review)
+            shift
+            cmd_review "$@"
+            ;;
+        doc)
+            shift
+            cmd_doc "$@"
+            ;;
+        provider)
+            shift
+            cmd_provider "$@"
+            ;;
+        # Legacy workflow commands
         create)
             shift
             cmd_create "$@"

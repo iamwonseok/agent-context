@@ -1,37 +1,271 @@
-# E2E Tests (Stage 3) - Local Only
+# E2E Test Guide
 
-End-to-end tests requiring real GitLab/GitHub/JIRA connections.
+실제 사용자 환경을 시뮬레이션하는 End-to-End 테스트입니다.
 
-> **Note**: E2E 테스트는 실제 API 토큰이 필요하므로 **로컬에서만 실행**합니다.
-> CI에서는 실행되지 않습니다.
+## 테스트 환경 구조
 
-## Prerequisites
-
-```bash
-export GITLAB_API_TOKEN=<your-token>
-export GITLAB_URL=https://gitlab.com
-# Optional:
-export JIRA_API_TOKEN=<your-token>
-export GITHUB_TOKEN=<your-token>
+```
+~/project-iamwonseok/
+├── agent-context/          # 프레임워크 소스 (이 레포)
+├── demo-github/            # GitHub E2E 테스트용 프로젝트
+│   └── .agent/             # agent-context clone
+└── demo-gitlab/            # GitLab E2E 테스트용 프로젝트
+    └── .agent/             # agent-context clone
 ```
 
-## Run
+## 테스트 레포
+
+| Platform | URL | 용도 |
+|----------|-----|------|
+| GitHub | https://github.com/iamwonseok/demo | GitHub Issue/PR 테스트 |
+| GitLab | https://gitlab.fadutec.dev/soc-ip/demo | GitLab Issue/MR 테스트 |
+
+## 환경 설정
+
+### 1. Demo 레포 Clone
 
 ```bash
-# Via Docker (recommended)
-docker compose -f tests/docker-compose.test.yml run e2e
+cd ~/project-iamwonseok
 
-# Direct execution
-./tests/e2e/test_e2e.sh
+# GitHub demo
+git clone git@github.com:iamwonseok/demo.git demo-github
+
+# GitLab demo
+git clone git@gitlab.fadutec.dev:soc-ip/demo.git demo-gitlab
 ```
 
-## Test Coverage
+### 2. Agent-Context 설치
 
-- GitLab API connection
-- `agent dev submit` → MR creation
-- JIRA issue integration (if configured)
+```bash
+# GitHub demo에 설치
+cd ~/project-iamwonseok/demo-github
+git clone git@github.com:iamwonseok/agent-context.git .agent
 
-## Dependencies
+# GitLab demo에 설치
+cd ~/project-iamwonseok/demo-gitlab
+git clone git@gitlab.fadutec.dev:wonseok/agent-context.git .agent
+```
 
-- Stage 1 (Smoke) and Stage 2 (Local Git) should pass first
-- Real API tokens with appropriate permissions
+### 3. 프로젝트 설정
+
+각 demo 레포에 `.project.yaml` 생성:
+
+**demo-github/.project.yaml**
+```yaml
+roles:
+  vcs: github
+  issue: github
+  review: github
+
+platforms:
+  github:
+    repo: iamwonseok/demo
+
+branch:
+  feature_prefix: feat/
+  bugfix_prefix: fix/
+```
+
+**demo-gitlab/.project.yaml**
+```yaml
+roles:
+  vcs: gitlab
+  issue: gitlab
+  review: gitlab
+
+platforms:
+  gitlab:
+    base_url: https://gitlab.fadutec.dev
+    project: soc-ip/demo
+
+branch:
+  feature_prefix: feat/
+  bugfix_prefix: fix/
+```
+
+### 4. API 토큰 설정
+
+```bash
+# 각 demo 레포에 .secrets 디렉토리 생성
+mkdir -p ~/project-iamwonseok/demo-github/.secrets
+mkdir -p ~/project-iamwonseok/demo-gitlab/.secrets
+
+# 토큰 복사 (agent-context에서)
+cp ~/project-iamwonseok/agent-context/.secrets/github-api-token ~/project-iamwonseok/demo-github/.secrets/
+cp ~/project-iamwonseok/agent-context/.secrets/gitlab-api-token ~/project-iamwonseok/demo-gitlab/.secrets/
+```
+
+---
+
+## E2E 시나리오
+
+### Scenario 1: GitHub-only Workflow
+
+**목적**: GitHub Issues + GitHub PRs로 전체 개발 사이클 테스트
+
+```bash
+cd ~/project-iamwonseok/demo-github
+export PATH="$PWD/.agent/tools/pm/bin:$PATH"
+
+# Step 1: 설정 확인
+pm config show
+pm provider show
+
+# Step 2: Issue 생성
+pm issue create "E2E Test: Add new feature" -b "Testing GitHub workflow"
+# => 생성된 Issue 번호 확인 (예: #1)
+
+# Step 3: Issue 확인
+pm issue list
+
+# Step 4: Feature Branch 생성
+git checkout -b feat/e2e-test-feature
+
+# Step 5: 코드 변경
+echo "// E2E test $(date)" >> test.js
+git add test.js
+git commit -m "feat: add e2e test file"
+
+# Step 6: Push
+git push -u origin feat/e2e-test-feature
+
+# Step 7: PR 생성
+pm review create --title "feat: E2E Test Feature" -b "Closes #1"
+# => 생성된 PR 번호 확인 (예: #2)
+
+# Step 8: PR 확인
+pm review list
+pm github pr view 2
+
+# Step 9: Cleanup
+pm github pr close 2
+pm github issue close 1
+git checkout main
+git branch -D feat/e2e-test-feature
+git push origin --delete feat/e2e-test-feature
+```
+
+---
+
+### Scenario 2: GitLab-only Workflow
+
+**목적**: GitLab Issues + GitLab MRs로 전체 개발 사이클 테스트
+
+```bash
+cd ~/project-iamwonseok/demo-gitlab
+export PATH="$PWD/.agent/tools/pm/bin:$PATH"
+
+# Step 1: 설정 확인
+pm config show
+pm provider show
+
+# Step 2: Issue 생성
+pm issue create "E2E Test: Add new feature" -d "Testing GitLab workflow"
+# => 생성된 Issue IID 확인 (예: #1)
+
+# Step 3: Issue 확인
+pm issue list
+
+# Step 4: Feature Branch 생성
+git checkout -b feat/e2e-test-feature
+
+# Step 5: 코드 변경
+echo "// E2E test $(date)" >> test.js
+git add test.js
+git commit -m "feat: add e2e test file"
+
+# Step 6: Push
+git push -u origin feat/e2e-test-feature
+
+# Step 7: MR 생성
+pm review create --title "feat: E2E Test Feature" -d "Closes #1"
+# => 생성된 MR IID 확인 (예: !1)
+
+# Step 8: MR 확인
+pm review list
+pm gitlab mr view 1
+
+# Step 9: Cleanup
+# GitLab MR/Issue close는 웹에서 또는 API로
+git checkout main
+git branch -D feat/e2e-test-feature
+git push origin --delete feat/e2e-test-feature
+```
+
+---
+
+### Scenario 3: Unified Command 전환 테스트
+
+**목적**: `roles` 설정 변경 시 명령어가 올바른 플랫폼으로 라우팅되는지 확인
+
+```bash
+cd ~/project-iamwonseok/demo-github
+
+# GitHub 모드 (기본)
+pm provider show
+# => Issue: github, Review: github
+
+pm issue list  # GitHub Issues 표시
+
+# GitLab 모드로 전환 (project.yaml 수정)
+yq -i '.roles.issue = "gitlab"' .project.yaml
+yq -i '.platforms.gitlab.base_url = "https://gitlab.fadutec.dev"' .project.yaml
+yq -i '.platforms.gitlab.project = "wonseok/demo"' .project.yaml
+
+pm provider show
+# => Issue: gitlab (변경됨)
+
+pm issue list  # GitLab Issues 표시
+
+# 원복
+yq -i '.roles.issue = "github"' .project.yaml
+```
+
+---
+
+## 자동화 스크립트
+
+### tests/e2e/run-e2e.sh
+
+E2E 테스트 자동 실행 스크립트 (TODO: 구현 예정)
+
+```bash
+./tests/e2e/run-e2e.sh --platform github  # GitHub만
+./tests/e2e/run-e2e.sh --platform gitlab  # GitLab만
+./tests/e2e/run-e2e.sh --all              # 전체
+```
+
+---
+
+## 체크리스트
+
+### GitHub Workflow
+- [ ] pm config show 정상
+- [ ] pm issue create 정상
+- [ ] pm issue list 정상
+- [ ] pm review create (PR) 정상
+- [ ] pm review list 정상
+
+### GitLab Workflow
+- [ ] pm config show 정상
+- [ ] pm issue create 정상
+- [ ] pm issue list 정상
+- [ ] pm review create (MR) 정상
+- [ ] pm review list 정상
+
+### Unified Commands
+- [ ] roles 전환 시 provider 변경 확인
+- [ ] pm issue가 올바른 플랫폼으로 라우팅
+
+---
+
+## 테스트 결과 기록
+
+테스트 완료 후 `tests/test-report.sh` 실행:
+
+```bash
+cd ~/project-iamwonseok/demo-github
+../.agent/tests/test-report.sh
+```
+
+리포트에 commit, user@hostname 자동 기록됨.

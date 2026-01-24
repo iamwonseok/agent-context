@@ -98,6 +98,15 @@ agent status
 - `pm gitlab mr view <IID>`
 - `pm gitlab mr create --source <branch> [--target <branch>] --title <t> [-d|--description <d>] [--draft]`
 - `pm gitlab issue list [--state <opened|...>] [--limit <n>]`
+- `pm gitlab issue create <TITLE> [-d|--description <text>]`
+
+**GitHub**
+- `pm github me`
+- `pm github pr list [--state <open|...>] [--limit <n>]`
+- `pm github pr view <NUM>`
+- `pm github pr create --head <branch> [--base <branch>] --title <t> [-b|--body <b>] [--draft]`
+- `pm github issue list [--state <open|...>] [--limit <n>]`
+- `pm github issue create <TITLE> [-b|--body <text>]`
 
 **Convenience**
 - `pm create <TITLE> [-t|--type <Task|Bug>] [-w|--workflow <feature|bugfix|...>]`
@@ -147,6 +156,19 @@ agent status
   - 매니저 Sprint 계획: Epic 하위 이슈 일괄 생성 → Sprint 배치 → 의존관계 설정 → 모니터링
 - `010-agile-full-cycle.md` **(Dev + Mgr)**
   - 전체 Agile 사이클: Sprint Planning → Development → Review → Retrospective
+
+### Platform-only 워크플로우 (JIRA/Confluence 없이)
+
+- `011-github-only-workflow.md` **(Dev)**
+  - GitHub만 사용: GitHub Issues + GitHub PRs로 전체 개발 사이클 (JIRA 없이)
+- `012-gitlab-only-workflow.md` **(Dev)**
+  - GitLab만 사용: GitLab Issues + GitLab MRs로 전체 개발 사이클 (JIRA 없이)
+
+### Unified 워크플로우 (Platform-Agnostic)
+
+- `013-unified-workflow.md` **(Dev)**
+  - 플랫폼 무관 통합 명령어: `pm issue`, `pm review`, `pm doc`
+  - project.yaml 설정에 따라 자동으로 플랫폼 선택 (JIRA/GitLab/GitHub)
 
 ---
 
