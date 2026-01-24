@@ -82,33 +82,34 @@ load_config() {
             # Default wiki to vcs provider if not set
             ROLE_WIKI="${ROLE_WIKI:-$ROLE_VCS}"
             
-            # Load platform configs
-            JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.jira.base_url')
-            JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" '.platforms.jira.project_key')
+            # Load platform configs (environment variables take precedence)
+            JIRA_BASE_URL="${JIRA_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.jira.base_url')}"
+            JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-$(yaml_get "$CONFIG_FILE" '.platforms.jira.project_key')}"
             JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.jira.email')
             
-            CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.base_url')
-            CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.space_key')
+            CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.confluence.base_url')}"
+            CONFLUENCE_SPACE_KEY="${CONFLUENCE_SPACE_KEY:-$(yaml_get "$CONFIG_FILE" '.platforms.confluence.space_key')}"
             CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.email')
             
-            GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.base_url')
-            GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.project')
+            GITLAB_BASE_URL="${GITLAB_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.base_url')}"
+            GITLAB_PROJECT="${GITLAB_PROJECT:-$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.project')}"
             
-            GITHUB_REPO=$(yaml_get "$CONFIG_FILE" '.platforms.github.repo')
+            GITHUB_REPO="${GITHUB_REPO:-$(yaml_get "$CONFIG_FILE" '.platforms.github.repo')}"
         else
             # Legacy flat format (backward compatibility)
-            JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" '.jira.base_url')
-            JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" '.jira.project_key')
+            # Environment variables take precedence over config file
+            JIRA_BASE_URL="${JIRA_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.jira.base_url')}"
+            JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-$(yaml_get "$CONFIG_FILE" '.jira.project_key')}"
             JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.jira.email')
             
-            CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" '.confluence.base_url')
-            CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" '.confluence.space_key')
+            CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.confluence.base_url')}"
+            CONFLUENCE_SPACE_KEY="${CONFLUENCE_SPACE_KEY:-$(yaml_get "$CONFIG_FILE" '.confluence.space_key')}"
             CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.confluence.email')
             
-            GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" '.gitlab.base_url')
-            GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" '.gitlab.project')
+            GITLAB_BASE_URL="${GITLAB_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.gitlab.base_url')}"
+            GITLAB_PROJECT="${GITLAB_PROJECT:-$(yaml_get "$CONFIG_FILE" '.gitlab.project')}"
             
-            GITHUB_REPO=$(yaml_get "$CONFIG_FILE" '.github.repo')
+            GITHUB_REPO="${GITHUB_REPO:-$(yaml_get "$CONFIG_FILE" '.github.repo')}"
             
             # Legacy: no explicit roles
             ROLE_VCS=""
@@ -130,10 +131,13 @@ load_config() {
     BRANCH_BUGFIX_PREFIX="${BRANCH_BUGFIX_PREFIX:-fix/}"
     BRANCH_HOTFIX_PREFIX="${BRANCH_HOTFIX_PREFIX:-hotfix/}"
 
-    # Auth: Environment > .secrets files
+    # Auth: Environment > Project .secrets > Global ~/.secrets
+    
     # Jira/Atlassian
     if [[ -z "$JIRA_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         JIRA_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
+    elif [[ -z "$JIRA_TOKEN" ]] && [[ -f "$HOME/.secrets/atlassian-api-token" ]]; then
+        JIRA_TOKEN=$(cat "$HOME/.secrets/atlassian-api-token")
     fi
     JIRA_EMAIL="${JIRA_EMAIL:-$JIRA_EMAIL_CONFIG}"
 
@@ -142,19 +146,25 @@ load_config() {
         CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/confluence-api-token")
     elif [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
+    elif [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$HOME/.secrets/atlassian-api-token" ]]; then
+        CONFLUENCE_TOKEN=$(cat "$HOME/.secrets/atlassian-api-token")
     fi
     CONFLUENCE_TOKEN="${CONFLUENCE_TOKEN:-$JIRA_TOKEN}"
     CONFLUENCE_EMAIL="${CONFLUENCE_EMAIL:-${CONFLUENCE_EMAIL_CONFIG:-$JIRA_EMAIL}}"
     CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$JIRA_BASE_URL}"
 
-    # GitLab
+    # GitLab: Environment > Project .secrets > Global ~/.secrets
     if [[ -z "$GITLAB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/gitlab-api-token" ]]; then
         GITLAB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/gitlab-api-token")
+    elif [[ -z "$GITLAB_TOKEN" ]] && [[ -f "$HOME/.secrets/gitlab-api-token" ]]; then
+        GITLAB_TOKEN=$(cat "$HOME/.secrets/gitlab-api-token")
     fi
 
-    # GitHub
+    # GitHub: Environment > Project .secrets > Global ~/.secrets
     if [[ -z "$GITHUB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/github-api-token" ]]; then
         GITHUB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/github-api-token")
+    elif [[ -z "$GITHUB_TOKEN" ]] && [[ -f "$HOME/.secrets/github-api-token" ]]; then
+        GITHUB_TOKEN=$(cat "$HOME/.secrets/github-api-token")
     fi
 
     # Export all
