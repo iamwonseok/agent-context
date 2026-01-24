@@ -31,10 +31,16 @@ resolve_jira_url() {
 }
 
 # Detect if Jira Cloud or Server
+# Uses resolved URL to handle custom domains that proxy to atlassian.net
 is_jira_cloud() {
-    local url
-    url=$(resolve_jira_url)
-    [[ "$url" == *".atlassian.net"* ]]
+    # First try resolved URL (handles custom domains)
+    local resolved_url
+    resolved_url=$(resolve_jira_url)
+    if [[ "$resolved_url" == *".atlassian.net"* ]]; then
+        return 0
+    fi
+    # Fallback to checking original URL
+    [[ "$JIRA_BASE_URL" == *".atlassian.net"* ]]
 }
 
 # Jira API request
@@ -60,10 +66,9 @@ jira_api() {
         -H "Accept: application/json"
     )
 
-    # Authentication: Cloud uses Basic Auth, Server uses Bearer token
+    # Authentication: Cloud uses -u option, Server uses Bearer token
     if is_jira_cloud; then
-        local auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
-        curl_args+=(-H "Authorization: Basic $auth")
+        curl_args+=(-u "${JIRA_EMAIL}:${JIRA_TOKEN}")
     else
         # Jira Server/Data Center uses Bearer token (Personal Access Token)
         curl_args+=(-H "Authorization: Bearer $JIRA_TOKEN")
@@ -676,20 +681,23 @@ jira_sprint_list() {
         return 1
     fi
 
+    local base_url
+    base_url=$(resolve_jira_url)
+
     # If no board_id, try to find boards for the project
     if [[ -z "$board_id" ]]; then
-        local base_url
-        base_url=$(resolve_jira_url)
-        local auth
-        if is_jira_cloud; then
-            auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
-        fi
-
         local boards_response
-        boards_response=$(curl -s -X GET \
-            -H "Authorization: Basic $auth" \
-            -H "Accept: application/json" \
-            "${base_url}/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}")
+        if is_jira_cloud; then
+            boards_response=$(curl -s -X GET \
+                -u "${JIRA_EMAIL}:${JIRA_TOKEN}" \
+                -H "Accept: application/json" \
+                "${base_url}/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}")
+        else
+            boards_response=$(curl -s -X GET \
+                -H "Authorization: Bearer ${JIRA_TOKEN}" \
+                -H "Accept: application/json" \
+                "${base_url}/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}")
+        fi
 
         echo "=========================================="
         echo "Boards for project $JIRA_PROJECT_KEY"
@@ -700,18 +708,18 @@ jira_sprint_list() {
         return 0
     fi
 
-    local base_url
-    base_url=$(resolve_jira_url)
-    local auth
-    if is_jira_cloud; then
-        auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
-    fi
-
     local response
-    response=$(curl -s -X GET \
-        -H "Authorization: Basic $auth" \
-        -H "Accept: application/json" \
-        "${base_url}/rest/agile/1.0/board/${board_id}/sprint?state=active,future")
+    if is_jira_cloud; then
+        response=$(curl -s -X GET \
+            -u "${JIRA_EMAIL}:${JIRA_TOKEN}" \
+            -H "Accept: application/json" \
+            "${base_url}/rest/agile/1.0/board/${board_id}/sprint?state=active,future")
+    else
+        response=$(curl -s -X GET \
+            -H "Authorization: Bearer ${JIRA_TOKEN}" \
+            -H "Accept: application/json" \
+            "${base_url}/rest/agile/1.0/board/${board_id}/sprint?state=active,future")
+    fi
 
     echo "------------------------------------------------------------------------"
     printf "%-6s | %-10s | %-30s | %s\n" "ID" "State" "Name" "Dates"
@@ -748,21 +756,26 @@ jira_issue_move_to_sprint() {
 
     local base_url
     base_url=$(resolve_jira_url)
-    local auth
-    if is_jira_cloud; then
-        auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
-    fi
 
     local payload
     payload=$(jq -n --arg key "$key" '{ issues: [$key] }')
 
     local response
-    response=$(curl -s -X POST \
-        -H "Authorization: Basic $auth" \
-        -H "Content-Type: application/json" \
-        -H "Accept: application/json" \
-        "${base_url}/rest/agile/1.0/sprint/${sprint_id}/issue" \
-        -d "$payload")
+    if is_jira_cloud; then
+        response=$(curl -s -X POST \
+            -u "${JIRA_EMAIL}:${JIRA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            "${base_url}/rest/agile/1.0/sprint/${sprint_id}/issue" \
+            -d "$payload")
+    else
+        response=$(curl -s -X POST \
+            -H "Authorization: Bearer ${JIRA_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            "${base_url}/rest/agile/1.0/sprint/${sprint_id}/issue" \
+            -d "$payload")
+    fi
 
     if [[ -n "$response" ]] && echo "$response" | jq -e '.errorMessages' > /dev/null 2>&1; then
         echo "[ERROR] Failed to move issue to sprint:" >&2
