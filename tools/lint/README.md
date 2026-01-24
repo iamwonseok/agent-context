@@ -4,14 +4,35 @@
 
 ## 지원 언어
 
-| 언어 | 명령어 | 검사 도구 |
-|------|--------|-----------|
-| C/C++ | `lint c`, `lint-c` | clang-format, clang-tidy |
-| Python | `lint python`, `lint-python` | flake8, black |
-| Bash | `lint bash`, `lint-bash` | shellcheck |
-| Make | `lint make`, `lint-make` | custom rules |
-| YAML | `lint yaml`, `lint-yaml` | yamllint |
-| Dockerfile | `lint yaml` | hadolint |
+| 언어 | 명령어 | 외부 도구 | 보조 규칙 |
+|------|--------|-----------|-----------|
+| C/C++ | `lint c`, `lint-c` | clang-format, clang-tidy | regex (11 rules) |
+| Python | `lint python`, `lint-python` | flake8, black | regex (10 rules) |
+| Bash | `lint bash`, `lint-bash` | shellcheck | regex (9 rules) |
+| Make | `lint make`, `lint-make` | - | regex (4 rules) |
+| YAML | `lint yaml`, `lint-yaml` | yamllint | regex (5 rules) |
+| Dockerfile | `lint yaml` | hadolint | regex (3 rules) |
+
+## 검사 방식 (하이브리드)
+
+기본적으로 **하이브리드 모드**로 동작합니다:
+
+1. **1st Pass**: 외부 도구 (clang-format, flake8 등) - 자동화 가능한 규칙
+2. **2nd Pass**: regex 규칙 - 외부 도구로 커버 안 되는 규칙
+
+```bash
+# 기본 (하이브리드)
+lint-c file.c
+
+# 외부 도구만 사용
+lint-c file.c --external-only
+
+# regex 규칙만 사용 (기존 동작)
+lint-c file.c --regex-only
+
+# 도구 설치 상태 확인
+lint-c --check-tools
+```
 
 ## 사용법
 
@@ -59,14 +80,31 @@ tools/lint/
 │   ├── lint-bash
 │   ├── lint-make
 │   └── lint-yaml
+├── lib/                   # 공통 라이브러리
+│   └── executor.sh        # 외부 도구 실행기
 ├── scripts/               # 내부 스크립트
-│   ├── rules/             # 언어별 규칙
+│   ├── rules/             # 언어별 regex 규칙
 │   ├── junit_helper.sh    # JUnit 출력 헬퍼
 │   └── test_*.sh          # 테스트 스크립트
 ├── ci-templates/          # CI 파이프라인 템플릿
 │   └── lint.yml
 └── install.sh             # 설치 스크립트
 ```
+
+## 설정 파일
+
+외부 도구 설정 파일은 다음 순서로 검색됩니다:
+
+1. 프로젝트 루트 (예: `.clang-format`)
+2. `templates/configs/` (fallback)
+
+| 언어 | 설정 파일 |
+|------|-----------|
+| C/C++ | `.clang-format`, `.clang-tidy` |
+| Python | `.flake8`, `pyproject.toml` |
+| Bash | `.shellcheckrc` |
+| YAML | `.yamllint.yml` |
+| Dockerfile | `.hadolint.yaml` |
 
 ## 테스트
 

@@ -2,11 +2,15 @@
 # lint-bash - Bash Coding Convention Checker
 #
 # Usage: lint-bash [OPTIONS] [PATH]
+#   --external-only   External tools only (shellcheck)
+#   --regex-only      Regex rules only (original behavior)
+#   --check-tools     Show tool availability
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../scripts/rules/bash_rules.sh"
+source "${SCRIPT_DIR}/../lib/executor.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -21,6 +25,7 @@ JUNIT_OUTPUT=false
 JUNIT_FILE=""
 QUIET=false
 TARGET="."
+MODE="hybrid"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -29,6 +34,9 @@ while [[ $# -gt 0 ]]; do
 		--junit) JUNIT_OUTPUT=true; shift ;;
 		-o|--output) JUNIT_FILE="$2"; shift 2 ;;
 		-q|--quiet) QUIET=true; shift ;;
+		--external-only) MODE="external"; shift ;;
+		--regex-only) MODE="regex"; shift ;;
+		--check-tools) check_tools_status bash; exit 0 ;;
 		-h|--help)
 			echo "Usage: lint-bash [OPTIONS] [PATH]"
 			echo ""
@@ -39,6 +47,9 @@ while [[ $# -gt 0 ]]; do
 			echo "  --junit              Output JUnit XML format"
 			echo "  -o, --output FILE    Write output to file"
 			echo "  -q, --quiet          Quiet mode"
+			echo "  --external-only      Use external tools only (shellcheck)"
+			echo "  --regex-only         Use regex rules only"
+			echo "  --check-tools        Show tool availability"
 			echo "  -h, --help           Show this help"
 			exit 0
 			;;
@@ -72,16 +83,44 @@ if [[ ${#FILES[@]} -eq 0 ]]; then
 	exit 0
 fi
 
+# Find configuration files
+SHELLCHECK_CONFIG=$(find_config ".shellcheckrc" "$(pwd)") || true
+
 PASS_COUNT=0
 FAIL_COUNT=0
 TEST_CASES=""
 
-[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${BOLD}${CYAN}Checking ${#FILES[@]} Bash script(s)...${NC}\n"
+if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
+	echo -e "${BOLD}${CYAN}Checking ${#FILES[@]} Bash script(s)...${NC}"
+	echo -e "${DIM}Mode: ${MODE}${NC}"
+	[[ -n "${SHELLCHECK_CONFIG}" ]] && echo -e "${DIM}shellcheck config: ${SHELLCHECK_CONFIG}${NC}"
+	echo ""
+fi
 
 for file in "${FILES[@]}"; do
 	filename=$(basename "${file}")
+	file_failed=false
+	file_errors=""
 
-	if check_bash_file "${file}"; then
+	# 1st Pass: External tools
+	if [[ "${MODE}" == "hybrid" || "${MODE}" == "external" ]]; then
+		if run_shellcheck "${file}" "${SHELLCHECK_CONFIG}"; then
+			:
+		elif [[ $? -ne 127 ]]; then
+			file_failed=true
+			file_errors+="[shellcheck] ${TOOL_OUTPUT}"$'\n'
+		fi
+	fi
+
+	# 2nd Pass: Regex rules
+	if [[ "${MODE}" == "hybrid" || "${MODE}" == "regex" ]]; then
+		if ! check_bash_file "${file}"; then
+			file_failed=true
+			file_errors+="[regex] ${CHECK_RESULT}"$'\n'
+		fi
+	fi
+
+	if [[ "${file_failed}" == false ]]; then
 		PASS_COUNT=$((PASS_COUNT + 1))
 		[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${GREEN}[PASS]${NC} ${file}"
 		[[ "${JUNIT_OUTPUT}" == true ]] && TEST_CASES+="    <testcase classname=\"bash.lint\" name=\"${filename}\" time=\"0.01\"/>"$'\n'
@@ -89,9 +128,9 @@ for file in "${FILES[@]}"; do
 		FAIL_COUNT=$((FAIL_COUNT + 1))
 		if [[ "${JUNIT_OUTPUT}" == false ]]; then
 			echo -e "${RED}[FAIL]${NC} ${file}"
-			echo -e "${DIM}${CHECK_RESULT}${NC}"
+			echo -e "${DIM}${file_errors}${NC}"
 		else
-			TEST_CASES+="    <testcase classname=\"bash.lint\" name=\"${filename}\" time=\"0.01\"><failure message=\"Lint error\"><![CDATA[${CHECK_RESULT}]]></failure></testcase>"$'\n'
+			TEST_CASES+="    <testcase classname=\"bash.lint\" name=\"${filename}\" time=\"0.01\"><failure message=\"Lint error\"><![CDATA[${file_errors}]]></failure></testcase>"$'\n'
 		fi
 	fi
 done
