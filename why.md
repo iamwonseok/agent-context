@@ -267,11 +267,9 @@ agent-context/              # This repo = what gets deployed
 ├── skills/
 ├── workflows/
 ├── tools/
+├── plan/                   # Framework plans
 ├── setup.sh
-├── _dev/                   # Development only (not deployed)
-│   ├── .agent -> ../       # Symlink for testing
-│   ├── plan/
-│   └── design/
+└── why.md
 ```
 
 **Deployment Model (Hybrid):**
@@ -286,12 +284,11 @@ agent-context/              # This repo = what gets deployed
 **Rationale:**
 1. Global install (`~/.agent`) allows modifications
 2. Local install (`.agent/`) allows project-specific versions
-3. `_dev/` with symlink enables testing during development
+3. Docker-based testing for isolated environments
 4. Simpler mental model: repo = deployable unit
 
 **Trade-offs:**
 - Requires migration (one-time effort)
-- Development docs move to `_dev/` (minor inconvenience)
 - More flexible but slightly more complex path resolution
 
 ---

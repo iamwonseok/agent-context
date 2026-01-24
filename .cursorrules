@@ -2,10 +2,10 @@
 #
 # This IS the agent-context source repository.
 # - Modifying skills/, workflows/, tools/ IS allowed here
-# - _dev/ contains development documents (plan/, design/)
-# - For testing: cd _dev && .agent/setup.sh
+# - plan/ is the single source of truth for framework plans
+# - For testing: use Docker-based test environment
 #
-# For design philosophy, see why.md (will be at root after migration)
+# For design philosophy, see why.md
 
 # Agent-Context Project Rules
 
@@ -18,16 +18,14 @@ Unlike user projects, you CAN modify:
 - `tools/` - CLI tools
 - `templates/` - User project templates
 
-Development documents are in `_dev/`:
-- `_dev/plan/` - Agent-context framework plans (becomes `.agent/plan/` when deployed)
-- `_dev/design/` - Design documents
-- `_dev/.agent -> ../` - Symlink for testing
+Single source of truth:
+- `plan/` - Framework plans for this repository (SSoT)
 
 ### Plan Directory Convention
 | Location | Purpose |
 |----------|---------|
-| `_dev/plan/` (this repo) | Framework development plans |
-| `.agent/plan/` (user project) | Framework plans (deployed from _dev/plan/) |
+| `plan/` (this repo) | Framework plans (SSoT) |
+| `.agent/plan/` (user project) | Framework plans (deployed from this repo `plan/`) |
 | `plan/` (user project) | User's project-specific plans |
 
 ## Design Philosophy
@@ -76,12 +74,17 @@ Read `why.md` for the full rationale. Key principles:
 5. Always keep escape hatches
 
 ## Language Policy
-- **Code and documentation: English only**
-- Comments, variables, functions, commits: English
-- Korean allowed only in user messages
+- **Execution code and commit artifacts: English only**
+  - Source code, scripts, config, and code comments MUST be in English
+  - Variable/function/class names MUST be in English
+  - Commit messages MUST be in English
+- **Docs exception (this repo only)**: Korean is allowed in Markdown documents (`*.md`) in this repository
+  - Rationale: Document-language exception is defined in `plan/agent-workflow-system-plan.md` (Quality Requirements)
+  - This exception does NOT apply to executable code or code comments
 
 ## Output Style
-- **No Korean characters in code/docs**
+- **No Korean characters in executable code or code comments**
+- Korean is allowed only in `*.md` documents in this repo (see Language Policy)
 - Unicode symbols allowed (arrows, box chars, block elements, math symbols)
   - Allowed: `→`, `├`, `└`, `│`, `─`, `█`, `░`, `×`, `±`
 - No icon-style Unicode:
@@ -99,11 +102,15 @@ Read `why.md` for the full rationale. Key principles:
 ### Before Starting Work
 | Task Type | Read First |
 |-----------|------------|
-| New feature | `workflows/feature.md` |
-| Bug fix | `workflows/bug-fix.md` |
-| Hotfix | `workflows/hotfix.md` |
-| Refactoring | `workflows/refactor.md` |
+| New feature | `workflows/developer/feature.md` |
+| Bug fix | `workflows/developer/bug-fix.md` |
+| Hotfix | `workflows/developer/hotfix.md` |
+| Refactoring | `workflows/developer/refactor.md` |
 | Large/complex task | `skills/plan/design-solution/SKILL.md` |
+
+If the exact workflow file is unclear, look under:
+- `workflows/developer/` (Developer)
+- `workflows/manager/` (Manager)
 
 ### After Modifying Files
 1. Run related tests if they exist
@@ -125,15 +132,34 @@ Read `why.md` for the full rationale. Key principles:
 - Keep branches still in use (worktree, unmerged)
 
 ### Concurrent Work
-- Multiple agents on different tasks -> Use git worktree
-- Each agent works on separate branch
+- For parallel work, prefer Detached Mode worktrees (see Hybrid Mode Guidance)
+
+## Operational Invariants (Artifacts as State)
+- `.context/` and `.worktrees/` are **state/log artifacts**, not permanent storage
+  - After submission (MR/PR created), clean them up (archive/delete) per workflow
+  - Prefer keeping logs in Issue/MR description (see Issue N/A policy)
+- Keep the **main working directory clean** (no long-lived generated artifacts)
+
+## Hybrid Mode Guidance (Git Strategy)
+- Default: **Interactive Mode = branch workflow in current directory**
+- For parallel/background work: **Detached Mode = worktree in `.worktrees/`**
+
+## Issue N/A Policy
+- If there is no Issue (N/A):
+  - Create MR/PR as usual
+  - Include `.context/` summary/logs in the MR/PR description **instead of uploading to an Issue**
+
+## Human-only Decisions (Permissions Boundary)
+- Decisions like **approval/merge** are `human_only` by default
+  - The agent may prepare, summarize, and suggest actions, but should not execute final decisions unless explicitly authorized
 
 ## Project Overview
 Workflow + CI/CD template for agent-driven development.
 
-### Directory Structure (After Migration)
+### Directory Structure
 ```
 agent-context/                  # This repo = deployable unit
+├── plan/                       # Framework plans (SSoT)
 ├── skills/                     # Atomic skills (building blocks)
 ├── workflows/                  # Workflow definitions (combinations)
 ├── tools/                      # CLI tools
@@ -144,19 +170,14 @@ agent-context/                  # This repo = deployable unit
 │   └── plan/                   # Project plan directory template
 ├── coding-convention/          # Language rule docs
 ├── setup.sh                    # Installation script
-├── why.md                      # Design philosophy
-│
-└── _dev/                       # Development only
-    ├── .agent -> ../           # Symlink for testing
-    ├── plan/                   # Framework implementation plans
-    └── design/                 # Design documents
+└── why.md                      # Design philosophy
 ```
 
 ### User Project Structure (After Setup)
 ```
 user-project/
 ├── .agent/                     # Agent-context framework (installed)
-│   ├── plan/                   # Framework plans (from _dev/plan/)
+│   ├── plan/                   # Framework plans (from agent-context `plan/`)
 │   └── ...
 │
 └── plan/                       # User's project plans (from templates/plan/)
@@ -174,10 +195,11 @@ Organized into 5 categories:
 
 ### Workflows (`workflows/`)
 Skill combinations for scenarios:
-- `feature.md` - Full feature development
-- `bug-fix.md` - Standard bug fix
-- `hotfix.md` - Emergency fix
-- `refactor.md` - Code refactoring
+- `developer/feature.md` - Full feature development
+- `developer/bug-fix.md` - Standard bug fix
+- `developer/hotfix.md` - Emergency fix
+- `developer/refactor.md` - Code refactoring
+- `manager/*` - Manager workflows (approval, monitoring, initiative, ...)
 
 ### Quality Gates
 | Gate | Criteria |
