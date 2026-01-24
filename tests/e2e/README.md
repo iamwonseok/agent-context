@@ -194,7 +194,78 @@ git push origin --delete feat/e2e-test-feature
 
 ---
 
-### Scenario 3: Unified Command 전환 테스트
+### Scenario 3: Milestone/Label Workflow
+
+**목적**: Milestone과 Label 생성/관리 테스트
+
+```bash
+cd ~/project-iamwonseok/demo-gitlab
+export PATH="$PWD/.agent/tools/pm/bin:$PATH"
+
+# Step 1: Milestone 생성
+pm milestone create "Sprint 1" --due 2026-02-07 -d "First sprint"
+# => 생성된 Milestone ID 확인 (예: #1)
+
+# Step 2: Milestone 확인
+pm milestone list
+pm milestone view 1
+
+# Step 3: Label 생성
+pm label create "priority:high" --color "ff0000"
+pm label create "type:feature" --color "0000ff"
+
+# Step 4: Label 확인
+pm label list
+
+# Step 5: Cleanup
+pm milestone close 1
+pm label delete "priority:high"
+pm label delete "type:feature"
+```
+
+---
+
+### Scenario 4: Wiki Workflow (GitLab Only)
+
+**목적**: Wiki 페이지 생성/수정/삭제 테스트
+
+```bash
+cd ~/project-iamwonseok/demo-gitlab
+export PATH="$PWD/.agent/tools/pm/bin:$PATH"
+
+# Step 1: Wiki 페이지 생성
+pm wiki create "Getting Started" -c "# Getting Started
+
+Welcome to the project wiki."
+# => 생성된 Slug 확인 (예: Getting-Started)
+
+# Step 2: Wiki 목록 확인
+pm wiki list
+
+# Step 3: Wiki 페이지 보기
+pm wiki view "Getting-Started"
+
+# Step 4: Wiki 페이지 업데이트
+pm wiki update "Getting-Started" -c "# Getting Started
+
+Welcome to the project wiki.
+
+## Quick Links
+- [Installation](Installation)
+- [Configuration](Configuration)"
+
+# Step 5: 업데이트 확인
+pm wiki view "Getting-Started"
+
+# Step 6: Cleanup
+pm wiki delete "Getting-Started"
+```
+
+**Note**: GitHub Wiki는 별도 Git 저장소로 관리되어 API 지원이 제한됩니다.
+
+---
+
+### Scenario 5: Unified Command 전환 테스트
 
 **목적**: `roles` 설정 변경 시 명령어가 올바른 플랫폼으로 라우팅되는지 확인
 
@@ -256,6 +327,22 @@ E2E 테스트 자동 실행 스크립트 (TODO: 구현 예정)
 ### Unified Commands
 - [ ] roles 전환 시 provider 변경 확인
 - [ ] pm issue가 올바른 플랫폼으로 라우팅
+
+### Milestone/Label (Phase 1)
+- [ ] pm milestone list 정상
+- [ ] pm milestone create 정상
+- [ ] pm milestone view 정상
+- [ ] pm milestone close 정상
+- [ ] pm label list 정상
+- [ ] pm label create 정상
+- [ ] pm label delete 정상
+
+### Wiki (Phase 2 - GitLab Only)
+- [ ] pm wiki list 정상
+- [ ] pm wiki create 정상
+- [ ] pm wiki view 정상
+- [ ] pm wiki update 정상
+- [ ] pm wiki delete 정상
 
 ---
 

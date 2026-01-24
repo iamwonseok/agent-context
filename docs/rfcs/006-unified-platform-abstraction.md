@@ -23,10 +23,10 @@
 | `pm issue` | O | JIRA, GitLab, GitHub |
 | `pm review` | O | GitLab, GitHub |
 | `pm doc` | O | Confluence |
-| `pm milestone` | X | - |
-| `pm label` | X | - |
+| `pm milestone` | O | GitLab, GitHub |
+| `pm label` | O | GitLab, GitHub |
+| `pm wiki` | O | GitLab (GitHub는 Git repo 기반) |
 | `pm board` | X | - |
-| `pm wiki` | X | - |
 
 ---
 

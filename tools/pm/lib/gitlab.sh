@@ -550,3 +550,232 @@ gitlab_label_delete() {
         echo "(v) Label '$name' deleted"
     fi
 }
+
+# ============================================================
+# Wiki Functions
+# ============================================================
+
+# List wiki pages
+gitlab_wiki_list() {
+    local max_results="${1:-20}"
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local response
+    response=$(gitlab_api GET "/projects/${project_encoded}/wikis?per_page=${max_results}")
+
+    if [[ "$(echo "$response" | jq 'length')" == "0" ]]; then
+        echo "No wiki pages found."
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-30s | %s\n" "Slug" "Title"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | [.slug, .title] | @tsv' | \
+    while IFS=$'\t' read -r slug title; do
+        if [[ ${#slug} -gt 28 ]]; then
+            slug="${slug:0:25}..."
+        fi
+        printf "%-30s | %s\n" "$slug" "$title"
+    done
+
+    echo "------------------------------------------------------------------------"
+    local total
+    total=$(echo "$response" | jq 'length')
+    echo "Total: $total wiki pages"
+}
+
+# View wiki page
+gitlab_wiki_view() {
+    local slug="$1"
+
+    if [[ -z "$slug" ]]; then
+        echo "[ERROR] Wiki slug required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # URL encode the slug
+    local slug_encoded
+    slug_encoded=$(printf '%s' "$slug" | jq -sRr @uri)
+
+    local response
+    response=$(gitlab_api GET "/projects/${project_encoded}/wikis/${slug_encoded}")
+
+    local title
+    title=$(echo "$response" | jq -r '.title')
+
+    if [[ -z "$title" ]] || [[ "$title" == "null" ]]; then
+        echo "[ERROR] Wiki page not found: $slug" >&2
+        return 1
+    fi
+
+    echo "============================================================"
+    echo "Wiki: $title"
+    echo "============================================================"
+    echo "Slug:   $(echo "$response" | jq -r '.slug')"
+    echo "Format: $(echo "$response" | jq -r '.format')"
+    echo "------------------------------------------------------------"
+    echo "Content:"
+    echo ""
+    echo "$response" | jq -r '.content'
+    echo "============================================================"
+}
+
+# Create wiki page
+gitlab_wiki_create() {
+    local title="$1"
+    local content="$2"
+    local format="${3:-markdown}"
+
+    if [[ -z "$title" ]]; then
+        echo "[ERROR] Title required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # Default content if not provided
+    if [[ -z "$content" ]]; then
+        content="# $title\n\nThis page was created automatically."
+    fi
+
+    local payload
+    payload=$(jq -n \
+        --arg title "$title" \
+        --arg content "$content" \
+        --arg format "$format" \
+        '{
+            title: $title,
+            content: $content,
+            format: $format
+        }')
+
+    local response
+    response=$(gitlab_api POST "/projects/${project_encoded}/wikis" "$payload")
+
+    local slug
+    slug=$(echo "$response" | jq -r '.slug')
+
+    if [[ -z "$slug" ]] || [[ "$slug" == "null" ]]; then
+        echo "[ERROR] Failed to create wiki page:" >&2
+        echo "$response" | jq -r '.message // .error // .' >&2
+        return 1
+    fi
+
+    echo "$slug"
+}
+
+# Update wiki page
+gitlab_wiki_update() {
+    local slug="$1"
+    local content="$2"
+    local title="$3"
+
+    if [[ -z "$slug" ]]; then
+        echo "[ERROR] Wiki slug required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # URL encode the slug
+    local slug_encoded
+    slug_encoded=$(printf '%s' "$slug" | jq -sRr @uri)
+
+    local payload
+    if [[ -n "$title" ]]; then
+        payload=$(jq -n \
+            --arg content "$content" \
+            --arg title "$title" \
+            '{
+                content: $content,
+                title: $title
+            }')
+    else
+        payload=$(jq -n \
+            --arg content "$content" \
+            '{
+                content: $content
+            }')
+    fi
+
+    local response
+    response=$(gitlab_api PUT "/projects/${project_encoded}/wikis/${slug_encoded}" "$payload")
+
+    local new_slug
+    new_slug=$(echo "$response" | jq -r '.slug')
+
+    if [[ -z "$new_slug" ]] || [[ "$new_slug" == "null" ]]; then
+        echo "[ERROR] Failed to update wiki page:" >&2
+        echo "$response" | jq -r '.message // .error // .' >&2
+        return 1
+    fi
+
+    echo "(v) Wiki page '$slug' updated"
+}
+
+# Delete wiki page
+gitlab_wiki_delete() {
+    local slug="$1"
+
+    if [[ -z "$slug" ]]; then
+        echo "[ERROR] Wiki slug required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # URL encode the slug
+    local slug_encoded
+    slug_encoded=$(printf '%s' "$slug" | jq -sRr @uri)
+
+    local response
+    response=$(gitlab_api DELETE "/projects/${project_encoded}/wikis/${slug_encoded}")
+
+    # DELETE returns 204 with no content on success
+    if [[ -z "$response" ]]; then
+        echo "(v) Wiki page '$slug' deleted"
+    else
+        local error
+        error=$(echo "$response" | jq -r '.message // .error // .' 2>/dev/null)
+        if [[ -n "$error" ]] && [[ "$error" != "null" ]]; then
+            echo "[ERROR] Failed to delete wiki page: $error" >&2
+            return 1
+        fi
+        echo "(v) Wiki page '$slug' deleted"
+    fi
+}
