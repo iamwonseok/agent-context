@@ -82,7 +82,7 @@ cmd_config() {
                 esac
                 shift
             done
-            
+
             if [[ -f ".project.yaml" ]] && [[ "$force" != "true" ]]; then
                 echo "[ERROR] .project.yaml already exists. Use --force to overwrite." >&2
                 exit 1
@@ -99,7 +99,7 @@ cmd_config() {
 
 cmd_jira() {
     load_config || exit 1
-    
+
     case "$1" in
         me)
             jira_me
@@ -128,13 +128,13 @@ cmd_jira() {
                     local summary=""
                     local type="Task"
                     local description=""
-                    
+
                     # First positional arg is summary
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         summary="$1"
                         shift
                     fi
-                    
+
                     while [[ $# -gt 0 ]]; do
                         case "$1" in
                             -t|--type) type="$2"; shift ;;
@@ -142,7 +142,7 @@ cmd_jira() {
                         esac
                         shift
                     done
-                    
+
                     jira_issue_create "$summary" "$type" "$description"
                     ;;
                 *)
@@ -162,7 +162,7 @@ cmd_jira() {
 
 cmd_gitlab() {
     load_config || exit 1
-    
+
     case "$1" in
         me)
             gitlab_me
@@ -193,7 +193,7 @@ cmd_gitlab() {
                     local title=""
                     local description=""
                     local draft="false"
-                    
+
                     while [[ $# -gt 0 ]]; do
                         case "$1" in
                             -s|--source) source="$2"; shift ;;
@@ -204,12 +204,12 @@ cmd_gitlab() {
                         esac
                         shift
                     done
-                    
+
                     if [[ -z "$source" ]] || [[ -z "$title" ]]; then
                         echo "[ERROR] --source and --title required" >&2
                         exit 1
                     fi
-                    
+
                     gitlab_mr_create "$source" "$target" "$title" "$description" "$draft"
                     ;;
                 *)
@@ -252,7 +252,7 @@ cmd_gitlab() {
 
 cmd_github() {
     load_config || exit 1
-    
+
     case "$1" in
         me)
             github_me
@@ -283,7 +283,7 @@ cmd_github() {
                     local title=""
                     local body=""
                     local draft="false"
-                    
+
                     while [[ $# -gt 0 ]]; do
                         case "$1" in
                             -h|--head) head="$2"; shift ;;
@@ -294,12 +294,12 @@ cmd_github() {
                         esac
                         shift
                     done
-                    
+
                     if [[ -z "$head" ]] || [[ -z "$title" ]]; then
                         echo "[ERROR] --head and --title required" >&2
                         exit 1
                     fi
-                    
+
                     github_pr_create "$head" "$base" "$title" "$body" "$draft"
                     ;;
                 *)
@@ -342,17 +342,17 @@ cmd_github() {
 
 cmd_create() {
     load_config || exit 1
-    
+
     local title=""
     local type="Task"
     local workflow="feature"
-    
+
     # First positional arg is title
     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
         title="$1"
         shift
     fi
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -t|--type) type="$2"; shift ;;
@@ -360,18 +360,18 @@ cmd_create() {
         esac
         shift
     done
-    
+
     pm_create "$title" "$type" "$workflow"
 }
 
 cmd_finish() {
     load_config || exit 1
-    
+
     local target=""
     local skip_lint="false"
     local skip_tests="false"
     local draft="false"
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -t|--target) target="$2"; shift ;;
@@ -381,7 +381,7 @@ cmd_finish() {
         esac
         shift
     done
-    
+
     pm_finish "$target" "$skip_lint" "$skip_tests" "$draft"
 }
 

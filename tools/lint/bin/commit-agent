@@ -59,7 +59,7 @@ def print_commit_message(message: str):
     lines = message.strip().split('\n')
     max_len = max(len(line) for line in lines) if lines else 40
     max_len = max(max_len, 40)
-    
+
     print(f"\n{Colors.GREEN}┌{'─' * (max_len + 2)}┐{Colors.RESET}")
     for line in lines:
         padding = ' ' * (max_len - len(line))
@@ -95,14 +95,14 @@ def get_staged_diff() -> str:
     success, output = run_git_command(["diff", "--cached", "--stat"])
     if not output:
         return ""
-    
+
     # Also get the actual diff (limited)
     _, detailed = run_git_command(["diff", "--cached"])
-    
+
     # Limit diff size for LLM context
     if len(detailed) > 8000:
         detailed = detailed[:8000] + "\n... (truncated)"
-    
+
     return f"Summary:\n{output}\n\nDetailed changes:\n{detailed}"
 
 
@@ -111,12 +111,12 @@ def get_unstaged_diff() -> str:
     success, output = run_git_command(["diff", "--stat"])
     if not output:
         return ""
-    
+
     _, detailed = run_git_command(["diff"])
-    
+
     if len(detailed) > 8000:
         detailed = detailed[:8000] + "\n... (truncated)"
-    
+
     return f"Summary:\n{output}\n\nDetailed changes:\n{detailed}"
 
 
@@ -188,7 +188,7 @@ def generate_commit_message(
     context_content: str = ""
 ) -> Optional[str]:
     """Generate commit message using Ollama"""
-    
+
     system_prompt = """You are a commit message generator. Analyze the git diff and generate a clear, concise commit message.
 
 Follow these rules:
@@ -223,44 +223,44 @@ Project-specific conventions:
 {context_content}"""
 
     user_content = f"Git diff:\n```\n{diff}\n```"
-    
+
     if previous_message and feedback:
         user_content += f"\n\nPrevious message:\n```\n{previous_message}\n```"
         user_content += f"\n\nUser feedback: {feedback}"
         user_content += "\n\nPlease regenerate the commit message based on this feedback."
-    
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
     ]
-    
+
     try:
         print(f"{Colors.DIM}Generating commit message...{Colors.RESET}", end="", flush=True)
-        
+
         data = json.dumps({
             "model": OLLAMA_MODEL,
             "messages": messages,
             "stream": False,
             "options": {"temperature": 0.3, "num_ctx": 8192}
         }).encode("utf-8")
-        
+
         req = urllib.request.Request(
             f"{OLLAMA_HOST}/api/chat",
             data=data,
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        
+
         with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as response:
             print(f"\r{' ' * 40}\r", end="")  # Clear the loading message
-            
+
             if response.status == 200:
                 result = json.loads(response.read().decode("utf-8"))
                 return result.get("message", {}).get("content", "").strip()
             else:
                 print(f"{Colors.RED}Error: API returned {response.status}{Colors.RESET}")
                 return None
-            
+
     except urllib.error.URLError as e:
         print(f"\n{Colors.RED}Error: {e.reason}{Colors.RESET}")
         return None
@@ -276,34 +276,34 @@ def interactive_loop(diff: str, recent_commits: str = "", context_content: str =
     """Interactive loop for commit message generation"""
     feedback = ""
     previous_message = ""
-    
+
     while True:
         # Generate commit message
         message = generate_commit_message(
             diff, feedback, previous_message, recent_commits, context_content
         )
-        
+
         if not message:
             print(f"{Colors.RED}Failed to generate commit message{Colors.RESET}")
             return False
-        
+
         # Display the generated message
         print_section("Generated Commit Message", "")
         print_commit_message(message)
-        
+
         # Show options
         print(f"{Colors.BOLD}Options:{Colors.RESET}")
         print(f"  {Colors.GREEN}y{Colors.RESET} - Accept and commit")
         print(f"  {Colors.RED}n{Colors.RESET} - Cancel")
         print(f"  {Colors.YELLOW}<text>{Colors.RESET} - Enter feedback to regenerate")
         print()
-        
+
         try:
             user_input = input(f"{Colors.BOLD}Your choice: {Colors.RESET}").strip()
         except (KeyboardInterrupt, EOFError):
             print(f"\n{Colors.YELLOW}Cancelled{Colors.RESET}")
             return False
-        
+
         if user_input.lower() == 'y':
             # Commit with the message
             success, output = commit_changes(message)
@@ -314,17 +314,17 @@ def interactive_loop(diff: str, recent_commits: str = "", context_content: str =
             else:
                 print(f"\n{Colors.RED}(x) Commit failed: {output}{Colors.RESET}")
                 return False
-                
+
         elif user_input.lower() == 'n':
             print(f"{Colors.YELLOW}Cancelled{Colors.RESET}")
             return False
-            
+
         elif user_input:
             # Use input as feedback for regeneration
             feedback = user_input
             previous_message = message
             print(f"\n{Colors.CYAN}Regenerating with feedback: {feedback}{Colors.RESET}\n")
-            
+
         else:
             # Empty input, show options again
             print(f"{Colors.YELLOW}Please enter y, n, or your feedback{Colors.RESET}\n")
@@ -332,7 +332,7 @@ def interactive_loop(diff: str, recent_commits: str = "", context_content: str =
 
 def main():
     global OLLAMA_MODEL
-    
+
     parser = argparse.ArgumentParser(
         description="Generate commit messages using Ollama",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -358,9 +358,9 @@ Environment variables:
     parser.add_argument("--no-history", action="store_true",
                         help="Don't use git history for style reference")
     args = parser.parse_args()
-    
+
     OLLAMA_MODEL = args.model
-    
+
     # Check Ollama
     if not check_ollama():
         print(f"{Colors.RED}(x) Ollama is not running at {OLLAMA_HOST}{Colors.RESET}")
@@ -370,15 +370,15 @@ Environment variables:
 
     print_header("Commit Agent")
     print(f"{Colors.DIM}Model: {OLLAMA_MODEL}{Colors.RESET}")
-    
+
     # Get git status
     status = get_git_status()
     if not status:
         print(f"{Colors.YELLOW}No changes detected{Colors.RESET}")
         sys.exit(0)
-    
+
     print_section("Git Status", status)
-    
+
     # Stage all if requested
     if args.all:
         print(f"{Colors.CYAN}Staging all changes...{Colors.RESET}")
@@ -386,10 +386,10 @@ Environment variables:
         if not success:
             print(f"{Colors.RED}Failed to stage changes{Colors.RESET}")
             sys.exit(1)
-    
+
     # Get staged diff
     diff = get_staged_diff()
-    
+
     if not diff:
         # No staged changes, show unstaged
         unstaged = get_unstaged_diff()
@@ -401,20 +401,20 @@ Environment variables:
         else:
             print(f"{Colors.YELLOW}No changes to commit{Colors.RESET}")
         sys.exit(0)
-    
+
     print_section("Changes to Commit", diff[:2000] + ("..." if len(diff) > 2000 else ""))
-    
+
     if args.dry_run:
         print(f"{Colors.YELLOW}Dry run mode - not generating message{Colors.RESET}")
         sys.exit(0)
-    
+
     # Get recent commits for style reference
     recent_commits = ""
     if not args.no_history:
         recent_commits = get_recent_commits(10)
         if recent_commits:
             print(f"{Colors.DIM}Using {len(recent_commits.splitlines())} recent commits for style reference{Colors.RESET}")
-    
+
     # Get context file
     context_content = ""
     context_file = args.context or find_convention_file()
@@ -422,9 +422,9 @@ Environment variables:
         context_content = get_context_file(context_file)
         if context_content:
             print(f"{Colors.DIM}Using convention file: {context_file}{Colors.RESET}")
-    
+
     print()
-    
+
     # Run interactive loop
     success = interactive_loop(diff, recent_commits, context_content)
     sys.exit(0 if success else 1)

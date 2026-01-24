@@ -20,25 +20,25 @@ find_project_root() {
 parse_task_id() {
     local input="$1"
     local default_prefix="${2:-TASK}"
-    
+
     # Already has prefix (TASK-123, BUG-456, etc.)
     if [[ "$input" =~ ^[A-Z]+-[0-9]+$ ]]; then
         echo "$input"
         return 0
     fi
-    
+
     # Lowercase with prefix (task-123)
     if [[ "$input" =~ ^[a-z]+-[0-9]+$ ]]; then
         echo "${input^^}"  # Convert to uppercase
         return 0
     fi
-    
+
     # Just a number
     if [[ "$input" =~ ^[0-9]+$ ]]; then
         echo "${default_prefix}-${input}"
         return 0
     fi
-    
+
     # Return as-is if doesn't match patterns
     echo "$input"
 }
@@ -47,16 +47,16 @@ parse_task_id() {
 # feat/TASK-123-description -> TASK-123
 extract_task_from_branch() {
     local branch="$1"
-    
+
     # Remove prefix (feat/, fix/, hotfix/, etc.)
     local without_prefix="${branch#*/}"
-    
+
     # Extract task-id pattern
     if [[ "$without_prefix" =~ ^([A-Z]+-[0-9]+) ]]; then
         echo "${BASH_REMATCH[1]}"
         return 0
     fi
-    
+
     # No task-id found
     return 1
 }
@@ -69,7 +69,7 @@ parse_start_options() {
     TRY_NAME=""
     FROM_BRANCH="main"
     TASK_ID=""
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --detached)
@@ -96,7 +96,7 @@ parse_start_options() {
         esac
         shift
     done
-    
+
     if [[ -z "$TASK_ID" ]]; then
         echo "[ERROR] Task ID required" >&2
         return 1
@@ -116,29 +116,29 @@ COMMANDS:
         --detached          Use worktree mode (background work)
         --try=<name>        Name the try (for A/B testing)
         --from=<branch>     Branch to start from (default: main)
-    
+
     list                    List active tasks
     switch <branch>         Switch to branch or worktree
     status                  Show current work status
-    
+
     check                   Run quality checks (lint, test, intent)
                             Warnings only - does not block commit
-    
+
     verify                  Generate verification report
                             Creates .context/{task-id}/verification.md
-    
+
     retro                   Create/edit retrospective document
                             Creates .context/{task-id}/retrospective.md
-    
+
     sync                    Sync with base branch (rebase)
         --continue          Continue after resolving conflicts
         --abort             Abort rebase and restore state
-    
+
     submit                  Create MR and cleanup
         --sync              Sync before submit
         --draft             Create as draft MR
         --force             Skip pre-submit checks (not recommended)
-    
+
     cleanup <task-id>       Clean up completed task
 
 WORKFLOW:

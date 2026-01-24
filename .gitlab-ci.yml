@@ -75,6 +75,8 @@ report:
       optional: true
     - job: lint:yaml
       optional: true
+    - job: lint:whitespace
+      optional: true
   script:
     - cd ${CI_PROJECT_DIR}
     - mkdir -p out

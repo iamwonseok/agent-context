@@ -63,7 +63,7 @@ echo ""
 detect_os() {
     local os_name=""
     local os_version=""
-    
+
     case "$(uname -s)" in
         Darwin)
             os_name="macOS"
@@ -92,7 +92,7 @@ detect_os() {
             os_version="unknown"
             ;;
     esac
-    
+
     echo "${os_name}|${os_version}"
 }
 
@@ -100,7 +100,7 @@ detect_os() {
 check_command() {
     local cmd="$1"
     local name="$2"
-    
+
     if command -v "$cmd" >/dev/null 2>&1; then
         local version
         version=$("$cmd" --version 2>/dev/null | head -1 || echo "installed")
@@ -181,10 +181,10 @@ if [[ "$AUTO_INSTALL" == "true" ]]; then
     echo "Installing agent-context..."
     echo "========================================="
     echo ""
-    
+
     # Determine installation source
     SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-    
+
     if [[ -f "${SCRIPT_DIR}/setup.sh" ]]; then
         # Local installation (script is in agent-context repo)
         echo "[INFO] Installing from local source: ${SCRIPT_DIR}"
@@ -193,9 +193,9 @@ if [[ "$AUTO_INSTALL" == "true" ]]; then
         # Remote installation (one-liner)
         REPO_URL="https://github.com/example/agent-context.git"
         INSTALL_DIR="$HOME/.agent"
-        
+
         echo "[INFO] Cloning agent-context repository..."
-        
+
         if [[ -d "$INSTALL_DIR" ]]; then
             printf "${YELLOW}[WARN]${NC} ~/.agent already exists. Updating...\n"
             cd "$INSTALL_DIR"
@@ -209,13 +209,13 @@ if [[ "$AUTO_INSTALL" == "true" ]]; then
                 exit 1
             }
         fi
-        
+
         # Remove development files
         rm -rf "$INSTALL_DIR/_dev" 2>/dev/null || true
-        
+
         printf "${GREEN}[OK]${NC} Installed to ~/.agent\n"
     fi
-    
+
     echo ""
     echo "========================================="
     echo "Installation Complete!"

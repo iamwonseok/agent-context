@@ -80,7 +80,7 @@ TEST_CASES=""
 
 for file in "${FILES[@]}"; do
 	filename=$(basename "${file}")
-	
+
 	# Determine check function based on file type
 	if [[ "${file}" == *Dockerfile* ]]; then
 		check_func="check_dockerfile_file"
@@ -89,7 +89,7 @@ for file in "${FILES[@]}"; do
 		check_func="check_yaml_file"
 		classname="yaml.lint"
 	fi
-	
+
 	if ${check_func} "${file}"; then
 		PASS_COUNT=$((PASS_COUNT + 1))
 		[[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]] && echo -e "${GREEN}[PASS]${NC} ${file}"

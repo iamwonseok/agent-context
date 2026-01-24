@@ -7,7 +7,7 @@ set -e
 slugify() {
     local text="$1"
     local max_length="${2:-50}"
-    
+
     echo "$text" | \
         tr '[:upper:]' '[:lower:]' | \
         sed 's/[^a-z0-9]/-/g' | \
@@ -37,7 +37,7 @@ has_uncommitted_changes() {
 create_branch() {
     local branch_name="$1"
     local base="${2:-$(get_default_branch)}"
-    
+
     git checkout -b "$branch_name" "$base"
 }
 
@@ -52,16 +52,16 @@ pm_create() {
     local title="$1"
     local issue_type="${2:-Task}"
     local workflow_type="${3:-feature}"
-    
+
     if [[ -z "$title" ]]; then
         echo "[ERROR] Title required" >&2
         echo "Usage: pm create \"Feature title\" [--type Bug] [--workflow bugfix]" >&2
         return 1
     fi
-    
+
     local jira_key=""
     local gitlab_iid=""
-    
+
     # Create Jira issue
     if jira_configured; then
         echo "[INFO] Creating Jira issue..."
@@ -77,21 +77,21 @@ pm_create() {
                     issuetype: { name: $type }
                 }
             }')")
-        
+
         jira_key=$(echo "$jira_response" | jq -r '.key // empty')
-        
+
         if [[ -n "$jira_key" ]]; then
             echo "(v) Jira issue: $jira_key"
         else
             echo "[WARN] Failed to create Jira issue"
         fi
     fi
-    
+
     # Create GitLab issue
     if gitlab_configured; then
         echo "[INFO] Creating GitLab issue..."
         gitlab_iid=$(gitlab_issue_create "$title")
-        
+
         if [[ -n "$gitlab_iid" ]] && [[ "$gitlab_iid" != "null" ]]; then
             echo "(v) GitLab issue: #$gitlab_iid"
         else
@@ -99,7 +99,7 @@ pm_create() {
             gitlab_iid=""
         fi
     fi
-    
+
     # Determine branch prefix
     local prefix
     case "$workflow_type" in
@@ -108,28 +108,28 @@ pm_create() {
         hotfix)  prefix="$BRANCH_HOTFIX_PREFIX" ;;
         *)       prefix="$BRANCH_FEATURE_PREFIX" ;;
     esac
-    
+
     # Generate branch name
     local slug
     slug=$(slugify "$title")
-    
+
     local branch_name
     if [[ -n "$jira_key" ]]; then
         branch_name="${prefix}${jira_key}-${slug}"
     else
         branch_name="${prefix}${slug}"
     fi
-    
+
     # Create git branch
     echo "[INFO] Creating branch..."
     local default_branch
     default_branch=$(get_default_branch)
-    
+
     if ! create_branch "$branch_name" "$default_branch" 2>/dev/null; then
         echo "[ERROR] Failed to create branch: $branch_name" >&2
         return 1
     fi
-    
+
     echo "(v) Branch: $branch_name"
     echo ""
     echo "Initialization complete."
@@ -141,13 +141,13 @@ pm_finish() {
     local skip_lint="${2:-false}"
     local skip_tests="${3:-false}"
     local draft="${4:-false}"
-    
+
     # Check for uncommitted changes
     if has_uncommitted_changes; then
         echo "[ERROR] You have uncommitted changes. Commit or stash them first." >&2
         return 1
     fi
-    
+
     # Run lint
     if [[ "$skip_lint" != "true" ]]; then
         echo "[INFO] Running lint checks..."
@@ -157,7 +157,7 @@ pm_finish() {
             echo "[WARN] Lint not configured or failed, skipping"
         fi
     fi
-    
+
     # Run tests
     if [[ "$skip_tests" != "true" ]]; then
         echo "[INFO] Running tests..."
@@ -167,11 +167,11 @@ pm_finish() {
             echo "[WARN] Tests not configured or failed, skipping"
         fi
     fi
-    
+
     # Get current branch
     local current_branch
     current_branch=$(get_current_branch)
-    
+
     # Push branch
     echo "[INFO] Pushing $current_branch..."
     if ! push_branch "$current_branch" 2>/dev/null; then
@@ -179,11 +179,11 @@ pm_finish() {
         return 1
     fi
     echo "(v) Branch pushed"
-    
+
     # Create MR
     if gitlab_configured; then
         echo "[INFO] Creating merge request..."
-        
+
         # Generate title from branch name
         local title="$current_branch"
         # Remove prefix
@@ -195,16 +195,16 @@ pm_finish() {
         done
         # Convert hyphens to spaces and capitalize
         title=$(echo "$title" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-        
+
         gitlab_mr_create "$current_branch" "$target_branch" "$title" "" "$draft"
     fi
-    
+
     # Update Jira status
     if jira_configured; then
         # Try to extract Jira key from branch name
         local jira_key
         jira_key=$(echo "$current_branch" | grep -oE "${JIRA_PROJECT_KEY}-[0-9]+" | head -1)
-        
+
         if [[ -n "$jira_key" ]]; then
             echo "[INFO] Updating Jira status..."
             if jira_transition "$jira_key" "In Review" 2>/dev/null; then
@@ -214,7 +214,7 @@ pm_finish() {
             fi
         fi
     fi
-    
+
     echo ""
     echo "Feature complete."
 }

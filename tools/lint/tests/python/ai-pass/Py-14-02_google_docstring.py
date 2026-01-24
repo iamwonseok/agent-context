@@ -25,7 +25,7 @@ def calculate_discount(price: float, percentage: float) -> float:
         raise ValueError("Price cannot be negative")
     if not 0 <= percentage <= 100:
         raise ValueError("Percentage must be between 0 and 100")
-    
+
     discount = price * (percentage / 100)
     return price - discount
 

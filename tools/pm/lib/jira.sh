@@ -13,20 +13,20 @@ resolve_jira_url() {
         echo "$_JIRA_RESOLVED_URL"
         return
     fi
-    
+
     # Try to get serverInfo to find actual baseUrl
     local server_info
     server_info=$(curl -s "${JIRA_BASE_URL}/rest/api/2/serverInfo" 2>/dev/null || echo "{}")
-    
+
     local base_url
     base_url=$(echo "$server_info" | jq -r '.baseUrl // empty' 2>/dev/null)
-    
+
     if [[ -n "$base_url" ]] && [[ "$base_url" != "null" ]]; then
         _JIRA_RESOLVED_URL="$base_url"
     else
         _JIRA_RESOLVED_URL="$JIRA_BASE_URL"
     fi
-    
+
     echo "$_JIRA_RESOLVED_URL"
 }
 
@@ -42,24 +42,24 @@ jira_api() {
     local method="$1"
     local endpoint="$2"
     local data="$3"
-    
+
     local base_url
     base_url=$(resolve_jira_url)
-    
+
     # Cloud uses API v3, Server uses API v2
     local api_version="2"
     if is_jira_cloud; then
         api_version="3"
     fi
     local url="${base_url}/rest/api/${api_version}${endpoint}"
-    
+
     local curl_args=(
         -s
         -X "$method"
         -H "Content-Type: application/json"
         -H "Accept: application/json"
     )
-    
+
     # Authentication: Cloud uses Basic Auth, Server uses Bearer token
     if is_jira_cloud; then
         local auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
@@ -68,11 +68,11 @@ jira_api() {
         # Jira Server/Data Center uses Bearer token (Personal Access Token)
         curl_args+=(-H "Authorization: Bearer $JIRA_TOKEN")
     fi
-    
+
     if [[ -n "$data" ]]; then
         curl_args+=(-d "$data")
     fi
-    
+
     curl "${curl_args[@]}" "$url"
 }
 
@@ -82,10 +82,10 @@ jira_me() {
         echo "[ERROR] Jira not configured" >&2
         return 1
     fi
-    
+
     local response
     response=$(jira_api GET "/myself")
-    
+
     echo "=========================================="
     echo "Current Jira User"
     echo "=========================================="
@@ -99,15 +99,15 @@ jira_me() {
 jira_issue_list() {
     local jql="${1:-project = $JIRA_PROJECT_KEY ORDER BY updated DESC}"
     local max_results="${2:-20}"
-    
+
     if ! jira_configured; then
         echo "[ERROR] Jira not configured" >&2
         return 1
     fi
-    
+
     local encoded_jql=$(echo "$jql" | jq -sRr @uri)
     local response
-    
+
     # Cloud uses new search/jql endpoint, Server uses old search endpoint
     if is_jira_cloud; then
         local base_url
@@ -120,19 +120,19 @@ jira_issue_list() {
     else
         response=$(jira_api GET "/search?jql=${encoded_jql}&maxResults=${max_results}")
     fi
-    
+
     local issues
     issues=$(echo "$response" | jq -r '.issues[]' 2>/dev/null)
-    
+
     if [[ -z "$issues" ]]; then
         echo "No issues found."
         return 0
     fi
-    
+
     echo "------------------------------------------------------------------------"
     printf "%-12s | %-8s | %-12s | %s\n" "Key" "Type" "Status" "Summary"
     echo "------------------------------------------------------------------------"
-    
+
     echo "$response" | jq -r '.issues[] | [.key, .fields.issuetype.name, .fields.status.name, .fields.summary] | @tsv' | \
     while IFS=$'\t' read -r key type status summary; do
         # Truncate summary if too long
@@ -141,7 +141,7 @@ jira_issue_list() {
         fi
         printf "%-12s | %-8s | %-12s | %s\n" "$key" "$type" "$status" "$summary"
     done
-    
+
     echo "------------------------------------------------------------------------"
     local total
     total=$(echo "$response" | jq -r '.total // .issues | length')
@@ -151,20 +151,20 @@ jira_issue_list() {
 # View issue detail
 jira_issue_view() {
     local key="$1"
-    
+
     if [[ -z "$key" ]]; then
         echo "[ERROR] Issue key required" >&2
         return 1
     fi
-    
+
     if ! jira_configured; then
         echo "[ERROR] Jira not configured" >&2
         return 1
     fi
-    
+
     local response
     response=$(jira_api GET "/issue/${key}")
-    
+
     echo "============================================================"
     echo "Issue: $(echo "$response" | jq -r '.key')"
     echo "============================================================"
@@ -184,17 +184,17 @@ jira_issue_create() {
     local summary="$1"
     local issue_type="${2:-Task}"
     local description="$3"
-    
+
     if [[ -z "$summary" ]]; then
         echo "[ERROR] Summary required" >&2
         return 1
     fi
-    
+
     if ! jira_configured; then
         echo "[ERROR] Jira not configured" >&2
         return 1
     fi
-    
+
     local payload
     payload=$(jq -n \
         --arg project "$JIRA_PROJECT_KEY" \
@@ -209,19 +209,19 @@ jira_issue_create() {
                 description: (if $desc != "" then $desc else null end)
             }
         }')
-    
+
     local response
     response=$(jira_api POST "/issue" "$payload")
-    
+
     local key
     key=$(echo "$response" | jq -r '.key')
-    
+
     if [[ -z "$key" ]] || [[ "$key" == "null" ]]; then
         echo "[ERROR] Failed to create issue:" >&2
         echo "$response" | jq -r '.errors // .errorMessages // .' >&2
         return 1
     fi
-    
+
     echo "(v) Created: $key"
     jira_issue_view "$key"
 }
@@ -230,32 +230,32 @@ jira_issue_create() {
 jira_transition() {
     local key="$1"
     local transition_name="$2"
-    
+
     if ! jira_configured; then
         echo "[ERROR] Jira not configured" >&2
         return 1
     fi
-    
+
     # Get available transitions
     local transitions
     transitions=$(jira_api GET "/issue/${key}/transitions")
-    
+
     # Find transition ID
     local transition_id
     transition_id=$(echo "$transitions" | jq -r --arg name "$transition_name" \
         '.transitions[] | select(.name | ascii_downcase == ($name | ascii_downcase)) | .id')
-    
+
     if [[ -z "$transition_id" ]]; then
         echo "[ERROR] Transition '$transition_name' not found" >&2
         echo "Available transitions:"
         echo "$transitions" | jq -r '.transitions[].name'
         return 1
     fi
-    
+
     # Execute transition
     local payload
     payload=$(jq -n --arg id "$transition_id" '{ transition: { id: $id } }')
     jira_api POST "/issue/${key}/transitions" "$payload" > /dev/null
-    
+
     echo "(v) Transitioned $key to $transition_name"
 }

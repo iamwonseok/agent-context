@@ -265,16 +265,16 @@ main() {
 	# If no files specified, use AI test case directories
 	if [[ ${#files[@]} -eq 0 ]]; then
 		local ai_test_dir="${PROJECT_ROOT}/coding-convention/tests/c"
-		
+
 		# Check ai-pass and ai-fail directories
 		if [[ -d "${ai_test_dir}/ai-pass" ]] || [[ -d "${ai_test_dir}/ai-fail" ]]; then
 			echo "Using AI test case directories" >&2
-			
+
 			# Add ai-pass files
 			for file in "${ai_test_dir}"/ai-pass/*.c; do
 				[[ -f "${file}" ]] && files+=("${file}")
 			done
-			
+
 			# Add ai-fail files
 			for file in "${ai_test_dir}"/ai-fail/*.c; do
 				[[ -f "${file}" ]] && files+=("${file}")

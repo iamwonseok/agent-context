@@ -10,7 +10,7 @@ PERMISSION_HYBRID="hybrid"               # Requires human approval
 # Get default permission for a command (function-based for bash 3.x compatibility)
 get_default_permission() {
     local command="$1"
-    
+
     case "$command" in
         # Developer commands - mostly agent allowed
         dev_start|dev_list|dev_switch|dev_status)
@@ -22,7 +22,7 @@ get_default_permission() {
         dev_submit)
             echo "hybrid"  # Requires human approval before MR
             ;;
-        
+
         # Manager commands - mostly human only
         mgr_pending|mgr_review|mgr_status)
             echo "agent_allowed"  # Read-only, safe
@@ -30,7 +30,7 @@ get_default_permission() {
         mgr_approve|mgr_merge|mgr_assign)
             echo "human_only"  # Critical actions
             ;;
-        
+
         # Default
         *)
             echo "agent_allowed"
@@ -50,13 +50,13 @@ detect_executor() {
         echo "agent"
         return
     fi
-    
+
     # Check if running in a non-interactive shell
     if [[ ! -t 0 ]]; then
         echo "agent"
         return
     fi
-    
+
     echo "human"
 }
 
@@ -64,7 +64,7 @@ detect_executor() {
 # Usage: get_permission <command>
 get_permission() {
     local command="$1"
-    
+
     # Check project-specific overrides first
     local override
     override=$(get_project_permission_override "$command")
@@ -72,7 +72,7 @@ get_permission() {
         echo "$override"
         return
     fi
-    
+
     # Fall back to default
     get_default_permission "$command"
 }
@@ -81,11 +81,11 @@ get_permission() {
 get_project_permission_override() {
     local command="$1"
     local config_file
-    
+
     # Look for .agent/config.yaml or .project.yaml
     local project_root
     project_root=$(find_project_root 2>/dev/null) || return 1
-    
+
     for config_file in "$project_root/.agent/config.yaml" "$project_root/.project.yaml"; do
         if [[ -f "$config_file" ]]; then
             # Try to read permission override using yq or grep
@@ -99,7 +99,7 @@ get_project_permission_override() {
             fi
         fi
     done
-    
+
     return 1
 }
 
@@ -108,13 +108,13 @@ get_project_permission_override() {
 # Returns: 0 if allowed, 1 if denied
 check_permission() {
     local command="$1"
-    
+
     local executor
     executor=$(detect_executor)
-    
+
     local permission
     permission=$(get_permission "$command")
-    
+
     case "$permission" in
         "$PERMISSION_HUMAN_ONLY")
             if [[ "$executor" == "agent" ]]; then
@@ -134,7 +134,7 @@ check_permission() {
             # Always allowed
             ;;
     esac
-    
+
     return 0
 }
 
@@ -143,17 +143,17 @@ check_permission() {
 # Returns: 0 if approved, 1 if denied
 request_approval() {
     local action="$1"
-    
+
     local executor
     executor=$(detect_executor)
-    
+
     if [[ "$executor" == "agent" ]]; then
         echo "[APPROVAL NEEDED] $action"
         echo "[INFO] Running in agent mode - cannot request interactive approval"
         echo "[INFO] Use --force to skip approval or run manually"
         return 1
     fi
-    
+
     echo ""
     echo "=================================================="
     echo "[APPROVAL NEEDED]"
@@ -162,7 +162,7 @@ request_approval() {
     echo "Action: $action"
     echo ""
     read -p "Approve? [y/N] " response
-    
+
     if [[ "$response" =~ ^[Yy]$ ]]; then
         echo "[OK] Approved"
         return 0
@@ -180,7 +180,7 @@ show_permissions() {
     echo ""
     echo "Current executor: $(detect_executor)"
     echo ""
-    
+
     echo "Developer Commands:"
     local dev_cmds="dev_start dev_list dev_switch dev_status dev_check dev_verify dev_retro dev_sync dev_submit dev_cleanup"
     for cmd in $dev_cmds; do
@@ -188,7 +188,7 @@ show_permissions() {
         perm=$(get_permission "$cmd")
         printf "  %-15s : %s\n" "$cmd" "$perm"
     done
-    
+
     echo ""
     echo "Manager Commands:"
     local mgr_cmds="mgr_pending mgr_review mgr_approve mgr_merge mgr_assign mgr_status"
@@ -197,7 +197,7 @@ show_permissions() {
         perm=$(get_permission "$cmd")
         printf "  %-15s : %s\n" "$cmd" "$perm"
     done
-    
+
     echo ""
     echo "Legend:"
     echo "  agent_allowed : Can be run by agents or humans"

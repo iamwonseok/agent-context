@@ -19,6 +19,7 @@ repos:
       - id: trailing-whitespace
         name: Trim trailing whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: \.md$
 
       - id: mixed-line-ending
         name: Check line endings

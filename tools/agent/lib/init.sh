@@ -8,12 +8,12 @@ find_agent_context() {
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local agent_root
     agent_root="$(dirname "$(dirname "$(dirname "$script_dir")")")"
-    
+
     if [[ -f "${agent_root}/setup.sh" && -d "${agent_root}/tools/agent" ]]; then
         echo "$agent_root"
         return 0
     fi
-    
+
     # Check common locations
     if [[ -d ".agent" ]]; then
         echo "$(cd .agent && pwd)"
@@ -30,9 +30,9 @@ find_agent_context() {
 validate_secrets() {
     local project_root="$1"
     local errors=0
-    
+
     echo "[Secrets Validation]"
-    
+
     # Check JIRA token
     if [[ -n "$JIRA_TOKEN" ]]; then
         echo "  [OK] JIRA_TOKEN (environment variable)"
@@ -49,7 +49,7 @@ validate_secrets() {
         echo "  [WARN] JIRA token not found"
         errors=$((errors + 1))
     fi
-    
+
     # Check GitLab token
     if [[ -n "$GITLAB_TOKEN" ]]; then
         echo "  [OK] GITLAB_TOKEN (environment variable)"
@@ -66,7 +66,7 @@ validate_secrets() {
         echo "  [WARN] GitLab token not found"
         errors=$((errors + 1))
     fi
-    
+
     return $errors
 }
 
@@ -75,16 +75,16 @@ install_git_hooks() {
     local project_root="$1"
     local agent_context="$2"
     local hooks_dir="${project_root}/.git/hooks"
-    
+
     echo "[Git Hooks]"
-    
+
     if [[ ! -d "${project_root}/.git" ]]; then
         echo "  [SKIP] Not a git repository"
         return 0
     fi
-    
+
     mkdir -p "$hooks_dir"
-    
+
     # Pre-commit hook
     local pre_commit="${hooks_dir}/pre-commit"
     if [[ ! -f "$pre_commit" ]]; then
@@ -114,7 +114,7 @@ HOOK
     else
         echo "  [SKIP] pre-commit hook already exists"
     fi
-    
+
     # Commit-msg hook for conventional commits
     local commit_msg="${hooks_dir}/commit-msg"
     if [[ ! -f "$commit_msg" ]]; then
@@ -164,7 +164,7 @@ HOOK
 agent_init() {
     local force=false
     local skip_hooks=false
-    
+
     # Parse arguments
     for arg in "$@"; do
         case $arg in
@@ -187,17 +187,17 @@ agent_init() {
                 ;;
         esac
     done
-    
+
     echo "========================================="
     echo "Agent Project Initialization"
     echo "========================================="
     echo ""
-    
+
     # Find project root
     local project_root
     project_root=$(find_project_root 2>/dev/null) || project_root="$(pwd)"
     echo "Project: $project_root"
-    
+
     # Find agent-context
     local agent_context
     agent_context=$(find_agent_context) || {
@@ -206,7 +206,7 @@ agent_init() {
     }
     echo "Agent Context: $agent_context"
     echo ""
-    
+
     # Check if already initialized
     if [[ -f "${project_root}/.project.yaml" ]] && [[ "$force" != "true" ]]; then
         echo "[INFO] Project already initialized (.project.yaml exists)"
@@ -220,17 +220,17 @@ agent_init() {
             echo ""
         fi
     fi
-    
+
     # Validate secrets (warnings only, don't fail)
     validate_secrets "$project_root" || true
     echo ""
-    
+
     # Install git hooks
     if [[ "$skip_hooks" != "true" ]]; then
         install_git_hooks "$project_root" "$agent_context"
         echo ""
     fi
-    
+
     echo "========================================="
     echo "Initialization Complete"
     echo "========================================="

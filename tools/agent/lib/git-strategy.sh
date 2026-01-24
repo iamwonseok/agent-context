@@ -13,7 +13,7 @@ WORKTREE_ROOT=".worktrees"
 detect_git_mode() {
     local git_dir
     git_dir=$(git rev-parse --git-dir 2>/dev/null) || return 1
-    
+
     if [[ "$git_dir" == *".git/worktrees/"* ]]; then
         echo "detached"
     else
@@ -45,7 +45,7 @@ get_current_branch() {
 # HOTFIX-789 -> hotfix/
 get_branch_prefix() {
     local task_id="$1"
-    
+
     case "$task_id" in
         BUG-*|bug-*)
             echo "fix/"
@@ -76,7 +76,7 @@ generate_branch_name() {
 generate_worktree_name() {
     local task_id="$1"
     local try_name="$2"
-    
+
     if [[ -n "$try_name" ]]; then
         echo "${task_id}-${try_name}"
     else
@@ -88,31 +88,31 @@ generate_worktree_name() {
 list_task_branches() {
     echo "Active Task Branches:"
     echo ""
-    
+
     local branches
     branches=$(git branch --list 'feat/*' --list 'fix/*' --list 'hotfix/*' --list 'refactor/*' 2>/dev/null)
-    
+
     if [[ -z "$branches" ]]; then
         echo "  (none)"
         return
     fi
-    
+
     local current_branch
     current_branch=$(get_current_branch)
-    
+
     while IFS= read -r branch; do
         branch="${branch#  }"  # Remove leading spaces
         branch="${branch#\* }" # Remove asterisk for current
-        
+
         local marker=""
         if [[ "$branch" == "$current_branch" ]]; then
             marker=" <- current"
         fi
-        
+
         # Extract task ID
         local task_id
         task_id=$(extract_task_from_branch "$branch") || task_id="(no task)"
-        
+
         echo "  $branch ($task_id)$marker"
     done <<< "$branches"
 }
@@ -121,15 +121,15 @@ list_task_branches() {
 list_worktrees() {
     local project_root="$1"
     local worktree_root="$project_root/$WORKTREE_ROOT"
-    
+
     echo "Active Worktrees:"
     echo ""
-    
+
     if [[ ! -d "$worktree_root" ]]; then
         echo "  (none)"
         return
     fi
-    
+
     local found=false
     for dir in "$worktree_root"/*/; do
         if [[ -d "$dir" ]]; then
@@ -141,7 +141,7 @@ list_worktrees() {
             found=true
         fi
     done
-    
+
     if [[ "$found" == "false" ]]; then
         echo "  (none)"
     fi
@@ -151,7 +151,7 @@ list_worktrees() {
 sync_with_base() {
     local base_branch="${1:-$DEFAULT_BASE_BRANCH}"
     local action="${2:-rebase}"  # rebase, continue, abort
-    
+
     case "$action" in
         continue)
             echo "Continuing rebase..."
@@ -163,29 +163,29 @@ sync_with_base() {
             ;;
         *)
             echo "Syncing with $base_branch..."
-            
+
             # Fetch latest
             echo "  Fetching origin/$base_branch..."
             git fetch origin "$base_branch" || {
                 echo "[ERROR] Failed to fetch origin/$base_branch" >&2
                 return 1
             }
-            
+
             # Check if rebase is needed
             local current_branch
             current_branch=$(get_current_branch)
-            
+
             local behind
             behind=$(git rev-list --count "HEAD..origin/$base_branch" 2>/dev/null) || behind=0
-            
+
             if [[ "$behind" -eq 0 ]]; then
                 echo "  Already up to date."
                 return 0
             fi
-            
+
             echo "  $behind commits behind origin/$base_branch"
             echo "  Rebasing..."
-            
+
             if ! git rebase "origin/$base_branch"; then
                 echo ""
                 echo "[CONFLICT] Rebase conflicts detected!"
@@ -199,7 +199,7 @@ sync_with_base() {
                 echo "  Run: agent dev sync --abort"
                 return 1
             fi
-            
+
             echo "  Sync complete."
             ;;
     esac

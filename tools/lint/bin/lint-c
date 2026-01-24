@@ -130,7 +130,7 @@ fi
 
 for file in "${FILES[@]}"; do
 	filename=$(basename "${file}")
-	
+
 	if check_c_file "${file}"; then
 		PASS_COUNT=$((PASS_COUNT + 1))
 		if [[ "${QUIET}" == false && "${JUNIT_OUTPUT}" == false ]]; then
@@ -166,7 +166,7 @@ if [[ "${JUNIT_OUTPUT}" == true ]]; then
   <testsuite name=\"CodingConvention.C\" tests=\"${TOTAL}\" failures=\"${FAIL_COUNT}\" errors=\"0\" skipped=\"0\" timestamp=\"${timestamp}\" time=\"1\">
 ${TEST_CASES}  </testsuite>
 </testsuites>"
-	
+
 	if [[ -n "${JUNIT_FILE}" ]]; then
 		echo "${junit_output}" > "${JUNIT_FILE}"
 		echo -e "${GREEN}JUnit XML written to ${JUNIT_FILE}${NC}" >&2

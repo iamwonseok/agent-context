@@ -108,7 +108,7 @@ else
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
         -H "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
         "${GITLAB_URL}/api/v4/user" 2>/dev/null || echo "000")
-    
+
     if [ "$RESPONSE" = "200" ]; then
         test_pass "GitLab API connection (HTTP 200)"
     elif [ "$RESPONSE" = "401" ]; then
@@ -148,7 +148,7 @@ else
     echo -e "${YELLOW}[INFO]${NC} Full workflow test requires a configured test project"
     echo "  Set GITLAB_TEST_PROJECT to run full workflow tests"
     echo ""
-    
+
     if [ -n "$GITLAB_TEST_PROJECT" ]; then
         # TODO: Implement full workflow test
         # 1. Clone test project
@@ -177,7 +177,7 @@ else
         RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Basic $(echo -n ":${JIRA_API_TOKEN}" | base64)" \
             "${JIRA_URL}/rest/api/3/myself" 2>/dev/null || echo "000")
-        
+
         if [ "$RESPONSE" = "200" ]; then
             test_pass "JIRA API connection (HTTP 200)"
         else

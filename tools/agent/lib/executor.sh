@@ -23,12 +23,12 @@ source "$EXECUTOR_SCRIPT_DIR/permissions.sh" 2>/dev/null || true
 execute_with_check() {
     local command="$1"
     shift
-    
+
     # Check permission
     if ! check_permission "$command"; then
         return 1
     fi
-    
+
     # Execute the actual command function
     "$command" "$@"
 }
@@ -38,10 +38,10 @@ execute_with_check() {
 wait_for_human() {
     local reason="$1"
     local timeout="${2:-0}"  # 0 = no timeout
-    
+
     local executor
     executor=$(detect_executor)
-    
+
     echo ""
     echo "=================================================="
     echo "[HUMAN INTERVENTION REQUIRED]"
@@ -49,7 +49,7 @@ wait_for_human() {
     echo ""
     echo "Reason: $reason"
     echo ""
-    
+
     if [[ "$executor" == "agent" ]]; then
         # In agent mode, we can't wait interactively
         echo "[INFO] Running in agent mode"
@@ -61,10 +61,10 @@ wait_for_human() {
         echo ""
         return 1
     fi
-    
+
     # In human mode, wait for input
     echo "Press Enter when ready to continue, or Ctrl+C to cancel"
-    
+
     if [[ "$timeout" -gt 0 ]]; then
         echo "(Timeout: ${timeout}s)"
         read -t "$timeout" -p "> " || {
@@ -75,7 +75,7 @@ wait_for_human() {
     else
         read -p "> "
     fi
-    
+
     echo "[OK] Continuing..."
     return 0
 }
@@ -86,11 +86,11 @@ save_workflow_state() {
     local context_path="$1"
     local state="$2"
     local data="${3:-}"
-    
+
     local state_file="$context_path/workflow_state.yaml"
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    
+
     cat > "$state_file" << EOF
 # Workflow State
 # Updated: $timestamp
@@ -108,7 +108,7 @@ history:
   - state: "$state"
     timestamp: "$timestamp"
 EOF
-    
+
     echo "[INFO] Workflow state saved: $state"
 }
 
@@ -117,12 +117,12 @@ EOF
 load_workflow_state() {
     local context_path="$1"
     local state_file="$context_path/workflow_state.yaml"
-    
+
     if [[ ! -f "$state_file" ]]; then
         echo "$STATE_RUNNING"
         return
     fi
-    
+
     grep "^state:" "$state_file" | sed 's/state: *//' | tr -d '"'
 }
 
@@ -130,10 +130,10 @@ load_workflow_state() {
 # Usage: can_proceed <context_path>
 can_proceed() {
     local context_path="$1"
-    
+
     local state
     state=$(load_workflow_state "$context_path")
-    
+
     case "$state" in
         "$STATE_RUNNING"|"$STATE_COMPLETED")
             return 0
@@ -158,15 +158,15 @@ execute_or_human() {
     local command="$1"
     local human_instruction="$2"
     shift 2
-    
+
     local executor
     executor=$(detect_executor)
-    
+
     # Try to execute
     if "$command" "$@" 2>/dev/null; then
         return 0
     fi
-    
+
     # If failed, provide human instruction
     echo ""
     echo "[FALLBACK] Automated execution failed"
@@ -174,7 +174,7 @@ execute_or_human() {
     echo "Please perform manually:"
     echo "  $human_instruction"
     echo ""
-    
+
     if [[ "$executor" == "human" ]]; then
         wait_for_human "Manual action required"
     else
@@ -192,10 +192,10 @@ show_execution_info() {
     echo "Interactive: $([[ -t 0 ]] && echo "yes" || echo "no")"
     echo "CI Mode:     $([[ -n "${CI:-}" ]] && echo "yes" || echo "no")"
     echo ""
-    
+
     if [[ -n "${AGENT_MODE:-}" ]]; then
         echo "Agent Mode:  $AGENT_MODE"
     fi
-    
+
     echo "=================================================="
 }

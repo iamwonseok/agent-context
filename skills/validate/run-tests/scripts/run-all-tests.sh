@@ -41,9 +41,9 @@ detect_project_type() {
 # Run Python tests
 run_python_tests() {
     echo "Running Python tests with pytest..."
-    
+
     cd "${PROJECT_ROOT}"
-    
+
     pytest \
         --junit-xml="${OUTPUT_DIR}/junit.xml" \
         --cov=src \
@@ -52,73 +52,73 @@ run_python_tests() {
         --cov-report=term-missing \
         tests/ \
         2>&1 | tee "${OUTPUT_DIR}/test-output.txt"
-    
+
     return ${PIPESTATUS[0]}
 }
 
 # Run Node.js tests
 run_nodejs_tests() {
     echo "Running Node.js tests..."
-    
+
     cd "${PROJECT_ROOT}"
-    
+
     npm test -- \
         --coverage \
         --coverageDirectory="${OUTPUT_DIR}/coverage" \
         --reporters=default \
         --reporters=jest-junit \
         2>&1 | tee "${OUTPUT_DIR}/test-output.txt"
-    
+
     return ${PIPESTATUS[0]}
 }
 
 # Run CMake tests
 run_cmake_tests() {
     echo "Running CMake tests..."
-    
+
     cd "${PROJECT_ROOT}/build"
-    
+
     ctest \
         --output-junit "${OUTPUT_DIR}/junit.xml" \
         --output-on-failure \
         2>&1 | tee "${OUTPUT_DIR}/test-output.txt"
-    
+
     return ${PIPESTATUS[0]}
 }
 
 # Print summary
 print_summary() {
     local test_result=$1
-    
+
     echo ""
     echo "=========================================="
     echo "Test Verification Summary"
     echo "=========================================="
-    
+
     if [ -f "${OUTPUT_DIR}/junit.xml" ]; then
         # Parse JUnit XML (simple version)
         total=$(grep -oP 'tests="\K[0-9]+' "${OUTPUT_DIR}/junit.xml" | head -1)
         failures=$(grep -oP 'failures="\K[0-9]+' "${OUTPUT_DIR}/junit.xml" | head -1)
         errors=$(grep -oP 'errors="\K[0-9]+' "${OUTPUT_DIR}/junit.xml" | head -1)
         skipped=$(grep -oP 'skipped="\K[0-9]+' "${OUTPUT_DIR}/junit.xml" | head -1)
-        
+
         passed=$((total - failures - errors - skipped))
-        
+
         echo "Total Tests:    ${total:-0}"
         echo "Passed:         ${passed:-0}"
         echo "Failed:         ${failures:-0}"
         echo "Skipped:        ${skipped:-0}"
     fi
-    
+
     echo ""
     echo "Quality Gates:"
-    
+
     if [ "${test_result}" -eq 0 ]; then
         echo "  (v) All tests pass"
     else
         echo "  (x) Some tests failed"
     fi
-    
+
     echo ""
     if [ "${test_result}" -eq 0 ]; then
         echo "Status: PASSED"
@@ -137,12 +137,12 @@ print_summary() {
 main() {
     local project_type
     project_type=$(detect_project_type)
-    
+
     echo "Detected project type: ${project_type}"
     echo ""
-    
+
     local test_result=0
-    
+
     case "${project_type}" in
         python)
             run_python_tests || test_result=$?
@@ -158,9 +158,9 @@ main() {
             exit 1
             ;;
     esac
-    
+
     print_summary "${test_result}"
-    
+
     exit "${test_result}"
 }
 

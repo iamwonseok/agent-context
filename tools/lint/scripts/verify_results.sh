@@ -29,9 +29,9 @@ generate_actual_output() {
 	local lang="$1"
 	local output_file="${RESULT_DIR}/${lang}.actual"
 	local test_dir pass_dir fail_dir lint_cmd ext
-	
+
 	mkdir -p "${RESULT_DIR}"
-	
+
 	case "${lang}" in
 		c)
 			pass_dir="${PROJECT_ROOT}/tests/c/pass"
@@ -68,14 +68,14 @@ generate_actual_output() {
 			return 1
 			;;
 	esac
-	
+
 	{
 		local lang_upper
 		lang_upper=$(echo "${lang}" | tr '[:lower:]' '[:upper:]')
 		echo "# ${lang_upper} Lint Expected Output"
 		echo "# Generated: $(date -Iseconds)"
 		echo ""
-		
+
 		# Process pass directory
 		for pattern in ${ext}; do
 			for f in "${pass_dir}"/${pattern}; do
@@ -85,7 +85,7 @@ generate_actual_output() {
 				echo ""
 			done
 		done
-		
+
 		# Process fail directory
 		for pattern in ${ext}; do
 			for f in "${fail_dir}"/${pattern}; do
@@ -96,7 +96,7 @@ generate_actual_output() {
 			done
 		done
 	} > "${output_file}"
-	
+
 	echo "${output_file}"
 }
 
@@ -105,17 +105,17 @@ generate_actual_output() {
 verify_language() {
 	local lang="$1"
 	local expected_file="${EXPECTED_DIR}/${lang}.expected"
-	
+
 	if [[ ! -f "${expected_file}" ]]; then
 		echo -e "${YELLOW}[SKIP]${NC} ${lang}: No expected file" >&2
 		return 0
 	fi
-	
+
 	echo "Checking ${lang}..." >&2
-	
+
 	local actual_file
 	actual_file=$(generate_actual_output "${lang}")
-	
+
 	if [[ ! -f "${actual_file}" ]]; then
 		echo -e "${RED}[FAIL]${NC} ${lang}: Failed to generate actual output" >&2
 		TEST_CASES+="$(junit_fail "verify.${lang}" "output_generation" "Failed to generate output" "1.00")"$'\n'
@@ -123,16 +123,16 @@ verify_language() {
 		TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 		return 1
 	fi
-	
+
 	# Compare files (ignoring header lines and normalizing paths)
 	# Remove: header lines (#), absolute paths, trailing whitespace
 	local diff_output
 	diff_output=$(diff -u \
 		<(grep -v "^#" "${expected_file}" | sed 's|/[^ ]*tests/|tests/|g; s/[[:space:]]*$//') \
 		<(grep -v "^#" "${actual_file}" | sed 's|/[^ ]*tests/|tests/|g; s/[[:space:]]*$//') 2>&1 || true)
-	
+
 	TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
-	
+
 	if [[ -z "${diff_output}" ]]; then
 		echo -e "${GREEN}[PASS]${NC} ${lang}: Output matches expected" >&2
 		TEST_CASES+="$(junit_pass "verify.${lang}" "output_match" "1.00" "Output matches expected")"$'\n'
@@ -156,14 +156,14 @@ verify_language() {
 # Args: $1=language (or "all")
 regenerate_expected() {
 	local lang="$1"
-	
+
 	if [[ "${lang}" == "all" ]]; then
 		for l in c bash make python yaml; do
 			regenerate_expected "${l}"
 		done
 		return
 	fi
-	
+
 	echo "Regenerating ${lang}.expected..." >&2
 	local actual_file
 	actual_file=$(generate_actual_output "${lang}")
@@ -175,7 +175,7 @@ regenerate_expected() {
 main() {
 	local cmd="${1:-all}"
 	shift || true
-	
+
 	case "${cmd}" in
 		--regenerate|-r)
 			regenerate_expected "${1:-all}"
@@ -187,31 +187,31 @@ main() {
 			exit 0
 			;;
 	esac
-	
+
 	local languages="${cmd}"
 	if [[ "${languages}" == "all" ]]; then
 		languages="c bash make python yaml"
 	fi
-	
+
 	echo "" >&2
 	echo "=========================================" >&2
 	echo "Verifying lint output against expected..." >&2
 	echo "=========================================" >&2
-	
+
 	local verify_failed=0
 	for lang in ${languages}; do
 		verify_language "${lang}" || verify_failed=1
 	done
-	
+
 	echo "" >&2
 	echo "=========================================" >&2
 	echo "Verification Summary" >&2
 	echo "=========================================" >&2
 	echo "Total: ${TOTAL_CHECKS} | Passed: ${TOTAL_PASS} | Failed: ${TOTAL_FAIL}" >&2
-	
+
 	# Output JUnit XML
 	junit_testsuite "Verify.LintOutput" "${TOTAL_CHECKS}" "${TOTAL_FAIL}" "${TEST_CASES}" "1"
-	
+
 	exit ${verify_failed}
 }
 

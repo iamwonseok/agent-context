@@ -120,14 +120,14 @@ lint:c:ai:
   script:
     - |
       cd ${CI_PROJECT_DIR}
-      
+
       # Skip if explicitly disabled
       if [ "${ENABLE_AI_REVIEW}" = "false" ]; then
         echo "AI review disabled via ENABLE_AI_REVIEW=false"
         echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="skipped"><skipped message="AI review disabled"/></testcase></testsuite></testsuites>' > junit-c-ai.xml
         exit 0
       fi
-      
+
       # Determine Ollama host (try multiple options for Docker-to-host connectivity)
       if [ -n "${OLLAMA_HOST}" ]; then
         echo "Using configured OLLAMA_HOST: ${OLLAMA_HOST}"
@@ -142,7 +142,7 @@ lint:c:ai:
           fi
         done
       fi
-      
+
       # Check if Ollama is accessible
       if [ -z "${OLLAMA_HOST}" ]; then
         echo "WARNING: Ollama not found - skipping AI review"
@@ -154,16 +154,16 @@ lint:c:ai:
         echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="ollama_connection"><skipped message="Ollama not available">Ollama not found on host - AI review skipped</skipped></testcase></testsuite></testsuites>' > junit-c-ai.xml
         exit 0
       fi
-      
+
       # Verify model is available
       echo "Checking model ${OLLAMA_MODEL}..."
       if ! curl -s "${OLLAMA_HOST}/api/tags" | grep -q "${OLLAMA_MODEL}"; then
         echo "WARNING: Model ${OLLAMA_MODEL} not found. Attempting to pull..."
         curl -s "${OLLAMA_HOST}/api/pull" -d "{\"name\": \"${OLLAMA_MODEL}\"}" || true
       fi
-      
+
       echo "Running AI code review with ${OLLAMA_MODEL}..."
-      
+
       # Get changed C files in MR (AI reviews only changed files)
       CHECK_FILES=""
       if [ "${CI_PIPELINE_SOURCE}" = "merge_request_event" ]; then
@@ -178,30 +178,30 @@ lint:c:ai:
       else
         echo "Running on default branch - checking test cases"
       fi
-      
+
       echo "=== Debug Info ==="
       echo "SCRIPT_DIR=${SCRIPT_DIR}"
       echo "CHECK_FILES=${CHECK_FILES}"
       echo "OLLAMA_HOST=${OLLAMA_HOST}"
       echo "OLLAMA_MODEL=${OLLAMA_MODEL}"
-      
+
       # Verify Ollama is responding
       if ! curl -s --max-time 5 "${OLLAMA_HOST}/api/tags" >/dev/null 2>&1; then
         echo "WARNING: Ollama not responding at ${OLLAMA_HOST} - skipping AI review"
         echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="CodingConvention.C.AI" tests="0" failures="0" errors="0" skipped="1"><testcase classname="c.ai" name="ollama_connection"><skipped message="Ollama not responding">Cannot connect to ${OLLAMA_HOST} - AI review skipped</skipped></testcase></testsuite></testsuites>' > junit-c-ai.xml
         exit 0
       fi
-      
+
       echo "Ollama is ready, starting review..."
-      
+
       # Run AI review
       mkdir -p ai-review-results
       ls -la ${SCRIPT_DIR}/test_c_ai_review.sh 2>/dev/null || echo "Script not found at ${SCRIPT_DIR}"
-      
+
       echo ""
       echo "=== Running AI Review ==="
       OLLAMA_HOST="${OLLAMA_HOST}" OLLAMA_MODEL="${OLLAMA_MODEL}" REPORT_FILE=ai-review-results/ai-review-report.md ${SCRIPT_DIR}/test_c_ai_review.sh ${CHECK_FILES} > junit-c-ai.xml || echo "Script exited with code $?"
-      
+
       echo ""
       echo "=== Generated JUnit XML ==="
       ls -la junit-c-ai.xml 2>/dev/null || echo "junit-c-ai.xml not found!"
@@ -308,6 +308,33 @@ lint:yaml:
         - "**/*.yml"
         - "**/Dockerfile"
         - "**/*.Dockerfile"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Trailing whitespace (non-Markdown)
+lint:whitespace:
+  extends: .lint:test
+  script:
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p ${CI_PROJECT_DIR}/lint-results
+    - |
+      CHECK_FILES=""
+      if [ "${CI_PIPELINE_SOURCE}" = "merge_request_event" ]; then
+        CHECK_FILES=$(git diff --name-only --diff-filter=ACMR ${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA} 2>/dev/null | tr '\n' ' ' || true)
+        if [ -n "${CHECK_FILES}" ]; then
+          echo "Checking changed files only:"
+          echo "${CHECK_FILES}"
+        fi
+      fi
+    - RESULT_FILE=${CI_PROJECT_DIR}/lint-results/whitespace.results ${SCRIPT_DIR}/test_whitespace_junit.sh ${CHECK_FILES} > junit-whitespace.xml || true
+  artifacts:
+    when: always
+    paths:
+      - junit-whitespace.xml
+      - lint-results/
+    reports:
+      junit: junit-whitespace.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # Verify lint results against expected values

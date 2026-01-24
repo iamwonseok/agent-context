@@ -22,9 +22,9 @@ def process_notification(email: str, message: str) -> bool:
     """Process and send a notification email."""
     if not validate_email(email):
         return False
-    
+
     success = send_email(email, "Notification", message)
     if success:
         log_email_sent(email, "Notification")
-    
+
     return success
