@@ -134,3 +134,99 @@ agent dev submit --sync
 - `pm jira issue assign <KEY> <ASSIGNEE>`
 - (선택) `pm jira issue update <KEY> --due-date ... --labels ...`
 
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 유휴 인력 부재 시 재할당/재계획을 수행하는 방법입니다.
+
+### Git Only & CLI Commands
+
+```bash
+# 1. P1 Issue 생성
+jira issue create \
+  --type Bug \
+  --summary "P1 Incident: payment callback delayed" \
+  --priority P1 \
+  --project G6SOCTC
+
+# 2. 유휴 인력 확인 (실패)
+jira issue list --jql "assignee = <ASSIGNEE_A> AND statusCategory = \"In Progress\""
+jira issue list --jql "assignee = <ASSIGNEE_B> AND statusCategory = \"In Progress\""
+# 결과: 모두 In Progress 이슈 보유 → 유휴 없음
+
+# 3-4. 재계획 (Jira UI 필수)
+# Jira UI에서 수행:
+# - 기존 작업 <ONGOING_KEY>: "In Progress" → "To Do" 전환
+# - Due date 조정, 라벨 추가 ("deprioritized", "paused")
+# - 코멘트: "P1으로 인해 중단. 재개 조건: P1 완료 + 매니저 승인"
+# - P1 Issue <P1_KEY>: Assignee 할당
+
+# 5. P1 작업 개발
+git checkout -b fix/G6SOCTC-789 main
+vim src/payment.py
+make lint && make test
+git add src/payment.py
+git commit -m "fix: mitigate payment callback delay"
+git push -u origin fix/G6SOCTC-789
+glab mr create --title "fix: payment callback delay"
+
+# 6. 보고 (수동)
+# Slack/Email로 팀장 보고:
+# [Escalation] P1 Incident requires replanning
+# - P1: G6SOCTC-789
+# - Paused: G6SOCTC-456
+# - Expected impact: deadline slip by 2 days
+# - Mitigation: add buffer / request extra resources
+```
+
+### UI Steps (필수)
+
+**Jira UI**:
+- 기존 작업 상태 전환 (In Progress → To Do)
+- Due date/스프린트 조정
+- 라벨 변경 ("deprioritized")
+- P1 Issue Assignee 할당
+- 재계획 근거 코멘트 작성
+
+**보고**:
+- Slack/Email로 팀장 에스컬레이션
+- Confluence에 재계획 문서 작성 (선택)
+
+---
+
+## Responsibility Boundary
+
+### CLI Responsibilities
+
+**Jira 조회/생성**:
+- P1 Issue 생성 (jira-cli)
+- JQL로 유휴 인력 조회
+- 상태 조회
+
+**Git 작업**:
+- P1 브랜치 생성/개발/커밋
+- Push & MR 생성
+
+### UI Responsibilities (조직 정책 의존)
+
+**Jira 재계획** (UI 필수):
+- 기존 작업 상태 변경
+- Due date/라벨/스프린트 조정
+- Assignee 재할당
+- 재계획 근거 문서화
+
+**조직 보고**:
+- 팀장/관리자 에스컬레이션
+- 재계획 승인 받기
+- 영향 범위 공유
+
+### 현재 갭
+
+완전 CLI 자동화를 위해 필요:
+- `pm jira issue transition <KEY> "<Status>"`
+- `pm jira issue assign <KEY> <ASSIGNEE>`
+- `pm jira issue update <KEY> --due-date <DATE> --labels <LABELS>`
+
+**주의**: 재계획은 조직 정책/우선순위가 개입하므로, CLI 자동화보다는 **기록/문서화 중심** 접근이 철학에 부합
+

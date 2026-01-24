@@ -104,3 +104,108 @@ agent mgr review <mr-id>
 | 3 | `agent dev start <KEY>`로 작업을 시작했는가 | [ ] |
 | 4 | `agent dev submit`로 MR을 만들었는가 | [ ] |
 
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 순수 CLI + UI로 급작스런 문제를 처리하는 방법입니다.
+
+### Git Only & CLI Commands
+
+```bash
+# 1. Jira Issue 생성 (jira-cli 사용)
+jira issue create \
+  --type Bug \
+  --summary "Incident: login API returns 500" \
+  --description "Repro: ...\nImpact: ...\nMitigation: ..." \
+  --project G6SOCTC
+
+# Issue 키 확인 (예: G6SOCTC-456)
+
+# 2. 유휴 인력 찾기 (JQL 조회)
+jira issue list \
+  --jql "assignee = <ASSIGNEE_A> AND statusCategory = \"In Progress\"" \
+  --limit 50
+
+jira issue list \
+  --jql "assignee = <ASSIGNEE_B> AND statusCategory = \"In Progress\"" \
+  --limit 50
+
+# 판정: 결과가 0개인 사람이 유휴 인력
+
+# 3. Assignee 할당 (갭: CLI 미지원, UI 사용)
+# → Jira UI에서 Issue의 Assignee 필드 변경
+
+# 4. 개발자가 작업 시작
+git checkout -b fix/G6SOCTC-456 main
+
+# 5. 개발/테스트
+vim src/auth_api.py
+make lint && make test
+
+# 6. 커밋
+git add src/auth_api.py
+git commit -m "fix: handle 500 error on login API
+
+- Add null check for user object
+- Add error logging
+- Add unit test for edge case
+
+Fixes: G6SOCTC-456"
+
+# 7. Push & MR
+git push -u origin fix/G6SOCTC-456
+glab mr create --title "fix: handle 500 on login API"
+
+# 8. Jira 상태 전환 (선택)
+jira issue transition G6SOCTC-456 "In Review"
+```
+
+### UI Steps (플랫폼별 작업)
+
+**Jira UI에서 필수 작업**:
+- Issue 생성 (또는 jira-cli)
+- Assignee 할당 (현재 CLI 미지원)
+- 상태 전환 (또는 jira-cli)
+
+**GitLab/GitHub UI**:
+- MR/PR 생성 (또는 glab/gh CLI)
+- 리뷰/승인
+- 머지
+
+---
+
+## Responsibility Boundary
+
+### CLI Responsibilities
+
+**Jira 조회**:
+- Issue 생성 (`jira-cli` 또는 `pm jira issue create`)
+- JQL 조회로 유휴 인력 찾기
+- 상태 전환 (`jira-cli` 또는 `pm`)
+
+**Git 작업**:
+- 브랜치 생성/커밋/Push
+- MR/PR 생성 (`glab`/`gh`)
+
+**품질 체크**:
+- Lint/Test (`make lint`, `make test`)
+
+### UI Responsibilities (Platform-specific)
+
+**Jira UI** (일부 CLI 가능):
+- Issue 생성 (jira-cli로도 가능)
+- **Assignee 할당** (현재 CLI 미지원, UI 필수)
+- 상태 전환 (jira-cli로도 가능)
+- 우선순위/라벨 설정
+
+**GitLab/GitHub UI**:
+- MR/PR 리뷰/승인/머지
+- 인라인 코멘트
+- Draft → Ready 전환
+
+### 현재 갭 (추가 구현 필요)
+
+- `pm jira issue assign <KEY> <ASSIGNEE>`: CLI로 assignee 할당
+- `pm jira issue transition <KEY> "<Status>"`: CLI로 상태 전환 (내부 함수는 존재)
+

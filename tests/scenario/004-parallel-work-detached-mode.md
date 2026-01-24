@@ -236,3 +236,169 @@ agent dev status
 - Worktree 내에서 작업 시 **반드시 해당 디렉터리로 이동**해야 합니다.
 - 같은 브랜치를 여러 worktree에서 checkout하면 충돌이 발생할 수 있습니다.
 - Cleanup하지 않은 worktree는 디스크 공간을 차지합니다.
+
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 순수 `git worktree`로 병렬 작업을 수행하는 방법입니다.
+
+### Git Only (Worktree 직접 사용)
+
+```bash
+# 1. Approach A 시작
+git worktree add .worktrees/TASK-100-approach-a \
+  -b feat/TASK-100-approach-a \
+  main
+
+cd .worktrees/TASK-100-approach-a
+
+# Context 생성 (선택)
+mkdir -p .context/TASK-100
+cat > .context/TASK-100/summary.yaml << EOF
+task_id: TASK-100
+approach: approach-a
+strategy: refactor existing code
+EOF
+
+# 작업
+echo "// approach-a: refactor existing code" > approach-a-test.txt
+git add approach-a-test.txt
+git commit -m "feat: approach-a - refactor existing code"
+
+# 품질 체크
+make lint && make test
+
+cd ../..
+
+# 2. Approach B 시작
+git worktree add .worktrees/TASK-100-approach-b \
+  -b feat/TASK-100-approach-b \
+  main
+
+cd .worktrees/TASK-100-approach-b
+
+# Context 생성 (선택)
+mkdir -p .context/TASK-100
+cat > .context/TASK-100/summary.yaml << EOF
+task_id: TASK-100
+approach: approach-b
+strategy: new module design
+EOF
+
+# 작업
+echo "// approach-b: new module" > approach-b-test.txt
+git add approach-b-test.txt
+git commit -m "feat: approach-b - new module design"
+
+# 품질 체크
+make lint && make test
+
+cd ../..
+
+# 3. 비교
+git log feat/TASK-100-approach-a --oneline
+git log feat/TASK-100-approach-b --oneline
+
+# 파일 차이
+diff .worktrees/TASK-100-approach-a/src \
+     .worktrees/TASK-100-approach-b/src
+
+# 복잡도 비교 (radon 등)
+cd .worktrees/TASK-100-approach-a
+radon cc src/ -s
+cd ../../.worktrees/TASK-100-approach-b
+radon cc src/ -s
+cd ../..
+
+# 4. 승자 선택 및 제출 (approach-a)
+cd .worktrees/TASK-100-approach-a
+
+# Verification (선택)
+cat > .context/TASK-100/verification.md << EOF
+# Comparison Results
+
+## Approach A (Selected)
+- Complexity: 3.2
+- Test coverage: 92%
+- Code reuse: High
+
+## Approach B
+- Complexity: 4.1
+- Test coverage: 88%
+- Code reuse: Low
+
+## Decision
+Selected approach-a for better maintainability
+EOF
+
+# Push & MR
+git push -u origin feat/TASK-100-approach-a
+glab mr create \
+  --title "feat: TASK-100 (approach-a selected)" \
+  --description "$(cat .context/TASK-100/verification.md)"
+
+cd ../..
+
+# 5. 정리
+# approach-b 제거
+git worktree remove .worktrees/TASK-100-approach-b
+git branch -D feat/TASK-100-approach-b
+
+# approach-a는 MR 머지 후 정리
+# (MR 머지 후)
+git worktree remove .worktrees/TASK-100-approach-a
+git branch -d feat/TASK-100-approach-a
+```
+
+### UI Steps
+
+**GitLab/GitHub UI**:
+- MR/PR 생성 (또는 glab/gh CLI)
+- 리뷰/승인
+- 머지
+
+**Worktree 전환** (선택):
+- 터미널에서 `cd` 명령으로 직접 전환
+- 또는 IDE의 폴더 열기 기능 사용
+
+---
+
+## Responsibility Boundary
+
+### CLI Responsibilities
+
+**Git Worktree 관리**:
+- Worktree 생성 (`git worktree add`)
+- Worktree 목록 (`git worktree list`)
+- Worktree 제거 (`git worktree remove`)
+
+**각 Worktree 내 작업**:
+- 독립적인 개발/커밋
+- 품질 체크
+- Context 관리
+
+**비교 & 선택**:
+- 커밋 히스토리 비교
+- 복잡도/성능 비교
+- 승자 선택 후 MR 생성
+
+### UI Responsibilities
+
+**MR/PR 관리**:
+- 리뷰/승인/머지
+
+**Agent가 추가로 제공하는 것**:
+- `agent dev list`: Interactive + Detached 통합 뷰
+- `agent dev switch <target>`: 자동 디렉터리 전환
+- `agent dev cleanup <task>`: 안전한 정리 (stale 감지)
+- Context 통합 관리
+
+### Manual vs Agent
+
+| 작업 | Manual | Agent |
+|------|--------|-------|
+| Worktree 생성 | `git worktree add` | `agent dev start --detached` |
+| 전환 | `cd .worktrees/...` | `agent dev switch <target>` |
+| 목록 | `git worktree list` | `agent dev list` (통합 뷰) |
+| 정리 | `git worktree remove` | `agent dev cleanup` (안전) |

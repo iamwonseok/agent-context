@@ -322,3 +322,180 @@ agent mgr approve <mr-id>  # Reviewer2
 - `agent dev ready`: Draft → Ready 전환 커맨드
 - `agent mgr request-changes <mr-id>`: 변경 요청 상태 설정
 - `agent mgr inline-comment <mr-id> <file> <line> "..."`: 인라인 코멘트
+
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 순수 Git + CLI로 Draft MR 반복 리뷰를 수행하는 방법입니다.
+
+### Git Only & CLI Commands
+
+```bash
+# Phase 1: Draft MR 생성
+
+# 1. 작업 시작
+git checkout -b feat/TASK-400 main
+
+# 2. 초기 구현 (WIP)
+echo "function featureX() { /* TODO */ }" > feature-x.js
+git add feature-x.js
+git commit -m "feat: WIP - initial featureX scaffold"
+
+# 3. Draft MR 생성
+# GitLab
+glab mr create \
+  --draft \
+  --title "feat: featureX implementation" \
+  --description "Early WIP, feedback welcome"
+
+# GitHub
+gh pr create \
+  --draft \
+  --title "feat: featureX implementation" \
+  --body "Early WIP, feedback welcome"
+
+# Phase 2: 첫 번째 리뷰 사이클
+
+# 4. 리뷰어가 MR 확인
+glab mr list --state opened  # Draft 포함
+glab mr view <mr-id>
+
+# 5. 리뷰어가 코멘트 작성 (GitLab UI 또는 CLI)
+glab mr note <mr-id> "featureX needs error handling. Also add unit tests."
+
+# 6. 개발자가 피드백 반영
+cat > feature-x.js << 'EOF'
+function featureX() {
+  try {
+    return { success: true };
+  } catch (error) {
+    console.error('featureX failed:', error);
+    throw error;
+  }
+}
+EOF
+
+git add feature-x.js
+git commit -m "feat: add error handling and unit test for featureX"
+git push  # 기존 MR에 자동 반영
+
+# Phase 3: 두 번째 리뷰 사이클
+
+# 7. 리뷰어가 재확인
+glab mr view <mr-id>
+glab mr note list <mr-id>
+
+# 8. 추가 피드백
+glab mr note <mr-id> "Looks better! Please add JSDoc comments."
+
+# 9. 최종 수정
+cat > feature-x.js << 'EOF'
+/**
+ * Feature X implementation
+ */
+function featureX() {
+  try {
+    return { success: true };
+  } catch (error) {
+    console.error('featureX failed:', error);
+    throw error;
+  }
+}
+EOF
+
+git add feature-x.js
+git commit -m "docs: add JSDoc comments to featureX"
+git push
+
+# Phase 4: Draft → Ready 전환
+
+# GitLab UI: "Mark as ready" 버튼 클릭
+# 또는 CLI로 title 변경 (Draft: 접두사 제거)
+glab mr update <mr-id> --title "feat: featureX implementation"
+
+# GitHub: "Ready for review" 버튼 클릭
+# 또는 CLI
+gh pr ready <pr-id>
+
+# Phase 5: 최종 승인
+
+# 10. 리뷰어가 최종 확인 및 승인
+glab mr view <mr-id>
+glab mr note <mr-id> "LGTM! Approved."
+glab mr approve <mr-id>
+
+# 11. 머지 (승인 후)
+# GitLab UI 또는 CLI
+glab mr merge <mr-id>
+
+# GitHub
+gh pr merge <pr-id>
+
+# 12. 정리
+git checkout main
+git pull
+git branch -d feat/TASK-400
+```
+
+### UI Steps (플랫폼별)
+
+**Draft MR 생성** (선택: CLI 또는 UI)
+- GitLab/GitHub UI에서 "New MR/PR" → Draft 체크
+- 또는 `glab mr create --draft` / `gh pr create --draft`
+
+**인라인 코멘트** (UI 권장)
+- 코드 라인별 상세 피드백
+- UI에서 직접 코드 블록에 코멘트
+
+**Draft → Ready** (플랫폼별)
+- GitLab: UI에서 "Mark as ready" 버튼 또는 `glab mr update --ready`
+- GitHub: UI에서 "Ready for review" 버튼 또는 `gh pr ready`
+
+**승인 & 머지**
+- UI에서 Approve 버튼
+- 또는 `glab mr approve` / `gh pr review --approve`
+- 머지: UI 또는 `glab mr merge` / `gh pr merge`
+
+---
+
+## Responsibility Boundary
+
+### CLI Responsibilities
+
+**Git 작업**:
+- 브랜치 생성/커밋
+- 추가 커밋 후 push
+- Draft MR 생성 (`glab --draft`, `gh --draft`)
+
+**MR 조회**:
+- MR 목록/상세 조회
+- 코멘트 조회
+- MR 전체 코멘트 추가
+
+### UI Responsibilities (Platform-specific)
+
+**Draft 관리**:
+- Draft → Ready 전환 (일부 CLI 가능)
+- Ready → Draft 복귀 (필요 시)
+
+**리뷰**:
+- **인라인 코멘트** (코드 라인별, UI 권장)
+- 변경 요청 (Request changes)
+- 승인 (Approve)
+
+**머지**:
+- 머지 버튼 클릭 (또는 CLI)
+- 머지 옵션 선택 (Fast-forward, Squash, Merge commit)
+
+### Agent가 추가로 제공하는 것
+
+**편의 기능**:
+- `agent dev submit --draft` = `git push` + `glab mr create --draft`
+- `agent mgr pending` = Draft 포함 MR 목록 조회
+- `agent mgr review <mr-id> --comment` = MR 전체 코멘트 추가
+- `agent mgr approve <mr-id>` = MR 승인 (human_only)
+
+**주의**:
+- 인라인 코멘트는 UI 사용 권장 (CLI 복잡)
+- Draft → Ready 전환은 UI 또는 플랫폼 API 직접 호출

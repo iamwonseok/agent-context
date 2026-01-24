@@ -15,6 +15,13 @@ skills:
 
 # Refactor
 
+## Implementation Status
+
+- **Status**: Implemented
+- **CLI Coverage**: 95% (Jira auto-transition optional)
+- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#refactor-manual)
+- **Last Updated**: 2026-01-24
+
 ## When to Use
 
 - Improve code structure

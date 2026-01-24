@@ -11,6 +11,13 @@ skills:
 
 # MR Approval
 
+## Implementation Status
+
+- **Status**: Implemented
+- **CLI Coverage**: 85% (inline comments via UI recommended)
+- **Manual Alternative**: MR 리뷰/승인은 GitLab/GitHub UI 또는 `glab`/`gh` CLI로 가능
+- **Last Updated**: 2026-01-24
+
 ## When to Use
 
 - MR ready for review

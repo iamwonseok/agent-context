@@ -12,6 +12,14 @@ skills:
 
 # Initiative Planning
 
+## Implementation Status
+
+- **Status**: Roadmap
+- **CLI Coverage**: 0% (문서 정의만 존재)
+- **Manual Alternative**: Jira UI에서 Epic 또는 Initiative 타입 Issue 생성 + 하위 Epic/Task 연결
+- **Last Updated**: 2026-01-24
+- **Note**: 현재 `agent mgr initiative` 명령어는 미구현 상태입니다.
+
 ## When to Use
 
 - Quarterly planning

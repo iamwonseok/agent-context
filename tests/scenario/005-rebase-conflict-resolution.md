@@ -276,3 +276,136 @@ git mergetool
 - `--abort`는 모든 해결 작업을 버리므로 신중하게 사용합니다.
 - 복잡한 충돌은 팀원과 상의하거나, 작은 단위로 나눠서 sync하는 것이 좋습니다.
 - 충돌이 자주 발생하면 sync 주기를 짧게 가져가세요.
+
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 순수 Git으로 Rebase 충돌을 해결하는 방법입니다.
+
+### Git Only (Standard Git Rebase)
+
+`agent dev sync` = `git fetch` + `git rebase`
+
+```bash
+# Phase 1: 충돌 상황 만들기 (테스트용)
+git checkout -b feat/TASK-300 main
+echo "feature_flag: enabled" > conflict-test.txt
+git add conflict-test.txt
+git commit -m "feat: add feature flag"
+
+# main에서 충돌 유발
+git checkout main
+echo "feature_flag: disabled" > conflict-test.txt
+git add conflict-test.txt
+git commit -m "chore: disable feature flag"
+
+# 다시 브랜치로 복귀
+git checkout feat/TASK-300
+
+# Phase 2: Rebase 시도 (충돌 발생)
+git fetch origin
+git rebase origin/main
+
+# 기대: CONFLICT 메시지 출력
+
+# Phase 3: 충돌 상태 확인
+git status
+# → "You are currently rebasing"
+# → "both modified: conflict-test.txt"
+
+cat conflict-test.txt
+# → 충돌 마커 표시됨
+
+# Phase 4: 충돌 해결
+echo "feature_flag: enabled  # merged value" > conflict-test.txt
+git add conflict-test.txt
+
+# Phase 5: Rebase 계속
+git rebase --continue
+
+# 기대: "Successfully rebased and updated..."
+
+# 결과 확인
+git log --oneline --graph -10
+# → 선형 히스토리 (no merge commits)
+```
+
+### 대안: Rebase 중단
+
+```bash
+# 충돌 발생 후
+git fetch origin
+git rebase origin/main
+# → CONFLICT!
+
+# 해결 대신 중단 결정
+git rebase --abort
+
+# 결과 확인
+git status
+# → "nothing to commit, working tree clean"
+# → 이전 상태로 복원됨
+```
+
+### 여러 파일/커밋 충돌
+
+```bash
+# 여러 파일 충돌
+git status
+# → both modified: file1.txt, file2.txt, file3.txt
+
+vim file1.txt  # 해결
+git add file1.txt
+
+vim file2.txt  # 해결
+git add file2.txt
+
+vim file3.txt  # 해결
+git add file3.txt
+
+git rebase --continue
+
+# 다음 커밋에서 또 충돌 발생 가능
+# → 반복 해결
+```
+
+---
+
+## Responsibility Boundary
+
+### CLI Responsibilities
+
+**Git Rebase**:
+- `git fetch origin`
+- `git rebase origin/main`
+- `git rebase --continue`
+- `git rebase --abort`
+
+**충돌 해결**:
+- 충돌 파일 수동 편집
+- `git add <resolved-files>`
+- 충돌 상태 확인 (`git status`)
+
+**유용한 명령어**:
+- `git diff --name-only --diff-filter=U` (충돌 파일 목록)
+- `git mergetool` (머지 툴 사용)
+
+### UI Responsibilities
+
+**없음** (Rebase는 순수 Git CLI 작업)
+
+### Agent가 추가로 제공하는 것
+
+**편의 기능**:
+- `agent dev sync` = `git fetch` + `git rebase` (wrapper)
+- `agent dev sync --continue` = `git rebase --continue`
+- `agent dev sync --abort` = `git rebase --abort`
+- `agent dev sync --base=<branch>` = 다른 base branch 지정
+
+**추가 가이드**:
+- 충돌 파일 하이라이트
+- 해결 가이드 표시
+- 친숙한 인터페이스
+
+**주의**: Rebase 충돌 해결 자체는 **순수 Git 작업**이므로 Agent 없이도 100% 가능
