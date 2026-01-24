@@ -368,7 +368,7 @@ agent (CLI)
 #### Task 2.1: Knowledge Caching
 
 **파일 추가**:
-- `tools/agent/templates/llm_context.md`: 템플릿
+- `tools/agent/resources/llm_context.md`: 템플릿
 - `tools/agent/lib/context.sh`: create_llm_context, add_technical_decision 함수
 
 **파일 변경**:
@@ -384,7 +384,7 @@ agent (CLI)
 #### Task 2.2: Question-Driven Planning
 
 **파일 추가**:
-- `tools/agent/templates/questions.md`: 템플릿
+- `tools/agent/resources/questions.md`: 템플릿
 - `tools/agent/lib/context.sh`: create_questions, process_questions 함수
 
 **파일 변경**:

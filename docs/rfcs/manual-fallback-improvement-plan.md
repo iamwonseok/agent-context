@@ -454,7 +454,7 @@ agent dev submit --skip=sync
 
 **Files**:
 - `tools/agent/lib/check.sh` (수정, ~50 LOC 추가)
-- `tools/agent/templates/pre-commit.hook.sh` (신규)
+- `tools/agent/resources/pre-commit.hook.sh` (신규)
 
 **Hook 템플릿**:
 ```bash

@@ -445,7 +445,7 @@ vi2는 모든 상태를 임시 `.vi2/` 디렉터리에 저장합니다:
 
 **구현 위치**:
 - `tools/agent/lib/context.sh`: `create_llm_context()`, `update_llm_context()`
-- `tools/agent/templates/llm_context.md`: 템플릿
+- `tools/agent/resources/llm_context.md`: 템플릿
 
 ##### 1.2.3 Question-Driven Planning (questions.md)
 
@@ -1153,7 +1153,7 @@ cat docs/cursor-modes-guide.md
 
 **파일 변경**:
 
-1. **`tools/agent/templates/llm_context.md` 생성**:
+1. **`tools/agent/resources/llm_context.md` 생성**:
 
 ```markdown
 # LLM Context Cache
@@ -1396,7 +1396,7 @@ EOF
 }
 ```
 
-4. **`skills/plan/design-solution/SKILL.md` 업데이트**:
+4. **`skills/planning/design-solution/SKILL.md` 업데이트**:
 
 ```markdown
 # Design Solution
@@ -1475,7 +1475,7 @@ agent dev submit
 
 **파일 변경**:
 
-1. **`tools/agent/templates/questions.md` 생성**:
+1. **`tools/agent/resources/questions.md` 생성**:
 
 ```markdown
 # Planning Questions

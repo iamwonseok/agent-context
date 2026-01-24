@@ -6,7 +6,7 @@ Automated verification of skills framework integrity.
 
 ```bash
 # Run all tests
-./skills/_tests/test_skills.sh
+./tests/unit/skills/test_skills.sh
 
 # Expected output
 All tests passed!
@@ -18,10 +18,10 @@ All tests passed!
 cd /path/to/agent-context
 
 # Option 1: Direct execution
-./skills/_tests/test_skills.sh
+./tests/unit/skills/test_skills.sh
 
 # Option 2: From anywhere
-bash skills/_tests/test_skills.sh
+bash tests/unit/skills/test_skills.sh
 ```
 
 ## Test Output
@@ -152,7 +152,7 @@ Verifies `workflows/` directory:
 test:skills:
   stage: test
   script:
-    - ./skills/_tests/test_skills.sh
+    - ./tests/unit/skills/test_skills.sh
   allow_failure: false
 ```
 
@@ -179,7 +179,7 @@ When adding a new skill:
 
 5. Run tests:
    ```bash
-   ./skills/_tests/test_skills.sh
+   ./tests/unit/skills/test_skills.sh
    ```
 
 6. Verify:

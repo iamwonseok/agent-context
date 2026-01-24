@@ -11,7 +11,7 @@ Skills are organized into 5 categories based on workflow phase:
 | Category | Purpose | Skills |
 |----------|---------|--------|
 | [analyze/](analyze/) | Understand the situation | parse-requirement, inspect-codebase, inspect-logs, ... |
-| [plan/](plan/) | Design the approach | design-solution, breakdown-work, estimate-effort, ... |
+| [planning/](planning/) | Design the approach | design-solution, breakdown-work, estimate-effort, ... |
 | [execute/](execute/) | Perform the work | write-code, refactor-code, fix-defect, ... |
 | [validate/](validate/) | Verify quality | run-tests, check-style, review-code, verify-requirements, ... |
 | [integrate/](integrate/) | Deliver results | commit-changes, create-merge-request, merge-changes, ... |
@@ -23,7 +23,7 @@ Skills are organized into 5 categories based on workflow phase:
 | Path | Purpose |
 |------|---------|
 | `analyze/parse-requirement` | Clarify requirements |
-| `plan/design-solution` | Plan implementation |
+| `planning/design-solution` | Plan implementation |
 | `execute/write-code` | Test-driven development |
 | `validate/check-style` | Check code style |
 | `validate/run-tests` | Run tests |
@@ -81,13 +81,12 @@ skills/
 ├── README.md
 ├── USAGE.md
 ├── _template/
-├── _tests/
 ├── analyze/
 │   ├── README.md
 │   ├── parse-requirement/
 │   ├── inspect-codebase/
 │   └── ...
-├── plan/
+├── planning/
 │   ├── README.md
 │   ├── design-solution/
 │   └── ...
@@ -104,4 +103,6 @@ skills/
     ├── README.md
     ├── commit-changes/
     └── ...
+
+# Tests are located at tests/unit/skills/
 ```

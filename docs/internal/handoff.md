@@ -83,7 +83,7 @@ agent dev submit --skip=sync      # sync 제외
 
 **위치**: 
 - `tools/agent/lib/check.sh` (수정)
-- `tools/agent/templates/pre-commit.hook.sh` (신규)
+- `tools/agent/resources/pre-commit.hook.sh` (신규)
 
 **작업 내용**:
 - `agent dev check --install-hook` 구현
