@@ -7,6 +7,7 @@ User guides and how-to documentation.
 | Guide | Description |
 |-------|-------------|
 | [manual-fallback-guide.md](manual-fallback-guide.md) | Manual intervention procedures when automation fails |
+| [pm-hierarchy-sync.md](pm-hierarchy-sync.md) | PM hierarchy (Initiative/Epic/WorkItem) operational rules for JIRA+Confluence+GitLab |
 
 ## Guide Categories
 
