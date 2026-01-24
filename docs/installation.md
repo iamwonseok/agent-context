@@ -117,7 +117,7 @@ export JIRA_TOKEN="your-atlassian-token"
 export JIRA_EMAIL="your-email"
 ```
 
-> **Detailed setup:** See `templates/.secrets/README.md` for token generation steps.
+> **Detailed setup:** See `templates/secrets-examples/README.md` for token generation steps.
 
 ## Uninstallation
 

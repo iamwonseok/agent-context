@@ -24,7 +24,7 @@ project/
 ## Usage
 
 1. Create a new plan using the skill:
-   - Read `.agent/skills/plan/design-solution/SKILL.md`
+   - Read `.agent/skills/planning/design-solution/SKILL.md`
 
 2. Save your plans here with descriptive names:
    - `feature-user-auth.md`
@@ -35,4 +35,4 @@ project/
 
 ## Template
 
-See `.agent/skills/plan/design-solution/templates/implementation-plan.md` for the plan template.
+See `.agent/skills/planning/design-solution/templates/implementation-plan.md` for the plan template.

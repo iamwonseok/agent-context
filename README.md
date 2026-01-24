@@ -2,7 +2,7 @@
 
 A comprehensive workflow and CI/CD template for agent-driven development.
 
-**Design Philosophy**: See [why.md](why.md) for our approach to simplicity, user autonomy, and avoiding over-engineering.
+**Design Philosophy**: See [ARCHITECTURE.md](ARCHITECTURE.md) for our approach to simplicity, user autonomy, and avoiding over-engineering.
 
 ## Why This Project?
 
@@ -15,7 +15,7 @@ A comprehensive workflow and CI/CD template for agent-driven development.
 | Component | Purpose | Location |
 |-----------|---------|----------|
 | Workflow | Development process definition | `skills/`, `workflows/`, `.cursorrules` |
-| Pipeline | CI/CD automation | `tools/lint/`, `configs/` |
+| Pipeline | CI/CD automation | `tools/lint/`, `templates/configs/` |
 | Agent CLI | AI agent's interface to JIRA/GitLab | `tools/agent/`, `tools/pm/` |
 
 **Goal**: AI agent performs all operations via CLI - no browser, no context switching.
@@ -71,9 +71,17 @@ Setup creates these files in your project:
 
 ```
 agent-context/                  # Repository root = deployable unit
+├── ARCHITECTURE.md             # Design philosophy
+├── LICENSE                     # MIT License
+├── docs/                       # Documentation hub
+│   ├── installation.md        # Installation guide
+│   ├── cli/                   # CLI usage docs
+│   ├── style/                 # Coding conventions
+│   ├── rfcs/                  # RFCs and proposals
+│   └── guides/                # User guides
 ├── skills/                     # Atomic skills (building blocks)
 │   ├── analyze/               # Input: Parse requirements, inspect code
-│   ├── plan/                  # Strategy: Design, breakdown, estimate
+│   ├── planning/              # Strategy: Design, breakdown, estimate
 │   ├── execute/               # Action: Write code, refactor, fix
 │   ├── validate/              # Check: Test, lint, review
 │   └── integrate/             # Output: Commit, MR, notify
@@ -85,9 +93,18 @@ agent-context/                  # Repository root = deployable unit
 │   ├── pm/                    # JIRA/GitLab API wrapper
 │   └── lint/                  # Code quality checks
 ├── templates/                  # User project templates
-├── coding-convention/          # Language-specific standards
-├── setup.sh                    # Installation script
-└── why.md                      # Design philosophy
+│   ├── configs/               # Tool configurations
+│   ├── planning/              # Plan templates
+│   └── secrets-examples/      # API token examples
+├── tests/                      # All tests
+│   ├── unit/                  # Unit tests
+│   │   ├── skills/
+│   │   ├── tools/
+│   │   └── lint-rules/
+│   ├── e2e/
+│   ├── scenario/
+│   └── smoke/
+└── setup.sh                    # Installation script
 ```
 
 ### User Project (After Setup)
@@ -135,7 +152,7 @@ Independent, reusable building blocks organized by purpose:
 | Category | Skills | Purpose |
 |----------|--------|---------|
 | analyze | parse-requirement, inspect-codebase, inspect-logs | Input processing |
-| plan | design-solution, breakdown-work, estimate-effort | Strategy |
+| planning | design-solution, breakdown-work, estimate-effort | Strategy |
 | execute | write-code, refactor-code, fix-defect | Implementation |
 | validate | run-tests, check-style, review-code | Quality checks |
 | integrate | commit-changes, create-merge-request | Output |
@@ -205,6 +222,18 @@ lint c . --junit -o results.xml
 
 Supported: C/C++, Python, Bash, Make, YAML, Dockerfile
 
+See [tools/lint/README.md](tools/lint/README.md) for details.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Design philosophy and decisions |
+| [docs/installation.md](docs/installation.md) | Installation guide |
+| [docs/cli/](docs/cli/) | CLI command reference |
+| [docs/style/](docs/style/) | Coding conventions |
+| [docs/rfcs/](docs/rfcs/) | RFCs and proposals |
+
 ## Development
 
 For contributing to agent-context itself:
@@ -224,7 +253,7 @@ cd agent-context
 # docker run -v $(pwd):/workspace ...
 ```
 
-See [plan/](plan/) for implementation plans.
+See [docs/rfcs/](docs/rfcs/) for implementation plans.
 
 ## Environment Variables
 
@@ -236,4 +265,6 @@ See [plan/](plan/) for implementation plans.
 
 ## License
 
-MIT License
+MIT License - See [LICENSE](LICENSE) for details.
+
+Copyright (c) 2026 FADU Inc. and contributors

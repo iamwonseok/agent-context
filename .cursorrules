@@ -2,10 +2,10 @@
 #
 # This IS the agent-context source repository.
 # - Modifying skills/, workflows/, tools/ IS allowed here
-# - plan/ is the single source of truth for framework plans
+# - docs/rfcs/ is the single source of truth for framework plans
 # - For testing: use Docker-based test environment
 #
-# For design philosophy, see why.md
+# For design philosophy, see ARCHITECTURE.md
 
 # Agent-Context Project Rules
 
@@ -19,18 +19,18 @@ Unlike user projects, you CAN modify:
 - `templates/` - User project templates
 
 Single source of truth:
-- `plan/` - Framework plans for this repository (SSoT)
+- `docs/rfcs/` - Framework plans for this repository (SSoT)
 
 ### Plan Directory Convention
 | Location | Purpose |
 |----------|---------|
-| `plan/` (this repo) | Framework plans (SSoT) |
-| `.agent/plan/` (user project) | Framework plans (deployed from this repo `plan/`) |
+| `docs/rfcs/` (this repo) | Framework plans (SSoT) |
+| `.agent/docs/rfcs/` (user project) | Framework plans (deployed from this repo) |
 | `plan/` (user project) | User's project-specific plans |
 
 ## Design Philosophy
 
-Read `why.md` for the full rationale. Key principles:
+Read `ARCHITECTURE.md` for the full rationale. Key principles:
 
 1. **Simplicity Over Completeness** - Simple solutions that work > Complex solutions that might work better
 2. **User Autonomy** - Warnings over blocking, provide `--force` escape hatches
@@ -79,7 +79,7 @@ Read `why.md` for the full rationale. Key principles:
   - Variable/function/class names MUST be in English
   - Commit messages MUST be in English
 - **Docs exception (this repo only)**: Korean is allowed in Markdown documents (`*.md`) in this repository
-  - Rationale: Document-language exception is defined in `plan/agent-workflow-system-plan.md` (Quality Requirements)
+  - Rationale: Document-language exception is defined in `docs/rfcs/agent-workflow-system-plan.md` (Quality Requirements)
   - This exception does NOT apply to executable code or code comments
 
 ## Output Style
@@ -106,7 +106,7 @@ Read `why.md` for the full rationale. Key principles:
 | Bug fix | `workflows/developer/bug-fix.md` |
 | Hotfix | `workflows/developer/hotfix.md` |
 | Refactoring | `workflows/developer/refactor.md` |
-| Large/complex task | `skills/plan/design-solution/SKILL.md` |
+| Large/complex task | `skills/planning/design-solution/SKILL.md` |
 
 If the exact workflow file is unclear, look under:
 - `workflows/developer/` (Developer)
@@ -114,7 +114,7 @@ If the exact workflow file is unclear, look under:
 
 ### After Modifying Files
 1. Run related tests if they exist
-2. Check `skills/_tests/` for test scripts
+2. Check `tests/unit/skills/` for test scripts
 3. Fix any test failures before committing
 
 ### Before Committing
@@ -162,7 +162,7 @@ If the exact workflow file is unclear, look under:
 ## Secrets Policy (init/setup)
 - On `agent init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
 - Use `--skip-secrets` to bypass validation (for CI environments)
-- See `templates/.secrets/README.md` for token setup
+- See `templates/secrets-examples/README.md` for token setup
 
 ## Project Overview
 Workflow + CI/CD template for agent-driven development.
@@ -170,7 +170,12 @@ Workflow + CI/CD template for agent-driven development.
 ### Directory Structure
 ```
 agent-context/                  # This repo = deployable unit
-├── plan/                       # Framework plans (SSoT)
+├── ARCHITECTURE.md             # Design philosophy
+├── docs/                       # Documentation hub
+│   ├── cli/                    # CLI usage docs
+│   ├── style/                  # Coding conventions
+│   ├── rfcs/                   # Framework plans (SSoT)
+│   └── guides/                 # User guides
 ├── skills/                     # Atomic skills (building blocks)
 ├── workflows/                  # Workflow definitions (combinations)
 ├── tools/                      # CLI tools
@@ -178,20 +183,21 @@ agent-context/                  # This repo = deployable unit
 │   ├── pm/                     # JIRA/GitLab API
 │   └── lint/                   # Code quality
 ├── templates/                  # User project templates
-│   └── plan/                   # Project plan directory template
-├── coding-convention/          # Language rule docs
-├── setup.sh                    # Installation script
-└── why.md                      # Design philosophy
+│   ├── configs/                # Tool configurations
+│   └── planning/               # Plan templates
+├── tests/                      # All tests
+│   └── unit/                   # Unit tests
+└── setup.sh                    # Installation script
 ```
 
 ### User Project Structure (After Setup)
 ```
 user-project/
 ├── .agent/                     # Agent-context framework (installed)
-│   ├── plan/                   # Framework plans (from agent-context `plan/`)
+│   ├── docs/rfcs/              # Framework plans
 │   └── ...
 │
-└── plan/                       # User's project plans (from templates/plan/)
+└── plan/                       # User's project plans
 ```
 
 ## Skills & Workflows
@@ -199,7 +205,7 @@ user-project/
 ### Skills (`skills/`)
 Organized into 5 categories:
 - `analyze/` - Understand situation (parse-requirement, inspect-codebase, ...)
-- `plan/` - Design approach (design-solution, breakdown-work, ...)
+- `planning/` - Design approach (design-solution, breakdown-work, ...)
 - `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
 - `validate/` - Verify quality (run-tests, check-style, review-code, ...)
 - `integrate/` - Deliver results (commit-changes, create-merge-request, ...)

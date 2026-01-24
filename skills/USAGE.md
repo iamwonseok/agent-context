@@ -91,7 +91,7 @@ AI: Writing design document...
 ### Step 3: Design Solution
 
 ```
-Read: skills/plan/design-solution/SKILL.md
+Read: skills/planning/design-solution/SKILL.md
 
 AI: Breaking into tasks...
     - Task 1: UART register definitions

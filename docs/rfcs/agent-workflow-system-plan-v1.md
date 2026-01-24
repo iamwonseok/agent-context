@@ -342,7 +342,7 @@ skills/
 - [ ] `plan/allocate-resources/SKILL.md` (Manager)
 
 **Files**:
-- `skills/plan/*`
+- `skills/planning/*`
 
 **Done when**: 5개 plan skills 완성
 
@@ -631,8 +631,8 @@ agent mgr review <mr-id> --comment "message"
 
 **Files**:
 - `tools/agent/lib/context.sh`
-- `tools/agent/templates/try.yaml`
-- `tools/agent/templates/attempt.yaml`
+- `tools/agent/resources/try.yaml`
+- `tools/agent/resources/attempt.yaml`
 
 **Done when**: 작업 시 `.context/` 자동 생성 및 기록 (두 모드 모두 지원)
 
