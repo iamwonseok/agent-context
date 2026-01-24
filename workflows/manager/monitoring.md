@@ -64,7 +64,7 @@ agent mgr report weekly --epic=EPIC-50
 
 **Skills**: `integrate/publish-report`
 
-### Step 4: Take Action
+### Step 4: Take Action & Retrospective
 
 Based on findings:
 
@@ -72,12 +72,20 @@ Based on findings:
 # Reassign blocked tasks
 agent mgr assign TASK-456 --to=@jane
 
-# Adjust timeline
-agent mgr adjust EPIC-50 --deadline="2026-02-15"
-
-# Escalate issues
-agent mgr escalate TASK-789 --reason="External dependency"
+# Split oversized tasks for next sprint
+# Create new task and link: pm jira link create TASK-123 TASK-124 "Split"
 ```
+
+#### Monthly Retrospective Tips:
+- **Root Cause Analysis**: `Causes` 링크가 많이 걸린 작업들을 전수 조사하여 프로세스 개선 (예: "기획 변경으로 인한 버그 발생 빈도 측정")
+- **Dependency Map**: `Blocks` 관계가 복잡하게 얽힌 구간을 파악하여 다음 계획 시 자원 우선 배정
+
+#### Visualization Tip:
+> [!TIP]
+> **Jira 보드에서 Blocked 강조하기**:
+> 1. Board Settings -> Card Colours -> Choose 'Queries'
+> 2. JQL에 `issueLinkType = "is blocked by"` 입력 후 색상을 **빨간색**으로 설정
+> 3. 이제 차단된 업무가 보드에서 즉시 시각적으로 드러납니다!
 
 ## Outputs
 
