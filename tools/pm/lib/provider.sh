@@ -92,6 +92,56 @@ get_document_provider() {
     fi
 }
 
+# Get planning provider from roles.planning (for milestones/sprints)
+get_planning_provider() {
+    # Check role-based config first
+    if [[ -n "$ROLE_PLANNING" ]]; then
+        echo "$ROLE_PLANNING"
+        return
+    fi
+
+    # Fall back to issue provider
+    if [[ -n "$ROLE_ISSUE" ]]; then
+        echo "$ROLE_ISSUE"
+        return
+    fi
+
+    # Auto-detect (legacy mode): JIRA > GitLab > GitHub
+    if jira_configured; then
+        echo "jira"
+    elif gitlab_configured; then
+        echo "gitlab"
+    elif github_configured; then
+        echo "github"
+    else
+        echo "none"
+    fi
+}
+
+# Get wiki provider from roles.wiki
+get_wiki_provider() {
+    # Check role-based config first
+    if [[ -n "$ROLE_WIKI" ]]; then
+        echo "$ROLE_WIKI"
+        return
+    fi
+
+    # Fall back to VCS provider
+    if [[ -n "$ROLE_VCS" ]]; then
+        echo "$ROLE_VCS"
+        return
+    fi
+
+    # Auto-detect (legacy mode): GitLab > GitHub
+    if gitlab_configured; then
+        echo "gitlab"
+    elif github_configured; then
+        echo "github"
+    else
+        echo "none"
+    fi
+}
+
 # ============================================================
 # Unified Issue Functions
 # ============================================================
@@ -377,6 +427,33 @@ show_providers() {
         github)     echo "  Platform: GitHub Wiki ($GITHUB_REPO)" ;;
         gitlab)     echo "  Platform: GitLab Wiki ($GITLAB_PROJECT)" ;;
         none)       echo "  Platform: (not configured)" ;;
+    esac
+    echo ""
+
+    # Planning (Milestones/Sprints)
+    echo "[Planning (Milestones/Sprints)]"
+    local planning_provider
+    planning_provider=$(get_planning_provider)
+    echo "  Role:     ${ROLE_PLANNING:-(auto)}"
+    echo "  Provider: $planning_provider"
+    case "$planning_provider" in
+        jira)   echo "  Platform: JIRA Sprints ($JIRA_BASE_URL)" ;;
+        github) echo "  Platform: GitHub Milestones ($GITHUB_REPO)" ;;
+        gitlab) echo "  Platform: GitLab Milestones ($GITLAB_PROJECT)" ;;
+        none)   echo "  Platform: (not configured)" ;;
+    esac
+    echo ""
+
+    # Wiki
+    echo "[Wiki]"
+    local wiki_provider
+    wiki_provider=$(get_wiki_provider)
+    echo "  Role:     ${ROLE_WIKI:-(auto)}"
+    echo "  Provider: $wiki_provider"
+    case "$wiki_provider" in
+        github) echo "  Platform: GitHub Wiki ($GITHUB_REPO)" ;;
+        gitlab) echo "  Platform: GitLab Wiki ($GITLAB_PROJECT)" ;;
+        none)   echo "  Platform: (not configured)" ;;
     esac
     echo "=================================================="
 }

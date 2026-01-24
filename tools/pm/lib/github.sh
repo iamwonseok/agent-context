@@ -246,3 +246,273 @@ github_issue_create() {
 
     echo "$number"
 }
+
+# ============================================================
+# Milestone Functions
+# ============================================================
+
+# List milestones
+github_milestone_list() {
+    local state="${1:-open}"
+    local max_results="${2:-20}"
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(github_api GET "/repos/${GITHUB_REPO}/milestones?state=${state}&per_page=${max_results}")
+
+    if [[ "$(echo "$response" | jq 'length')" == "0" ]]; then
+        echo "No milestones found."
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-10s | %-12s | %s\n" "#" "State" "Due Date" "Title"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | [("#" + (.number | tostring)), .state, ((.due_on // "N/A") | split("T")[0]), .title] | @tsv' | \
+    while IFS=$'\t' read -r num state due_date title; do
+        if [[ ${#title} -gt 40 ]]; then
+            title="${title:0:37}..."
+        fi
+        printf "%-6s | %-10s | %-12s | %s\n" "$num" "$state" "$due_date" "$title"
+    done
+
+    echo "------------------------------------------------------------------------"
+    local total
+    total=$(echo "$response" | jq 'length')
+    echo "Total: $total milestones"
+}
+
+# View milestone detail
+github_milestone_view() {
+    local number="$1"
+
+    if [[ -z "$number" ]]; then
+        echo "[ERROR] Milestone number required" >&2
+        return 1
+    fi
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(github_api GET "/repos/${GITHUB_REPO}/milestones/${number}")
+
+    local due_date
+    due_date=$(echo "$response" | jq -r '.due_on // "N/A"' | cut -d'T' -f1)
+
+    echo "============================================================"
+    echo "Milestone: $(echo "$response" | jq -r '.title')"
+    echo "============================================================"
+    echo "Number:    #$(echo "$response" | jq -r '.number')"
+    echo "State:     $(echo "$response" | jq -r '.state')"
+    echo "Due Date:  $due_date"
+    echo "Open:      $(echo "$response" | jq -r '.open_issues') issues"
+    echo "Closed:    $(echo "$response" | jq -r '.closed_issues') issues"
+    echo "URL:       $(echo "$response" | jq -r '.html_url')"
+    echo "------------------------------------------------------------"
+    echo "Description:"
+    echo "$response" | jq -r '.description // "(No description)"'
+    echo "============================================================"
+}
+
+# Create milestone
+github_milestone_create() {
+    local title="$1"
+    local due_date="$2"
+    local description="$3"
+
+    if [[ -z "$title" ]]; then
+        echo "[ERROR] Title required" >&2
+        return 1
+    fi
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    local payload
+    # GitHub expects ISO 8601 format for due_on
+    if [[ -n "$due_date" ]]; then
+        # Convert YYYY-MM-DD to ISO 8601 format (add T07:00:00Z)
+        due_date="${due_date}T07:00:00Z"
+    fi
+
+    payload=$(jq -n \
+        --arg title "$title" \
+        --arg due_on "$due_date" \
+        --arg desc "$description" \
+        '{
+            title: $title,
+            due_on: (if $due_on != "" then $due_on else null end),
+            description: (if $desc != "" then $desc else null end)
+        }')
+
+    local response
+    response=$(github_api POST "/repos/${GITHUB_REPO}/milestones" "$payload")
+
+    local number
+    number=$(echo "$response" | jq -r '.number')
+
+    if [[ -z "$number" ]] || [[ "$number" == "null" ]]; then
+        echo "[ERROR] Failed to create milestone:" >&2
+        echo "$response" | jq -r '.message // .errors // .' >&2
+        return 1
+    fi
+
+    echo "$number"
+}
+
+# Close milestone
+github_milestone_close() {
+    local number="$1"
+
+    if [[ -z "$number" ]]; then
+        echo "[ERROR] Milestone number required" >&2
+        return 1
+    fi
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    local payload='{"state": "closed"}'
+
+    local response
+    response=$(github_api PATCH "/repos/${GITHUB_REPO}/milestones/${number}" "$payload")
+
+    local state
+    state=$(echo "$response" | jq -r '.state')
+
+    if [[ "$state" == "closed" ]]; then
+        echo "(v) Milestone #$number closed"
+    else
+        echo "[ERROR] Failed to close milestone:" >&2
+        echo "$response" | jq -r '.message // .errors // .' >&2
+        return 1
+    fi
+}
+
+# ============================================================
+# Label Functions
+# ============================================================
+
+# List labels
+github_label_list() {
+    local max_results="${1:-50}"
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(github_api GET "/repos/${GITHUB_REPO}/labels?per_page=${max_results}")
+
+    if [[ "$(echo "$response" | jq 'length')" == "0" ]]; then
+        echo "No labels found."
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-8s | %s\n" "Color" "Name"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | ["#" + .color, .name] | @tsv' | \
+    while IFS=$'\t' read -r color name; do
+        printf "%-8s | %s\n" "$color" "$name"
+    done
+
+    echo "------------------------------------------------------------------------"
+    local total
+    total=$(echo "$response" | jq 'length')
+    echo "Total: $total labels"
+}
+
+# Create label
+github_label_create() {
+    local name="$1"
+    local color="${2:-428BCA}"
+    local description="$3"
+
+    if [[ -z "$name" ]]; then
+        echo "[ERROR] Name required" >&2
+        return 1
+    fi
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    # Remove # prefix if present (GitHub expects color without #)
+    color="${color#\#}"
+
+    local payload
+    payload=$(jq -n \
+        --arg name "$name" \
+        --arg color "$color" \
+        --arg desc "$description" \
+        '{
+            name: $name,
+            color: $color,
+            description: (if $desc != "" then $desc else null end)
+        }')
+
+    local response
+    response=$(github_api POST "/repos/${GITHUB_REPO}/labels" "$payload")
+
+    local id
+    id=$(echo "$response" | jq -r '.id')
+
+    if [[ -z "$id" ]] || [[ "$id" == "null" ]]; then
+        echo "[ERROR] Failed to create label:" >&2
+        echo "$response" | jq -r '.message // .errors // .' >&2
+        return 1
+    fi
+
+    echo "$id"
+}
+
+# Delete label
+github_label_delete() {
+    local name="$1"
+
+    if [[ -z "$name" ]]; then
+        echo "[ERROR] Label name required" >&2
+        return 1
+    fi
+
+    if ! github_configured; then
+        echo "[ERROR] GitHub not configured" >&2
+        return 1
+    fi
+
+    # URL encode the label name (using printf to avoid newline issues)
+    local name_encoded
+    name_encoded=$(printf '%s' "$name" | jq -sRr @uri)
+
+    local response
+    response=$(github_api DELETE "/repos/${GITHUB_REPO}/labels/${name_encoded}")
+
+    # DELETE returns 204 with no content on success
+    if [[ -z "$response" ]]; then
+        echo "(v) Label '$name' deleted"
+    else
+        local error
+        error=$(echo "$response" | jq -r '.message // .errors // .' 2>/dev/null)
+        if [[ -n "$error" ]] && [[ "$error" != "null" ]]; then
+            echo "[ERROR] Failed to delete label: $error" >&2
+            return 1
+        fi
+        echo "(v) Label '$name' deleted"
+    fi
+}
