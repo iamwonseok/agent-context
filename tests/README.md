@@ -4,11 +4,14 @@ Docker 기반 테스트 환경입니다.
 
 ## 테스트 단계
 
-| Stage | 이름 | 의존성 | 설명 |
-|-------|------|--------|------|
-| 1 | Smoke | 없음 | bootstrap, setup, CLI 기본 동작 |
-| 2 | Local Git | Git (bare repo) | 브랜치 워크플로우, push, rebase |
-| 3 | E2E | GitLab/JIRA 토큰 | MR 생성, 이슈 연동 |
+| Stage | 이름 | 의존성 | CI | 설명 |
+|-------|------|--------|:--:|------|
+| 1 | Smoke | 없음 | O | bootstrap, setup, CLI 기본 동작 |
+| 2 | Local Git | Git (bare repo) | O | 브랜치 워크플로우, push, rebase |
+| 3 | E2E | GitLab/JIRA 토큰 | X | MR 생성, 이슈 연동 |
+
+> **Note**: Stage 3 (E2E)는 실제 API 토큰이 필요하므로 **로컬에서만 실행**합니다.
+> CI에서는 Stage 1-2만 자동 실행됩니다.
 
 ## 빠른 시작
 
@@ -104,10 +107,10 @@ tests/
 
 ## CI/CD 연동
 
-`.gitlab-ci.yml`에서 사용:
+CI에서는 Stage 1-2만 자동 실행됩니다 (토큰 불필요).
 
 ```yaml
-test:smoke:
+test:workflow:
   stage: test
   image: docker:latest
   services:
@@ -116,18 +119,7 @@ test:smoke:
     - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run smoke
     - docker compose -f tests/docker-compose.test.yml run local-git
-
-test:e2e:
-  stage: test
-  image: docker:latest
-  services:
-    - docker:dind
-  variables:
-    GITLAB_API_TOKEN: $CI_JOB_TOKEN
-    GITLAB_URL: $CI_SERVER_URL
-  script:
-    - docker compose -f tests/docker-compose.test.yml build
-    - docker compose -f tests/docker-compose.test.yml run e2e
-  only:
-    - main
 ```
+
+> **E2E 테스트**: 실제 API 토큰이 필요하므로 CI에서 실행하지 않습니다.
+> MR 머지 전 E2E 검증이 필요한 경우 개발자가 로컬에서 직접 실행하세요.
