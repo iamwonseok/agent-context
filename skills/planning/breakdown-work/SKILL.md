@@ -100,15 +100,20 @@ Feature: Database Migration
 | L | 1-2 days | Needs breakdown |
 | XL | > 2 days | Must breakdown |
 
-### 5. Identify Dependencies
+### 5. Identify Dependencies & History
 
 ```
-Task A ──┬──→ Task C ──→ Task E
-         │
-Task B ──┘
-         
-Legend: Arrow = "must complete before"
+Task A (Original) ──Split to──→ Task A-1 (Sprint N)
+                              └─Split to──→ Task A-2 (Sprint N+1)
+
+Task B (New) ──Is caused by──→ Task C (Technical Debt)
 ```
+
+**Linking Patterns:**
+- **Split to / Split from**: 하나의 티켓이 너무 커서 쪼개야 할 때 사용합니다. (Sub-task와는 다름)
+    - 예: 스프린트 도중 작업이 너무 커서 절반만 수행하고 나머지를 다음으로 미룰 때, 새 티켓을 만들고 `Split from`으로 연결합니다.
+- **Blocks / Is blocked by**: 작업의 순서를 강제하고 리스크를 식별하는 데 사용합니다.
+    - 예: API 개발이 완료되어야 프론트엔드 연동 작업을 시작할 수 있는 경우.
 
 ### 6. Create Task List
 

@@ -58,7 +58,7 @@ agent mgr capacity
 
 **Skills**: `plan/allocate-resources`
 
-### Step 4: Assign Task
+### Step 4: Assign & Validate Dependencies
 
 ```bash
 agent mgr assign TASK-123 --to=@john --priority=P2
@@ -67,6 +67,9 @@ agent mgr assign TASK-123 --to=@john --priority=P2
 - Update JIRA/GitLab
 - Set priority
 - Set sprint/milestone
+- **Validate Dependencies**: 
+    - `Is blocked by` 링크가 걸린 경우, 선행 작업이 이미 완료되었거나 동일 스프린트에 포함되었는지 확인합니다.
+    - 선행 작업이 다른 팀 소관일 경우, `Relates to`를 통해 미리 담당자 간 소통을 유도합니다.
 
 ### Step 5: Notify
 
