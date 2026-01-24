@@ -32,9 +32,13 @@ COMMANDS:
     config init             Create .project.yaml
 
     jira me                 Show current Jira user
+    jira user search QUERY  Search users by email/name
     jira issue list         List Jira issues
     jira issue view KEY     View issue details
     jira issue create TITLE Create new issue
+    jira issue assign KEY EMAIL  Assign issue to user
+    jira issue transition KEY STATUS  Transition issue status
+    jira bulk-create --csv FILE  Bulk create issues from CSV
 
     confluence me           Show current Confluence user
     confluence space list   List spaces
@@ -113,6 +117,26 @@ cmd_jira() {
         me)
             jira_me
             ;;
+        user)
+            shift
+            case "$1" in
+                search)
+                    shift
+                    local query=""
+                    # First positional arg is query
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        query="$1"
+                        shift
+                    fi
+                    jira_user_search "$query"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown jira user command: $1" >&2
+                    echo "Usage: pm jira user <search>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
         issue)
             shift
             case "$1" in
@@ -154,16 +178,73 @@ cmd_jira() {
 
                     jira_issue_create "$summary" "$type" "$description"
                     ;;
+                assign)
+                    shift
+                    local key=""
+                    local assignee=""
+
+                    # First positional arg is key
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                        shift
+                    fi
+
+                    # Second positional arg is assignee email
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        assignee="$1"
+                        shift
+                    fi
+
+                    jira_issue_assign "$key" "$assignee"
+                    ;;
+                transition)
+                    shift
+                    local key=""
+                    local status=""
+
+                    # First positional arg is key
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                        shift
+                    fi
+
+                    # Second positional arg is status
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        status="$1"
+                        shift
+                    fi
+
+                    jira_transition "$key" "$status"
+                    ;;
                 *)
                     echo "[ERROR] Unknown jira issue command: $1" >&2
-                    echo "Usage: pm jira issue <list|view|create>" >&2
+                    echo "Usage: pm jira issue <list|view|create|assign|transition>" >&2
                     exit 1
                     ;;
             esac
             ;;
+        bulk-create)
+            shift
+            local csv_file=""
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --csv) csv_file="$2"; shift ;;
+                    *)
+                        # Treat as csv file if no flag
+                        if [[ -z "$csv_file" ]]; then
+                            csv_file="$1"
+                        fi
+                        ;;
+                esac
+                shift
+            done
+
+            jira_bulk_create "$csv_file"
+            ;;
         *)
             echo "[ERROR] Unknown jira command: $1" >&2
-            echo "Usage: pm jira <me|issue>" >&2
+            echo "Usage: pm jira <me|user|issue|bulk-create>" >&2
             exit 1
             ;;
     esac

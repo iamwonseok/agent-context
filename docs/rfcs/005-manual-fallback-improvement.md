@@ -862,7 +862,57 @@ graph TD
 - [ ] Task 1-1: Submit 옵션 확장 완료
 - [ ] Task 1-2: Hook 관리 완료
 - [ ] Task 1-3: Alias 추가 완료
+- [ ] Task 1-4: Jira Assignee 할당 + 일괄 생성 완료
 - [ ] Task 2-2: P1 회귀 테스트 완료
+
+### Task 1-4: Jira Assignee 할당 + CSV 일괄 생성
+
+**Deps**: None (독립적)
+
+**Work**:
+- [ ] `jira_user_search()` - email로 accountId 조회
+- [ ] `jira_issue_assign()` - Issue에 assignee 할당
+- [ ] `jira_bulk_create()` - CSV에서 일괄 생성 + 할당
+- [ ] `pm jira issue assign` CLI 노출
+- [ ] `pm jira issue transition` CLI 노출
+- [ ] `pm jira bulk-create` CLI 노출
+- [ ] 시나리오 007 문서 작성
+
+**Files**:
+- `tools/pm/lib/jira.sh` (수정, ~60 LOC 추가)
+- `tools/pm/bin/pm` (수정, ~40 LOC 추가)
+- `tests/scenario/007-project-setup-bulk-assign.md` (신규)
+
+**예상 LOC**: ~100 LOC (코드) + ~150 LOC (문서)
+
+**구현 스펙**:
+```bash
+# email → accountId 조회
+pm jira user search "alice@company.com"
+
+# Issue에 assignee 할당
+pm jira issue assign TASK-123 "alice@company.com"
+
+# Issue 상태 전환 (기존 함수 CLI 노출)
+pm jira issue transition TASK-123 "In Review"
+
+# CSV 일괄 생성 + 할당
+pm jira bulk-create --csv tasks.csv
+```
+
+**CSV 형식**:
+```csv
+summary,type,assignee_email,description
+"로그인 기능 구현",Task,alice@company.com,"상세 설명"
+"버그 수정",Bug,bob@company.com,""
+```
+
+**Done when**:
+- [ ] email로 Jira accountId 조회 가능
+- [ ] CLI로 assignee 할당 가능
+- [ ] CLI로 상태 전환 가능
+- [ ] CSV에서 일괄 이슈 생성 + 할당 가능
+- [ ] 시나리오 007 문서 완성
 
 ### Quality
 - [ ] 모든 테스트 통과

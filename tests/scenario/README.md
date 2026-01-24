@@ -121,6 +121,11 @@ agent status
 - `006-draft-mr-iterative-review.md`
   - Draft MR 반복 리뷰: 초안 MR → 피드백 → 수정 → 재요청 → 최종 승인 사이클
 
+### 프로젝트 세팅
+
+- `007-project-setup-bulk-assign.md`
+  - 프로젝트 초기 세팅: CSV 일괄 이슈 생성 + Assignee 할당 (pm jira bulk-create)
+
 ---
 
 ## 역할별 시나리오 가이드
