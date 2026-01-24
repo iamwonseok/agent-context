@@ -26,6 +26,8 @@ docs/
 │   ├── 004-agent-workflow-system.md
 │   ├── 005-manual-fallback-improvement.md
 │   └── archive/             # 이전 버전 아카이브
+├── references/              # 외부 참조 문서/프로젝트
+│   └── README.md            # 참고 링크 모음
 └── internal/                # 내부 임시 문서 (handoff, draft)
     ├── README.md            # 정책 및 lifecycle
     └── handoff.md           # 세션 인수인계 (완료 후 삭제)
@@ -39,6 +41,7 @@ docs/
 | [cli/agent.md](cli/agent.md) | CLI 전체 개요 |
 | [cli/agent-dev.md](cli/agent-dev.md) | 개발자 명령어 상세 |
 | [cli/agent-mgr.md](cli/agent-mgr.md) | 매니저 명령어 상세 |
+| [references/README.md](references/README.md) | 외부 참조 문서/프로젝트 모음 |
 | [internal/README.md](internal/README.md) | 내부 문서 정책 (handoff lifecycle) |
 
 ## 관련 문서
