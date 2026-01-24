@@ -44,6 +44,10 @@ COMMANDS:
     jira workflow list      List workflows
     jira workflow transitions KEY  Show available transitions
     jira workflow statuses  List all statuses
+    jira link types         List available link types
+    jira link view KEY      View issue links (dependencies)
+    jira link create FROM TO TYPE  Create link (e.g., "Blocks")
+    jira link delete LINK_ID  Delete link
     jira bulk-create --csv FILE  Bulk create issues from CSV
 
     confluence me           Show current Confluence user
@@ -304,6 +308,57 @@ cmd_jira() {
                     ;;
             esac
             ;;
+        link)
+            shift
+            case "$1" in
+                types)
+                    jira_link_types
+                    ;;
+                view)
+                    shift
+                    local key=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        key="$1"
+                    fi
+                    jira_issue_links "$key"
+                    ;;
+                create)
+                    shift
+                    local from_key=""
+                    local to_key=""
+                    local link_type=""
+
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        from_key="$1"
+                        shift
+                    fi
+
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        to_key="$1"
+                        shift
+                    fi
+
+                    if [[ -n "$1" ]]; then
+                        link_type="$1"
+                    fi
+
+                    jira_link_create "$from_key" "$to_key" "$link_type"
+                    ;;
+                delete)
+                    shift
+                    local link_id=""
+                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                        link_id="$1"
+                    fi
+                    jira_link_delete "$link_id"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown jira link command: $1" >&2
+                    echo "Usage: pm jira link <types|view|create|delete>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
         bulk-create)
             shift
             local csv_file=""
@@ -325,7 +380,7 @@ cmd_jira() {
             ;;
         *)
             echo "[ERROR] Unknown jira command: $1" >&2
-            echo "Usage: pm jira <me|user|issue|sprint|workflow|bulk-create>" >&2
+            echo "Usage: pm jira <me|user|issue|sprint|workflow|link|bulk-create>" >&2
             exit 1
             ;;
     esac

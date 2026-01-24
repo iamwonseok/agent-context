@@ -849,3 +849,162 @@ jira_workflow_statuses() {
 
     echo "------------------------------------------------------------------------"
 }
+
+# List available issue link types
+jira_link_types() {
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/issueLinkType")
+
+    echo "=========================================="
+    echo "Available Link Types"
+    echo "=========================================="
+    echo ""
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-20s | %-20s | %s\n" "ID" "Name" "Inward" "Outward"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.issueLinkTypes[] | [.id, .name, .inward, .outward] | @tsv' | \
+    while IFS=$'\t' read -r id name inward outward; do
+        printf "%-6s | %-20s | %-20s | %s\n" "$id" "${name:0:20}" "${inward:0:20}" "${outward:0:20}"
+    done
+
+    echo "------------------------------------------------------------------------"
+    echo ""
+    echo "Usage: pm jira link create <from-key> <to-key> <link-type>"
+    echo "Example: pm jira link create PROJ-1 PROJ-2 \"Blocks\""
+}
+
+# Get issue links for an issue
+jira_issue_links() {
+    local key="$1"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/issue/${key}?fields=issuelinks")
+
+    echo "=========================================="
+    echo "Links for $key"
+    echo "=========================================="
+    echo ""
+
+    local links
+    links=$(echo "$response" | jq -r '.fields.issuelinks[]' 2>/dev/null)
+
+    if [[ -z "$links" ]]; then
+        echo "(No links found)"
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-8s | %-12s | %-20s | %s\n" "Link ID" "Issue" "Type" "Direction"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.fields.issuelinks[] | 
+        if .inwardIssue then 
+            [.id, .inwardIssue.key, .type.name, "inward: " + .type.inward] 
+        else 
+            [.id, .outwardIssue.key, .type.name, "outward: " + .type.outward] 
+        end | @tsv' | \
+    while IFS=$'\t' read -r id issue type direction; do
+        printf "%-8s | %-12s | %-20s | %s\n" "$id" "$issue" "${type:0:20}" "$direction"
+    done
+
+    echo "------------------------------------------------------------------------"
+    echo ""
+    echo "To delete: pm jira link delete <link-id>"
+}
+
+# Create issue link
+jira_link_create() {
+    local from_key="$1"
+    local to_key="$2"
+    local link_type="$3"
+
+    if [[ -z "$from_key" ]] || [[ -z "$to_key" ]] || [[ -z "$link_type" ]]; then
+        echo "[ERROR] Usage: pm jira link create <from-key> <to-key> <link-type>" >&2
+        echo "Example: pm jira link create PROJ-1 PROJ-2 \"Blocks\"" >&2
+        echo "" >&2
+        echo "Use 'pm jira link types' to see available link types" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local payload
+    payload=$(jq -n \
+        --arg type "$link_type" \
+        --arg inward "$from_key" \
+        --arg outward "$to_key" \
+        '{
+            type: { name: $type },
+            inwardIssue: { key: $inward },
+            outwardIssue: { key: $outward }
+        }')
+
+    local response
+    response=$(jira_api POST "/issueLink" "$payload")
+
+    # Jira returns empty response on success
+    if [[ -n "$response" ]]; then
+        local has_errors
+        has_errors=$(echo "$response" | jq -r 'if .errorMessages then "yes" else "no" end' 2>/dev/null || echo "no")
+        if [[ "$has_errors" == "yes" ]]; then
+            echo "[ERROR] Failed to create link:" >&2
+            echo "$response" | jq -r '.errorMessages[]' >&2
+            return 1
+        fi
+    fi
+
+    echo "(v) Created link: $from_key --[$link_type]--> $to_key"
+    return 0
+}
+
+# Delete issue link
+jira_link_delete() {
+    local link_id="$1"
+
+    if [[ -z "$link_id" ]]; then
+        echo "[ERROR] Link ID required" >&2
+        echo "Use 'pm jira link view <issue-key>' to find link IDs" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api DELETE "/issueLink/${link_id}")
+
+    # Jira returns empty response on success (204)
+    if [[ -n "$response" ]]; then
+        local has_errors
+        has_errors=$(echo "$response" | jq -r 'if .errorMessages then "yes" else "no" end' 2>/dev/null || echo "no")
+        if [[ "$has_errors" == "yes" ]]; then
+            echo "[ERROR] Failed to delete link:" >&2
+            echo "$response" | jq -r '.errorMessages[]' >&2
+            return 1
+        fi
+    fi
+
+    echo "(v) Deleted link: $link_id"
+    return 0
+}
