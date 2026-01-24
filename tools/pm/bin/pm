@@ -16,6 +16,8 @@ source "$LIB_DIR/gitlab.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/workflow.sh"
 source "$LIB_DIR/provider.sh"
+source "$LIB_DIR/milestone.sh"
+source "$LIB_DIR/label.sh"
 
 # Version
 VERSION="1.0.0"
@@ -83,6 +85,13 @@ COMMANDS:
     review create           Create MR/PR (auto-select: GitLab/GitHub)
     review list             List MRs/PRs
     review view ID          View MR/PR details
+    milestone list          List milestones (auto-select: GitLab/GitHub)
+    milestone view ID       View milestone details
+    milestone create TITLE  Create milestone
+    milestone close ID      Close milestone
+    label list              List labels (auto-select: GitLab/GitHub)
+    label create NAME       Create label
+    label delete NAME       Delete label
     doc create TITLE        Create document (Confluence)
     doc list                List documents
     provider show           Show current provider configuration
@@ -1003,6 +1012,159 @@ cmd_doc() {
     esac
 }
 
+cmd_milestone() {
+    load_config || exit 1
+
+    case "$1" in
+        list)
+            shift
+            local state="active"
+            local limit=20
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -s|--state) state="$2"; shift ;;
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_milestone_list "$state" "$limit"
+            ;;
+        view)
+            shift
+            local id=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                id="$1"
+            fi
+
+            if [[ -z "$id" ]]; then
+                echo "[ERROR] Milestone ID required" >&2
+                echo "Usage: pm milestone view <ID>" >&2
+                exit 1
+            fi
+
+            unified_milestone_view "$id"
+            ;;
+        create)
+            shift
+            local title=""
+            local due_date=""
+            local description=""
+
+            # First positional arg is title
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                title="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --due) due_date="$2"; shift ;;
+                    -d|--description) description="$2"; shift ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$title" ]]; then
+                echo "[ERROR] Title required" >&2
+                echo "Usage: pm milestone create TITLE [--due DATE] [-d|--description DESC]" >&2
+                exit 1
+            fi
+
+            unified_milestone_create "$title" "$due_date" "$description"
+            ;;
+        close)
+            shift
+            local id=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                id="$1"
+            fi
+
+            if [[ -z "$id" ]]; then
+                echo "[ERROR] Milestone ID required" >&2
+                echo "Usage: pm milestone close <ID>" >&2
+                exit 1
+            fi
+
+            unified_milestone_close "$id"
+            ;;
+        *)
+            echo "[ERROR] Unknown milestone command: $1" >&2
+            echo "Usage: pm milestone <list|view|create|close>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_label() {
+    load_config || exit 1
+
+    case "$1" in
+        list)
+            shift
+            local limit=50
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            unified_label_list "$limit"
+            ;;
+        create)
+            shift
+            local name=""
+            local color="428BCA"
+            local description=""
+
+            # First positional arg is name
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                name="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -c|--color) color="$2"; shift ;;
+                    -d|--description) description="$2"; shift ;;
+                esac
+                shift
+            done
+
+            if [[ -z "$name" ]]; then
+                echo "[ERROR] Name required" >&2
+                echo "Usage: pm label create NAME [-c|--color HEX] [-d|--description DESC]" >&2
+                exit 1
+            fi
+
+            unified_label_create "$name" "$color" "$description"
+            ;;
+        delete)
+            shift
+            local name=""
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                name="$1"
+            fi
+
+            if [[ -z "$name" ]]; then
+                echo "[ERROR] Label name required" >&2
+                echo "Usage: pm label delete <NAME>" >&2
+                exit 1
+            fi
+
+            unified_label_delete "$name"
+            ;;
+        *)
+            echo "[ERROR] Unknown label command: $1" >&2
+            echo "Usage: pm label <list|create|delete>" >&2
+            exit 1
+            ;;
+    esac
+}
+
 cmd_provider() {
     load_config || exit 1
 
@@ -1104,6 +1266,14 @@ main() {
         review)
             shift
             cmd_review "$@"
+            ;;
+        milestone)
+            shift
+            cmd_milestone "$@"
+            ;;
+        label)
+            shift
+            cmd_label "$@"
             ;;
         doc)
             shift

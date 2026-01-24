@@ -72,9 +72,15 @@ load_config() {
             ROLE_ISSUE=$(yaml_get "$CONFIG_FILE" '.roles.issue')
             ROLE_REVIEW=$(yaml_get "$CONFIG_FILE" '.roles.review')
             ROLE_DOCS=$(yaml_get "$CONFIG_FILE" '.roles.docs')
+            ROLE_PLANNING=$(yaml_get "$CONFIG_FILE" '.roles.planning')
+            ROLE_WIKI=$(yaml_get "$CONFIG_FILE" '.roles.wiki')
             
             # Default review to vcs if not set
             ROLE_REVIEW="${ROLE_REVIEW:-$ROLE_VCS}"
+            # Default planning to issue provider if not set
+            ROLE_PLANNING="${ROLE_PLANNING:-$ROLE_ISSUE}"
+            # Default wiki to vcs provider if not set
+            ROLE_WIKI="${ROLE_WIKI:-$ROLE_VCS}"
             
             # Load platform configs
             JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.jira.base_url')
@@ -109,6 +115,8 @@ load_config() {
             ROLE_ISSUE=""
             ROLE_REVIEW=""
             ROLE_DOCS=""
+            ROLE_PLANNING=""
+            ROLE_WIKI=""
         fi
         
         # Branch prefixes (same for both formats)
@@ -151,7 +159,7 @@ load_config() {
 
     # Export all
     export PROJECT_ROOT CONFIG_FILE
-    export ROLE_VCS ROLE_ISSUE ROLE_REVIEW ROLE_DOCS
+    export ROLE_VCS ROLE_ISSUE ROLE_REVIEW ROLE_DOCS ROLE_PLANNING ROLE_WIKI
     export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
     export CONFLUENCE_BASE_URL CONFLUENCE_SPACE_KEY CONFLUENCE_EMAIL CONFLUENCE_TOKEN
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN
@@ -195,10 +203,12 @@ print_config() {
     
     if [[ "$config_format" == "role-based" ]]; then
         echo "[Roles]"
-        echo "  VCS:    ${ROLE_VCS:-(not set)}"
-        echo "  Issue:  ${ROLE_ISSUE:-(not set)}"
-        echo "  Review: ${ROLE_REVIEW:-(not set)}"
-        echo "  Docs:   ${ROLE_DOCS:-(not set)}"
+        echo "  VCS:      ${ROLE_VCS:-(not set)}"
+        echo "  Issue:    ${ROLE_ISSUE:-(not set)}"
+        echo "  Review:   ${ROLE_REVIEW:-(not set)}"
+        echo "  Docs:     ${ROLE_DOCS:-(not set)}"
+        echo "  Planning: ${ROLE_PLANNING:-(not set)}"
+        echo "  Wiki:     ${ROLE_WIKI:-(not set)}"
         echo ""
     fi
     

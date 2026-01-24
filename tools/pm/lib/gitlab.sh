@@ -267,3 +267,286 @@ gitlab_issue_create() {
 
     echo "$iid"
 }
+
+# ============================================================
+# Milestone Functions
+# ============================================================
+
+# List milestones
+gitlab_milestone_list() {
+    local state="${1:-active}"
+    local max_results="${2:-20}"
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local response
+    response=$(gitlab_api GET "/projects/${project_encoded}/milestones?state=${state}&per_page=${max_results}")
+
+    if [[ "$(echo "$response" | jq 'length')" == "0" ]]; then
+        echo "No milestones found."
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-10s | %-12s | %s\n" "ID" "State" "Due Date" "Title"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | [(.id | tostring), .state, (.due_date // "N/A"), .title] | @tsv' | \
+    while IFS=$'\t' read -r id state due_date title; do
+        if [[ ${#title} -gt 40 ]]; then
+            title="${title:0:37}..."
+        fi
+        printf "%-6s | %-10s | %-12s | %s\n" "$id" "$state" "$due_date" "$title"
+    done
+
+    echo "------------------------------------------------------------------------"
+    local total
+    total=$(echo "$response" | jq 'length')
+    echo "Total: $total milestones"
+}
+
+# View milestone detail
+gitlab_milestone_view() {
+    local id="$1"
+
+    if [[ -z "$id" ]]; then
+        echo "[ERROR] Milestone ID required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local response
+    response=$(gitlab_api GET "/projects/${project_encoded}/milestones/${id}")
+
+    echo "============================================================"
+    echo "Milestone: $(echo "$response" | jq -r '.title')"
+    echo "============================================================"
+    echo "ID:        $(echo "$response" | jq -r '.id')"
+    echo "State:     $(echo "$response" | jq -r '.state')"
+    echo "Due Date:  $(echo "$response" | jq -r '.due_date // "N/A"')"
+    echo "Start:     $(echo "$response" | jq -r '.start_date // "N/A"')"
+    echo "URL:       $(echo "$response" | jq -r '.web_url')"
+    echo "------------------------------------------------------------"
+    echo "Description:"
+    echo "$response" | jq -r '.description // "(No description)"'
+    echo "============================================================"
+}
+
+# Create milestone
+gitlab_milestone_create() {
+    local title="$1"
+    local due_date="$2"
+    local description="$3"
+
+    if [[ -z "$title" ]]; then
+        echo "[ERROR] Title required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local payload
+    payload=$(jq -n \
+        --arg title "$title" \
+        --arg due_date "$due_date" \
+        --arg desc "$description" \
+        '{
+            title: $title,
+            due_date: (if $due_date != "" then $due_date else null end),
+            description: (if $desc != "" then $desc else null end)
+        }')
+
+    local response
+    response=$(gitlab_api POST "/projects/${project_encoded}/milestones" "$payload")
+
+    local id
+    id=$(echo "$response" | jq -r '.id')
+
+    if [[ -z "$id" ]] || [[ "$id" == "null" ]]; then
+        echo "[ERROR] Failed to create milestone:" >&2
+        echo "$response" | jq -r '.message // .error // .' >&2
+        return 1
+    fi
+
+    echo "$id"
+}
+
+# Close milestone
+gitlab_milestone_close() {
+    local id="$1"
+
+    if [[ -z "$id" ]]; then
+        echo "[ERROR] Milestone ID required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local payload='{"state_event": "close"}'
+
+    local response
+    response=$(gitlab_api PUT "/projects/${project_encoded}/milestones/${id}" "$payload")
+
+    local state
+    state=$(echo "$response" | jq -r '.state')
+
+    if [[ "$state" == "closed" ]]; then
+        echo "(v) Milestone #$id closed"
+    else
+        echo "[ERROR] Failed to close milestone:" >&2
+        echo "$response" | jq -r '.message // .error // .' >&2
+        return 1
+    fi
+}
+
+# ============================================================
+# Label Functions
+# ============================================================
+
+# List labels
+gitlab_label_list() {
+    local max_results="${1:-50}"
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    local response
+    response=$(gitlab_api GET "/projects/${project_encoded}/labels?per_page=${max_results}")
+
+    if [[ "$(echo "$response" | jq 'length')" == "0" ]]; then
+        echo "No labels found."
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-8s | %s\n" "ID" "Color" "Name"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | [(.id | tostring), .color, .name] | @tsv' | \
+    while IFS=$'\t' read -r id color name; do
+        printf "%-6s | %-8s | %s\n" "$id" "$color" "$name"
+    done
+
+    echo "------------------------------------------------------------------------"
+    local total
+    total=$(echo "$response" | jq 'length')
+    echo "Total: $total labels"
+}
+
+# Create label
+gitlab_label_create() {
+    local name="$1"
+    local color="${2:-#428BCA}"
+    local description="$3"
+
+    if [[ -z "$name" ]]; then
+        echo "[ERROR] Name required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # Ensure color starts with #
+    if [[ "$color" != \#* ]]; then
+        color="#$color"
+    fi
+
+    local payload
+    payload=$(jq -n \
+        --arg name "$name" \
+        --arg color "$color" \
+        --arg desc "$description" \
+        '{
+            name: $name,
+            color: $color,
+            description: (if $desc != "" then $desc else null end)
+        }')
+
+    local response
+    response=$(gitlab_api POST "/projects/${project_encoded}/labels" "$payload")
+
+    local id
+    id=$(echo "$response" | jq -r '.id')
+
+    if [[ -z "$id" ]] || [[ "$id" == "null" ]]; then
+        echo "[ERROR] Failed to create label:" >&2
+        echo "$response" | jq -r '.message // .error // .' >&2
+        return 1
+    fi
+
+    echo "$id"
+}
+
+# Delete label
+gitlab_label_delete() {
+    local name="$1"
+
+    if [[ -z "$name" ]]; then
+        echo "[ERROR] Label name required" >&2
+        return 1
+    fi
+
+    if ! gitlab_configured; then
+        echo "[ERROR] GitLab not configured" >&2
+        return 1
+    fi
+
+    local project_encoded
+    project_encoded=$(gitlab_encode_project)
+
+    # URL encode the label name (using printf to avoid newline issues)
+    local name_encoded
+    name_encoded=$(printf '%s' "$name" | jq -sRr @uri)
+
+    local response
+    response=$(gitlab_api DELETE "/projects/${project_encoded}/labels/${name_encoded}")
+
+    # DELETE returns 204 with no content on success
+    if [[ -z "$response" ]]; then
+        echo "(v) Label '$name' deleted"
+    else
+        local error
+        error=$(echo "$response" | jq -r '.message // .error // .' 2>/dev/null)
+        if [[ -n "$error" ]] && [[ "$error" != "null" ]]; then
+            echo "[ERROR] Failed to delete label: $error" >&2
+            return 1
+        fi
+        echo "(v) Label '$name' deleted"
+    fi
+}
