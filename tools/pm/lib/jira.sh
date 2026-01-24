@@ -196,19 +196,50 @@ jira_issue_create() {
     fi
 
     local payload
-    payload=$(jq -n \
-        --arg project "$JIRA_PROJECT_KEY" \
-        --arg summary "$summary" \
-        --arg type "$issue_type" \
-        --arg desc "$description" \
-        '{
-            fields: {
-                project: { key: $project },
-                summary: $summary,
-                issuetype: { name: $type },
-                description: (if $desc != "" then $desc else null end)
-            }
-        }')
+    # Jira Cloud API v3 requires ADF format for description
+    if is_jira_cloud && [[ -n "$description" ]]; then
+        payload=$(jq -n \
+            --arg project "$JIRA_PROJECT_KEY" \
+            --arg summary "$summary" \
+            --arg type "$issue_type" \
+            --arg desc "$description" \
+            '{
+                fields: {
+                    project: { key: $project },
+                    summary: $summary,
+                    issuetype: { name: $type },
+                    description: {
+                        type: "doc",
+                        version: 1,
+                        content: [
+                            {
+                                type: "paragraph",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: $desc
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }')
+    else
+        payload=$(jq -n \
+            --arg project "$JIRA_PROJECT_KEY" \
+            --arg summary "$summary" \
+            --arg type "$issue_type" \
+            --arg desc "$description" \
+            '{
+                fields: {
+                    project: { key: $project },
+                    summary: $summary,
+                    issuetype: { name: $type },
+                    description: (if $desc != "" then $desc else null end)
+                }
+            }')
+    fi
 
     local response
     response=$(jira_api POST "/issue" "$payload")
@@ -458,21 +489,51 @@ jira_bulk_create() {
 
         echo -n "[$line_num] Creating: ${summary:0:40}..."
 
-        # Create issue
+        # Create issue (Jira Cloud API v3 requires ADF for description)
         local payload
-        payload=$(jq -n \
-            --arg project "$JIRA_PROJECT_KEY" \
-            --arg summary "$summary" \
-            --arg type "$type" \
-            --arg desc "$description" \
-            '{
-                fields: {
-                    project: { key: $project },
-                    summary: $summary,
-                    issuetype: { name: $type },
-                    description: (if $desc != "" then $desc else null end)
-                }
-            }')
+        if is_jira_cloud && [[ -n "$description" ]]; then
+            payload=$(jq -n \
+                --arg project "$JIRA_PROJECT_KEY" \
+                --arg summary "$summary" \
+                --arg type "$type" \
+                --arg desc "$description" \
+                '{
+                    fields: {
+                        project: { key: $project },
+                        summary: $summary,
+                        issuetype: { name: $type },
+                        description: {
+                            type: "doc",
+                            version: 1,
+                            content: [
+                                {
+                                    type: "paragraph",
+                                    content: [
+                                        {
+                                            type: "text",
+                                            text: $desc
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }')
+        else
+            payload=$(jq -n \
+                --arg project "$JIRA_PROJECT_KEY" \
+                --arg summary "$summary" \
+                --arg type "$type" \
+                --arg desc "$description" \
+                '{
+                    fields: {
+                        project: { key: $project },
+                        summary: $summary,
+                        issuetype: { name: $type },
+                        description: (if $desc != "" then $desc else null end)
+                    }
+                }')
+        fi
 
         local response
         response=$(jira_api POST "/issue" "$payload")
