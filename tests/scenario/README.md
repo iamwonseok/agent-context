@@ -120,23 +120,23 @@ agent status
 
 ### 긴급/인시던트 대응
 
-- `002-incident-idle-available.md`
+- `002-incident-idle-available.md` (Dev+Mgr)
   - 문제 발생 → 새 task 생성 → 현재 task 없는 사람 찾기(성공) → assign → 개발-테스트-머지 루프
-- `003-incident-idle-unavailable-replan.md`
-  - 문제 발생 → 새 task 생성 → 현재 task 없는 사람 찾기(실패) → 강제 재할당/일정 변경 → 개발-테스트-머지 루프(PM)
+- `003-mgr-incident-idle-unavailable-replan.md` **(Mgr)**
+  - 문제 발생 → 새 task 생성 → 현재 task 없는 사람 찾기(실패) → 강제 재할당/일정 변경 → 개발-테스트-머지 루프
 
 ### Git 워크플로우 심화
 
-- `004-parallel-work-detached-mode.md`
+- `004-dev-parallel-work-detached-mode.md` **(Dev)**
   - 병렬 작업/A-B 테스팅: Detached Mode + Worktree를 활용한 여러 접근법 동시 실험
-- `005-rebase-conflict-resolution.md`
+- `005-dev-rebase-conflict-resolution.md` **(Dev)**
   - 리베이스 충돌 해결: `agent dev sync` 중 충돌 발생 → 해결 → `--continue`/`--abort`
-- `006-draft-mr-iterative-review.md`
+- `006-draft-mr-iterative-review.md` (Dev+Mgr)
   - Draft MR 반복 리뷰: 초안 MR → 피드백 → 수정 → 재요청 → 최종 승인 사이클
 
 ### 프로젝트 세팅
 
-- `007-project-setup-bulk-assign.md`
+- `007-mgr-project-setup-bulk-assign.md` **(Mgr)**
   - 프로젝트 초기 세팅: CSV 일괄 이슈 생성 + Assignee 할당 (pm jira bulk-create)
 
 ### Jira 워크플로우 (역할별)
