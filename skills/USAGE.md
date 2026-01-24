@@ -52,15 +52,18 @@ For each skill in workflow:
 6. Move to next skill
 ```
 
-### 3. Quality Gates
+### 3. Quality Gates (Recommended)
 
-| After | Check | Criteria |
-|-------|-------|----------|
+> These are **recommended targets**, not hard blocks.
+> See: [ARCHITECTURE.md](../ARCHITECTURE.md#3-feedback-over-enforcement)
+
+| After | Check | Target |
+|-------|-------|--------|
 | check-style | Lint | 0 violations |
 | run-tests | Test | All pass, >=80% coverage |
 | review-code | Review | 0 critical issues |
 
-If gate fails: fix issues, re-run skill, check again.
+If gate not met: fix if possible, or document rationale in MR and proceed.
 
 ---
 
@@ -115,17 +118,17 @@ For each task, repeat:
 [check-style]
     Run linter
     Fix violations
-    Gate: 0 violations
+    Target: 0 violations
 
 [run-tests]
     Run all tests
     Check coverage
-    Gate: all pass, >=80%
+    Target: all pass, >=80%
 
 [review-code]
     Self-review code
     Check memory safety, timing
-    Gate: 0 critical
+    Target: 0 critical
 
 [commit-changes]
     git add .

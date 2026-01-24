@@ -95,10 +95,14 @@ skills:
 +------------------------+
 ```
 
-## Quality Gates
+## Quality Gates (Recommended)
 
-| After | Gate | Criteria |
-|-------|------|----------|
+> These are **recommended targets**, not hard blocks.
+> In exceptional cases, document the rationale in MR description and proceed.
+> See: [ARCHITECTURE.md](../../ARCHITECTURE.md#3-feedback-over-enforcement)
+
+| After | Gate | Target |
+|-------|------|--------|
 | run-tests (each) | Test | All pass |
 | check-style | Lint | 0 violations |
 | review-code | Review | 0 critical |

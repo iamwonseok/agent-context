@@ -223,14 +223,14 @@ Skill combinations for scenarios:
 - `developer/refactor.md` - Code refactoring
 - `manager/*` - Manager workflows (approval, monitoring, initiative, ...)
 
-### Quality Gates
-| Gate | Criteria |
-|------|----------|
+### Quality Gates (Recommended Targets)
+| Gate | Target |
+|------|--------|
 | Lint | 0 violations |
 | Test | All pass, ≥80% coverage |
 | Review | 0 critical issues |
 
-> These are **recommended targets**, not hard blocks. If exceptions are needed, document the rationale in MR/commit and proceed.
+> These are **recommended targets**, not hard blocks. If exceptions are needed, document the rationale in MR/commit and proceed. See `ARCHITECTURE.md` for design philosophy.
 
 ## Bash Scripts
 

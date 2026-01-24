@@ -28,9 +28,12 @@ skills:
 
 ## Command Flow
 
+> **Note**: Commands below are **not yet implemented**. Use Manual Alternative in the meantime.
+
 ### Step 1: Define Initiative
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr initiative create "Q1 Performance Optimization"
 ```
 
@@ -44,6 +47,7 @@ agent mgr initiative create "Q1 Performance Optimization"
 ### Step 2: Create Epics
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr epic create "Phase 1: Profiling" --initiative=INIT-1
 agent mgr epic create "Phase 2: Database" --initiative=INIT-1
 agent mgr epic create "Phase 3: Caching" --initiative=INIT-1
@@ -58,6 +62,7 @@ agent mgr epic create "Phase 3: Caching" --initiative=INIT-1
 ### Step 3: Schedule Timeline
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr schedule INIT-1
 ```
 
@@ -71,6 +76,7 @@ agent mgr schedule INIT-1
 ### Step 4: Allocate Resources
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr allocate INIT-1
 ```
 
@@ -83,6 +89,7 @@ agent mgr allocate INIT-1
 ### Step 5: Communicate
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr announce INIT-1
 ```
 
@@ -101,6 +108,9 @@ agent mgr announce INIT-1
 ## Example
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI workflow example
+# For now, use Jira UI to create Epic/Initiative
+
 # Create initiative
 agent mgr initiative create "Q1 Performance"
 

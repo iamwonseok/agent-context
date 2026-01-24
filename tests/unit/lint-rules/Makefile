@@ -36,35 +36,35 @@ test-c: docker-build
 	@echo ""
 	@echo "${YELLOW}=== Testing C Code ===${NC}"
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_c.sh
+		${WORK_DIR}/tools/lint/scripts/test_c.sh
 
 # Test Bash scripts
 test-bash: docker-build
 	@echo ""
 	@echo "${YELLOW}=== Testing Bash Scripts ===${NC}"
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_bash.sh
+		${WORK_DIR}/tools/lint/scripts/test_bash.sh
 
 # Test Python code
 test-python: docker-build
 	@echo ""
 	@echo "${YELLOW}=== Testing Python Code ===${NC}"
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_python.sh
+		${WORK_DIR}/tools/lint/scripts/test_python.sh
 
 # Test Makefiles
 test-make: docker-build
 	@echo ""
 	@echo "${YELLOW}=== Testing Makefiles ===${NC}"
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_make.sh
+		${WORK_DIR}/tools/lint/scripts/test_make.sh
 
 # Test YAML/Dockerfile
 test-yaml: docker-build
 	@echo ""
 	@echo "${YELLOW}=== Testing YAML/Dockerfile ===${NC}"
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_yaml.sh
+		${WORK_DIR}/tools/lint/scripts/test_yaml.sh
 
 # Generate report
 report: docker-build
@@ -72,7 +72,7 @@ report: docker-build
 	@echo "${YELLOW}=== Generating Report ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/generate_report.sh \
+		${WORK_DIR}/tools/lint/scripts/generate_report.sh \
 		> ${OUT_DIR}/report.md
 	@echo "${GREEN}Report generated: ${OUT_DIR}/report.md${NC}"
 
@@ -87,7 +87,7 @@ test-c-junit: docker-build
 	@echo "${YELLOW}=== Testing C Code (JUnit) ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_c_junit.sh \
+		${WORK_DIR}/tools/lint/scripts/test_c_junit.sh \
 		> ${OUT_DIR}/junit-c.xml
 
 test-bash-junit: docker-build
@@ -95,7 +95,7 @@ test-bash-junit: docker-build
 	@echo "${YELLOW}=== Testing Bash Scripts (JUnit) ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_bash_junit.sh \
+		${WORK_DIR}/tools/lint/scripts/test_bash_junit.sh \
 		> ${OUT_DIR}/junit-bash.xml
 
 test-python-junit: docker-build
@@ -103,7 +103,7 @@ test-python-junit: docker-build
 	@echo "${YELLOW}=== Testing Python Code (JUnit) ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_python_junit.sh \
+		${WORK_DIR}/tools/lint/scripts/test_python_junit.sh \
 		> ${OUT_DIR}/junit-python.xml
 
 test-make-junit: docker-build
@@ -111,7 +111,7 @@ test-make-junit: docker-build
 	@echo "${YELLOW}=== Testing Makefiles (JUnit) ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_make_junit.sh \
+		${WORK_DIR}/tools/lint/scripts/test_make_junit.sh \
 		> ${OUT_DIR}/junit-make.xml
 
 test-yaml-junit: docker-build
@@ -119,25 +119,25 @@ test-yaml-junit: docker-build
 	@echo "${YELLOW}=== Testing YAML/Dockerfile (JUnit) ===${NC}"
 	@mkdir -p ${OUT_DIR}
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		${WORK_DIR}/coding-convention/scripts/test_yaml_junit.sh \
+		${WORK_DIR}/tools/lint/scripts/test_yaml_junit.sh \
 		> ${OUT_DIR}/junit-yaml.xml
 
 # Run individual tool checks (for debugging)
 check-clang-format: docker-build
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		bash -c "cd ${WORK_DIR} && clang-format --dry-run --Werror coding-convention/tests/c/pass/*.c"
+		bash -c "cd ${WORK_DIR} && clang-format --dry-run --Werror tests/unit/lint-rules/c/pass/*.c"
 
 check-shellcheck: docker-build
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		bash -c "cd ${WORK_DIR} && shellcheck coding-convention/tests/bash/pass/*.sh"
+		bash -c "cd ${WORK_DIR} && shellcheck tests/unit/lint-rules/bash/pass/*.sh"
 
 check-black: docker-build
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		bash -c "cd ${WORK_DIR} && black --check coding-convention/tests/python/pass/*.py"
+		bash -c "cd ${WORK_DIR} && black --check tests/unit/lint-rules/python/pass/*.py"
 
 check-yamllint: docker-build
 	@docker run --rm -v ${PROJECT_ROOT}:${WORK_DIR} ${IMAGE_NAME} \
-		bash -c "cd ${WORK_DIR} && yamllint -c .yamllint.yml coding-convention/tests/yaml/pass/*.yaml"
+		bash -c "cd ${WORK_DIR} && yamllint -c .yamllint.yml tests/unit/lint-rules/yaml/pass/*.yaml"
 
 # Clean generated files
 clean:

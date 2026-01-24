@@ -32,3 +32,13 @@ Tool configs are in `templates/configs/`:
 | Bash | `.shellcheckrc` |
 | YAML | `.yamllint.yml` |
 | Dockerfile | `.hadolint.yaml` |
+
+## Test Coverage Priority
+
+| Priority | Rule Type | Test Method |
+|----------|-----------|-------------|
+| P0 | Safety/Critical (C pointers, memory) | Automated (required) |
+| P1 | Auto-detectable (format, naming) | Lint tools |
+| P2 | Subjective judgment | AI review (optional) |
+
+Current coverage focuses on P0/P1. P2 rules are progressively added via `lint:c:ai` job.
