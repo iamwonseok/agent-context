@@ -16,6 +16,13 @@ skills:
 
 # Feature Development
 
+## Implementation Status
+
+- **Status**: Implemented
+- **CLI Coverage**: 95% (Jira auto-transition optional)
+- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#feature-development-manual)
+- **Last Updated**: 2026-01-24
+
 ## When to Use
 
 - New feature request

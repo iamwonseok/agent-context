@@ -10,6 +10,14 @@ skills:
 
 # Progress Monitoring
 
+## Implementation Status
+
+- **Status**: Partial
+- **CLI Coverage**: 30% (MR 조회만 가능, Epic/Initiative 상태는 Jira UI)
+- **Manual Alternative**: Jira UI에서 필터/보드/리포트 사용 + `glab mr list`로 MR 현황 조회
+- **Last Updated**: 2026-01-24
+- **Gaps**: `agent mgr status`, `agent mgr detect-delays` 명령어 미구현
+
 ## When to Use
 
 - Daily standups

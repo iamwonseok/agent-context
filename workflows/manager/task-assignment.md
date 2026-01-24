@@ -10,6 +10,14 @@ skills:
 
 # Task Assignment
 
+## Implementation Status
+
+- **Status**: Partial
+- **CLI Coverage**: 40% (조회만 가능, 할당은 UI 필요)
+- **Manual Alternative**: JQL로 유휴 인력 조회 + Jira UI에서 Assignee 할당
+- **Last Updated**: 2026-01-24
+- **Gaps**: `agent mgr inbox`, `agent mgr assign` 명령어 미구현
+
 ## When to Use
 
 - New task needs assignee

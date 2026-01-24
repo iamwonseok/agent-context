@@ -11,6 +11,14 @@ skills:
 
 # Epic Management
 
+## Implementation Status
+
+- **Status**: Roadmap
+- **CLI Coverage**: 0% (문서 정의만 존재)
+- **Manual Alternative**: Jira UI에서 Epic 생성 + 하위 Task/Story 연결
+- **Last Updated**: 2026-01-24
+- **Note**: 현재 `agent mgr epic` 명령어는 미구현 상태입니다.
+
 ## When to Use
 
 - Breaking down initiative into features

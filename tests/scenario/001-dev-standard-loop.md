@@ -123,3 +123,184 @@ agent mgr approve <mr-id>
 | 6 | `agent mgr pending/review`가 MR을 조회했는가 | [ ] |
 | 7 | `agent mgr approve`가 human_only로 보호되는지 확인했는가 | [ ] |
 
+---
+
+## Manual Flow (Without Agent)
+
+Agent 없이 순수 Git + CLI로 동일한 워크플로우를 수행하는 방법입니다.
+
+### Git Only (핵심 명령어)
+
+```bash
+# 1. 브랜치 생성
+git checkout -b feat/G6SOCTC-123 main
+
+# 2. Context 생성 (선택사항)
+mkdir -p .context/G6SOCTC-123/logs
+cat > .context/G6SOCTC-123/summary.yaml << EOF
+task_id: G6SOCTC-123
+branch: feat/G6SOCTC-123
+started_at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+status: in_progress
+EOF
+
+# 3. 개발 작업
+vim src/task_assignment.py
+vim tests/test_task_assignment.py
+
+# 4. 품질 체크
+make lint  # 또는 flake8, pylint
+make test  # 또는 pytest
+
+# 5. 커밋
+git add src/task_assignment.py tests/test_task_assignment.py
+git commit -m "feat(assignment): improve task assignment flow
+
+- Add priority-based assignment
+- Optimize capacity calculation
+- Add unit tests
+
+Refs: G6SOCTC-123"
+
+# 6. 검증 기록 (선택사항)
+cat > .context/G6SOCTC-123/verification.md << EOF
+# Verification Report
+
+## Test Results
+- Unit tests: 12/12 PASS
+- Integration tests: 5/5 PASS
+- Coverage: 87%
+
+## Requirements
+- [x] Priority-based assignment implemented
+- [x] Capacity calculation optimized
+- [x] Unit tests added
+EOF
+
+# 7. Sync & Push
+git fetch origin
+git rebase origin/main
+git push -u origin feat/G6SOCTC-123
+
+# 8. MR 생성
+# GitLab
+glab mr create \
+  --title "feat: improve task assignment flow" \
+  --description "$(cat << 'DESC'
+## Summary
+- Priority-based assignment
+- Optimized capacity calculation
+
+## Test Plan
+- [x] Unit tests: 12/12 pass
+- [x] Integration tests: 5/5 pass
+- [x] Performance test: 30% improvement
+
+## Verification
+See .context/G6SOCTC-123/verification.md
+DESC
+)" \
+  --label feature
+
+# GitHub
+gh pr create \
+  --title "feat: improve task assignment flow" \
+  --body "..." \
+  --label feature
+
+# 9. Jira 상태 전환 (선택사항)
+# jira-cli
+jira issue transition G6SOCTC-123 "In Review"
+
+# curl
+curl -X POST \
+  -H "Authorization: Bearer $JIRA_TOKEN" \
+  -H "Content-Type: application/json" \
+  "$JIRA_URL/rest/api/3/issue/G6SOCTC-123/transitions" \
+  -d '{"transition": {"id": "31"}}'
+```
+
+### UI Steps (플랫폼별 작업)
+
+Manual Flow에서 UI로 수행해야 하는 작업:
+
+**MR/PR 생성** (선택: CLI 또는 UI)
+- GitLab/GitHub UI에서 "New MR/PR" 버튼 클릭
+- 또는 `glab mr create` / `gh pr create` CLI 사용
+
+**리뷰 & 승인**
+- MR/PR 페이지에서 코멘트 작성
+- 승인 버튼 클릭 (권한 필요)
+- 플랫폼 설정에 따라 승인 정책 상이
+
+**머지**
+- MR/PR 페이지에서 "Merge" 버튼 클릭
+- 또는 `glab mr merge <id>` / `gh pr merge <id>` CLI 사용
+- 플랫폼 설정에 따라 머지 옵션 상이 (Fast-forward, Squash, Merge commit)
+
+**Context 정리** (MR 머지 후)
+```bash
+# 아카이브
+mv .context/G6SOCTC-123 .archive/$(date +%Y%m%d)-G6SOCTC-123
+
+# 브랜치 정리
+git checkout main
+git pull
+git branch -d feat/G6SOCTC-123
+```
+
+---
+
+## Responsibility Boundary
+
+Agent-based 워크플로우와 Manual 워크플로우에서 CLI와 UI의 책임 구분:
+
+### CLI Responsibilities
+
+**Git 작업**
+- 브랜치 생성/전환/삭제 (`git checkout`, `git branch`)
+- 커밋 (`git add`, `git commit`)
+- Sync (`git fetch`, `git rebase`)
+- Push (`git push`)
+
+**품질 체크**
+- Lint (`make lint`, `flake8`, `pylint`)
+- Test (`make test`, `pytest`)
+- Pre-commit hook 설정 (선택사항)
+
+**Context 관리**
+- `.context/` 디렉터리 생성/관리
+- `summary.yaml`, `verification.md`, `retrospective.md` 작성
+
+**통합 (CLI 가능)**
+- MR/PR 생성 (`glab mr create`, `gh pr create`)
+- Jira 상태 전환 (`jira-cli`, `curl`)
+
+### UI Responsibilities (Platform-specific)
+
+**MR/PR 관리** (일부는 CLI로도 가능)
+- MR/PR 생성 (GitLab/GitHub UI 또는 glab/gh CLI)
+- Draft → Ready 전환 (UI 또는 `glab mr update --ready`)
+- 인라인 코멘트 작성 (UI 권장)
+- 코드 리뷰 (UI)
+
+**승인 & 머지** (권한 필요)
+- MR/PR 승인 (UI 또는 `glab mr approve <id>`)
+- MR/PR 머지 (UI 또는 `glab mr merge <id>`)
+- 머지 옵션 선택 (Fast-forward, Squash, Merge commit)
+
+**이슈 관리** (일부는 CLI로도 가능)
+- Jira/GitLab Issue 생성/조회 (UI 또는 CLI)
+- 라벨/마일스톤 관리 (UI)
+- 할당자 변경 (UI)
+
+### Optional CLI Automation
+
+다음 작업들은 **선택적으로** CLI로 자동화 가능:
+
+- `glab` / `gh` CLI: MR/PR 생성, 승인, 머지
+- `jira-cli`: Jira 이슈 생성, 상태 전환
+- `pm` CLI (agent-context 제공): 통합 wrapper
+
+**주의**: 플랫폼 설정(권한, 정책)에 따라 CLI 동작이 제한될 수 있음
+

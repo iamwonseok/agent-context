@@ -12,6 +12,14 @@ skills:
 
 # Hotfix
 
+## Implementation Status
+
+- **Status**: Implemented
+- **CLI Coverage**: 90% (verification/retro skippable)
+- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#hotfix-manual---fastest) - **Manual이 더 빠름**
+- **Last Updated**: 2026-01-24
+- **Note**: 긴급 상황에서는 Manual 방식이 Agent보다 빠르고 직접적입니다.
+
 ## When to Use
 
 - Production bug
