@@ -27,9 +27,12 @@ skills:
 
 ## Command Flow
 
+> **Note**: Commands below are **not yet implemented**. Use Manual Alternative in the meantime.
+
 ### Step 1: Create Epic
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr epic create "User Authentication System" --initiative=INIT-1
 ```
 
@@ -42,6 +45,7 @@ agent mgr epic create "User Authentication System" --initiative=INIT-1
 ### Step 2: Break Down to Tasks
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr breakdown EPIC-50
 ```
 
@@ -54,6 +58,7 @@ agent mgr breakdown EPIC-50
 ### Step 3: Estimate
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr estimate EPIC-50
 ```
 
@@ -66,6 +71,7 @@ agent mgr estimate EPIC-50
 ### Step 4: Track Progress
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr status EPIC-50
 ```
 
@@ -87,6 +93,9 @@ agent mgr status EPIC-50
 ## Example
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI workflow example
+# For now, use Jira UI to create Epic and link Tasks
+
 # Create epic
 agent mgr epic create "Auth System" --initiative=INIT-1
 

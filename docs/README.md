@@ -2,6 +2,16 @@
 
 agent-context 프로젝트의 모든 문서를 관리하는 디렉터리입니다.
 
+## Language Policy
+
+| Document Type | Language | Notes |
+|---------------|----------|-------|
+| ARCHITECTURE.md, README.md | English | Official baseline (English first) |
+| Internal guides, scenarios | Korean OK | Internal team use |
+| Executable code, commits | English only | Per .cursorrules policy |
+
+**On change**: Update English docs first, sync Korean docs if needed.
+
 ## 구조
 
 ```
@@ -17,7 +27,7 @@ docs/
 ├── style/                   # 코딩 컨벤션 (coding-convention)
 │   ├── bash.md
 │   ├── c.md
-│   ├── cpp.md
+│   ├── cpp.md               # (Out of scope)
 │   ├── make.md
 │   ├── python.md
 │   └── yaml.md
@@ -29,8 +39,7 @@ docs/
 ├── references/              # 외부 참조 문서/프로젝트
 │   └── README.md            # 참고 링크 모음
 └── internal/                # 내부 임시 문서 (handoff, draft)
-    ├── README.md            # 정책 및 lifecycle
-    └── handoff.md           # 세션 인수인계 (완료 후 삭제)
+    └── README.md            # 정책 및 lifecycle
 ```
 
 ## Quick Links

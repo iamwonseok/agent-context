@@ -1027,6 +1027,22 @@ A5: 예. 모든 Agent 기능은 Manual 대안을 제공하며, Hybrid 접근 (Ma
 
 ---
 
+---
+
+## Implementation Status
+
+> Quick reference for next session. See each Phase section for details.
+
+| Phase | Status | Priority Tasks |
+|-------|--------|----------------|
+| Phase 1 | Pending | State Assertion, Self-Correction, Cursor Mode Integration |
+| Phase 2 | Pending | Knowledge Caching, Question-Driven Planning |
+| Phase 3 | Roadmap | Agentic CI/CD (optional) |
+
+**Related RFC**: [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md) for CLI enhancements
+
+---
+
 **문서 메타데이터**:
 - 제안일: 2026-01-24
 - 작성자: Agent Context Team

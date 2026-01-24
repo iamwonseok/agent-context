@@ -27,9 +27,12 @@ skills:
 
 ## Command Flow
 
+> **Note**: Most commands below are **not yet implemented**. See "Gaps" in Implementation Status.
+
 ### Step 1: Check Status
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr status EPIC-50
 ```
 
@@ -42,6 +45,7 @@ agent mgr status EPIC-50
 ### Step 2: Detect Issues
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr detect-delays EPIC-50
 ```
 
@@ -54,6 +58,7 @@ agent mgr detect-delays EPIC-50
 ### Step 3: Generate Report
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI example
 agent mgr report daily
 agent mgr report weekly --epic=EPIC-50
 ```
@@ -98,6 +103,9 @@ agent mgr assign TASK-456 --to=@jane
 ## Example
 
 ```bash
+# [NOT IMPLEMENTED] Future CLI workflow example
+# For now, use Jira UI filters/boards/reports + `glab mr list`
+
 # Morning check
 agent mgr status EPIC-50
 # Output: 70% complete, 2 blocked

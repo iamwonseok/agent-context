@@ -88,4 +88,8 @@ agent dev cleanup --handoff-archive [--older-than=30d]
 
 ## Current Files
 
-- `handoff.md` - Manual Fallback improvement work handoff (2026-01-24)
+(No active handoff documents - all tasks migrated to RFCs)
+
+**Reference**: For implementation status, see:
+- [RFC 002](../rfcs/002-proposal.md#implementation-status) - v2.0 Implementation Status
+- [RFC 005](../rfcs/005-manual-fallback-improvement.md) - Manual Fallback Tasks
