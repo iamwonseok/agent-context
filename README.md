@@ -87,12 +87,7 @@ agent-context/                  # Repository root = deployable unit
 ├── templates/                  # User project templates
 ├── coding-convention/          # Language-specific standards
 ├── setup.sh                    # Installation script
-├── why.md                      # Design philosophy
-│
-└── _dev/                       # Development only (not deployed)
-    ├── .agent -> ../           # Symlink for testing
-    ├── plan/                   # Implementation plans
-    └── design/                 # Design documents
+└── why.md                      # Design philosophy
 ```
 
 ### User Project (After Setup)
@@ -219,17 +214,17 @@ For contributing to agent-context itself:
 git clone https://github.com/your-org/agent-context.git
 cd agent-context
 
-# Setup development environment
-cd _dev
-ln -s .. .agent  # Already created
-.agent/setup.sh --non-interactive
-
 # Make changes to skills/, workflows/, tools/
-# Test in _dev/ directory
-agent dev start TEST-001
+# Test using Docker or global installation
+
+# Option 1: Install globally for testing
+./setup.sh --global
+
+# Option 2: Use Docker (recommended for isolated testing)
+# docker run -v $(pwd):/workspace ...
 ```
 
-See [_dev/plan/](/_dev/plan/) for implementation plans.
+See [plan/](plan/) for implementation plans.
 
 ## Environment Variables
 

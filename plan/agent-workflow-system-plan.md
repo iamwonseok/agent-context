@@ -68,7 +68,7 @@
   2. `.project.yaml`의 `agent_context` 설정
   3. `$AGENT_CONTEXT_PATH` 환경변수
   4. `~/.agent` (전역 기본값)
-- [x] **개발 환경**: `_dev/` 디렉터리 + symlink (`_dev/.agent -> ../`)
+- [x] **개발 환경**: Docker 기반 테스트 또는 전역 설치 (`~/.agent`)
 
 ### Quality Requirements
 
@@ -171,14 +171,6 @@ agent-context/                        # 레포 루트 = 배포 단위 (코어)
 ├── why.md                            # 설계 철학
 ├── README.md
 │
-├── _dev/                             # 개발 전용 (배포 안됨)
-│   ├── .agent -> ../                 # symlink (테스트용)
-│   ├── plan/                         # 개발 계획 문서
-│   ├── design/                       # 설계 문서
-│   ├── .cursorrules                  # setup.sh로 생성
-│   ├── .project.yaml                 # 테스트 설정
-│   └── configs/                      # 테스트용 설정
-│
 └── tests/                            # 단위 테스트
     ├── test_skills.sh
     └── test_cli.sh
@@ -280,23 +272,20 @@ skills/
 **Deps**: None (최우선 실행)
 
 **Work**:
-- [ ] `.agent/` 내용을 루트로 이동
-- [ ] `plan/`, `design/` → `_dev/plan/`, `_dev/design/`으로 이동
-- [ ] `_dev/.agent -> ../` symlink 생성
-- [ ] `setup.sh` 수정 (전역/로컬 설치 지원)
-- [ ] 경로 해석 로직 추가 (`resolve_agent_context()`)
-- [ ] `.gitignore` 업데이트 (`_dev/.agent`, `_dev/configs/` 등)
-- [ ] 문서 업데이트 (README.md, why.md)
+- [x] `.agent/` 내용을 루트로 이동
+- [x] `setup.sh` 수정 (전역/로컬 설치 지원)
+- [x] 경로 해석 로직 추가 (`resolve_agent_context()`)
+- [x] `.gitignore` 업데이트
+- [x] 문서 업데이트 (README.md, why.md)
 
 **Files**:
 - 루트 디렉터리 전체 재구성
 - `setup.sh`
-- `_dev/` 디렉터리 생성
 
 **Done when**:
 - 레포 루트 = 배포 단위 (skills, workflows, tools가 루트에 위치)
-- `_dev/`에서 symlink로 테스트 가능
-- `cd _dev && .agent/setup.sh && agent --version` 동작
+- Docker 기반 테스트 또는 전역 설치로 테스트 가능
+- `./setup.sh --global && agent --version` 동작
 
 ---
 
@@ -1257,13 +1246,13 @@ agent init
 ### Phase 0: 구조 마이그레이션
 - Task 0
 - 레포 구조 변경 (`.agent/` → 루트)
-- 개발 환경 설정 (`_dev/` + symlink)
+- 개발 환경 설정 (Docker 기반 테스트)
 
 **Phase 0 성공 기준**:
-- [ ] 레포 루트에 `skills/`, `workflows/`, `tools/` 위치
-- [ ] `_dev/.agent -> ../` symlink 동작
-- [ ] `cd _dev && .agent/setup.sh` 실행 가능
-- [ ] 기존 테스트 통과
+- [x] 레포 루트에 `skills/`, `workflows/`, `tools/` 위치
+- [x] Docker 또는 전역 설치로 테스트 가능
+- [x] `./setup.sh --global` 실행 가능
+- [x] 기존 테스트 통과
 
 ### Phase 1: Core (MVP)
 - Task 1, 9, 10, 11
@@ -1329,7 +1318,7 @@ agent dev submit
 - [x] 모든 요구사항 명확
 - [x] 기존 구조와의 호환성 고려
 - [x] 배포 모델 결정 (전역 + 로컬 하이브리드)
-- [x] 개발 환경 설계 (`_dev/` + symlink)
+- [x] 개발 환경 설계 (Docker 기반 테스트)
 - [ ] 이해관계자 승인
 
 ### Implementation
@@ -1357,7 +1346,7 @@ agent dev submit
 - [x] `.gitignore` 업데이트
 - [x] 문서 업데이트
 
-> **Note**: `_dev/` 디렉터리는 테스트 시에만 임시 생성/삭제하는 방식으로 운영
+> **Note**: 테스트는 Docker 기반 또는 전역 설치(`~/.agent`)로 진행
 
 ---
 
