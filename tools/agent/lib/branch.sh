@@ -502,10 +502,9 @@ dev_submit() {
     fi
     
     if [[ -n "$pm_cmd" ]]; then
-        local mr_opts="--source=$current_branch --title=\"$task_id: $(git log -1 --format=%s)\""
-        if [[ "$draft" == "true" ]]; then
-            mr_opts="$mr_opts --draft"
-        fi
+        local commit_msg
+        commit_msg=$(git log -1 --format=%s)
+        local mr_title="$task_id: $commit_msg"
         
         # Get context summary for MR description
         local context_path
@@ -521,12 +520,50 @@ dev_submit() {
             echo "  Including context summary in MR description..."
         fi
         
-        # For MVP, just show what would be done
-        echo "[INFO] MR creation command:"
-        echo "  $pm_cmd gitlab mr create $mr_opts"
-        echo ""
-        echo "[MVP] Actual MR creation requires pm CLI configuration."
-        echo "      Configure with: pm config init"
+        # Detect platform and create MR/PR
+        local platform=""
+        local config_output
+        config_output=$("$pm_cmd" config show 2>/dev/null)
+        if echo "$config_output" | grep -A2 "\[GitHub\]" | grep -q "Repo:.*[a-zA-Z0-9]"; then
+            platform="github"
+        elif echo "$config_output" | grep -A3 "\[GitLab\]" | grep -q "Project:.*[a-zA-Z0-9]"; then
+            platform="gitlab"
+        fi
+        
+        if [[ "$platform" == "github" ]]; then
+            echo "  Creating GitHub Pull Request..."
+            local pr_result
+            if [[ "$draft" == "true" ]]; then
+                pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" --draft 2>&1)
+            else
+                pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" 2>&1)
+            fi
+            if echo "$pr_result" | grep -q "Created:"; then
+                echo "$pr_result"
+                echo "  [OK] PR created"
+            else
+                echo "$pr_result"
+                echo "  [WARN] PR creation failed, create manually"
+            fi
+        elif [[ "$platform" == "gitlab" ]]; then
+            echo "  Creating GitLab Merge Request..."
+            local mr_result
+            if [[ "$draft" == "true" ]]; then
+                mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" --draft 2>&1)
+            else
+                mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" 2>&1)
+            fi
+            if echo "$mr_result" | grep -q "Created:"; then
+                echo "$mr_result"
+                echo "  [OK] MR created"
+            else
+                echo "$mr_result"
+                echo "  [WARN] MR creation failed, create manually"
+            fi
+        else
+            echo "[WARN] No GitHub/GitLab configured, skipping MR/PR creation"
+            echo "      Configure with: pm config init"
+        fi
     fi
     echo ""
     

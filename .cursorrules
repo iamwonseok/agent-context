@@ -144,6 +144,12 @@ If the exact workflow file is unclear, look under:
 - Default: **Interactive Mode = branch workflow in current directory**
 - For parallel/background work: **Detached Mode = worktree in `.worktrees/`**
 
+## Merge Strategy (Fast Forward + Rebase)
+- **Recommended**: Fast Forward merge for linear history
+- **Before MR submission**: Run `agent dev sync` to rebase on base branch
+- **On conflict**: Human intervention required (notify and wait)
+- **Override**: Project-specific settings in `.agent/config.yaml` (`merge_strategy: ff-only | squash | merge-commit`)
+
 ## Issue N/A Policy
 - If there is no Issue (N/A):
   - Create MR/PR as usual
@@ -152,6 +158,11 @@ If the exact workflow file is unclear, look under:
 ## Human-only Decisions (Permissions Boundary)
 - Decisions like **approval/merge** are `human_only` by default
   - The agent may prepare, summarize, and suggest actions, but should not execute final decisions unless explicitly authorized
+
+## Secrets Policy (init/setup)
+- On `agent init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
+- Use `--skip-secrets` to bypass validation (for CI environments)
+- See `templates/.secrets/README.md` for token setup
 
 ## Project Overview
 Workflow + CI/CD template for agent-driven development.
@@ -207,6 +218,8 @@ Skill combinations for scenarios:
 | Lint | 0 violations |
 | Test | All pass, ≥80% coverage |
 | Review | 0 critical issues |
+
+> These are **recommended targets**, not hard blocks. If exceptions are needed, document the rationale in MR/commit and proceed.
 
 ## Bash Scripts
 
