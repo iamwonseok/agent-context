@@ -7,9 +7,16 @@ skills:
   - plan/breakdown-work
   - plan/estimate-effort
   - analyze/assess-status
+references:
+  - docs/guides/pm-hierarchy-sync.md
+  - templates/planning/confluence-epic.md
 ---
 
 # Epic Management
+
+> [!NOTE]
+> PM 계층 운영 규칙은 [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md)를 참조하세요.
+> Confluence 페이지 템플릿은 [Confluence Epic Template](../../templates/planning/confluence-epic.md)을 사용하세요.
 
 ## Implementation Status
 

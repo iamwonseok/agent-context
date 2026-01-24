@@ -1,6 +1,6 @@
 # Project Plans
 
-This directory contains implementation plans for this project.
+This directory contains implementation plans and templates for this project.
 
 ## Directory Structure
 
@@ -21,6 +21,13 @@ project/
 | `.agent/plan/` | Agent-context framework plans | Framework maintainers |
 | `plan/` | This project's plans | You |
 
+## Available Templates
+
+| Template | Description |
+|----------|-------------|
+| [confluence-initiative.md](confluence-initiative.md) | Confluence Initiative page template |
+| [confluence-epic.md](confluence-epic.md) | Confluence Epic page template |
+
 ## Usage
 
 1. Create a new plan using the skill:
@@ -32,6 +39,9 @@ project/
    - `bugfix-login-issue.md`
 
 3. Reference plans in commits and MRs for traceability.
+
+4. For Confluence documentation, use the provided templates:
+   - See [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md) for operational rules
 
 ## Template
 

@@ -8,9 +8,16 @@ skills:
   - plan/breakdown-work
   - plan/schedule-timeline
   - plan/allocate-resources
+references:
+  - docs/guides/pm-hierarchy-sync.md
+  - templates/planning/confluence-initiative.md
 ---
 
 # Initiative Planning
+
+> [!NOTE]
+> PM 계층 운영 규칙은 [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md)를 참조하세요.
+> Confluence 페이지 템플릿은 [Confluence Initiative Template](../../templates/planning/confluence-initiative.md)을 사용하세요.
 
 ## Implementation Status
 
