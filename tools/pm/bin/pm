@@ -11,6 +11,7 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
 # Source libraries
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/jira.sh"
+source "$LIB_DIR/confluence.sh"
 source "$LIB_DIR/gitlab.sh"
 source "$LIB_DIR/github.sh"
 source "$LIB_DIR/workflow.sh"
@@ -34,6 +35,14 @@ COMMANDS:
     jira issue list         List Jira issues
     jira issue view KEY     View issue details
     jira issue create TITLE Create new issue
+
+    confluence me           Show current Confluence user
+    confluence space list   List spaces
+    confluence page list    List pages in space
+    confluence page view ID View page details
+    confluence page text ID View page as plain text
+    confluence page create  Create new page
+    confluence search CQL   Search pages
 
     gitlab me               Show current GitLab user
     gitlab mr list          List merge requests
@@ -155,6 +164,115 @@ cmd_jira() {
         *)
             echo "[ERROR] Unknown jira command: $1" >&2
             echo "Usage: pm jira <me|issue>" >&2
+            exit 1
+            ;;
+    esac
+}
+
+cmd_confluence() {
+    load_config || exit 1
+
+    case "$1" in
+        me)
+            confluence_me
+            ;;
+        space)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local limit=25
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    confluence_space_list "$limit"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown confluence space command: $1" >&2
+                    echo "Usage: pm confluence space <list>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        page)
+            shift
+            case "$1" in
+                list)
+                    shift
+                    local space=""
+                    local limit=25
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--space) space="$2"; shift ;;
+                            -n|--limit) limit="$2"; shift ;;
+                        esac
+                        shift
+                    done
+                    confluence_page_list "$space" "$limit"
+                    ;;
+                view)
+                    confluence_page_view "$2"
+                    ;;
+                text)
+                    confluence_page_text "$2"
+                    ;;
+                create)
+                    shift
+                    local space=""
+                    local title=""
+                    local content=""
+                    local parent=""
+
+                    while [[ $# -gt 0 ]]; do
+                        case "$1" in
+                            -s|--space) space="$2"; shift ;;
+                            -t|--title) title="$2"; shift ;;
+                            -c|--content) content="$2"; shift ;;
+                            -p|--parent) parent="$2"; shift ;;
+                        esac
+                        shift
+                    done
+
+                    if [[ -z "$title" ]]; then
+                        echo "[ERROR] --title required" >&2
+                        exit 1
+                    fi
+
+                    confluence_page_create "$space" "$title" "$content" "$parent"
+                    ;;
+                *)
+                    echo "[ERROR] Unknown confluence page command: $1" >&2
+                    echo "Usage: pm confluence page <list|view|text|create>" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        search)
+            shift
+            local cql=""
+            local limit=25
+
+            # First positional arg is CQL
+            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                cql="$1"
+                shift
+            fi
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -n|--limit) limit="$2"; shift ;;
+                esac
+                shift
+            done
+
+            confluence_search "$cql" "$limit"
+            ;;
+        *)
+            echo "[ERROR] Unknown confluence command: $1" >&2
+            echo "Usage: pm confluence <me|space|page|search>" >&2
             exit 1
             ;;
     esac
@@ -401,6 +519,10 @@ main() {
         jira)
             shift
             cmd_jira "$@"
+            ;;
+        confluence)
+            shift
+            cmd_confluence "$@"
             ;;
         gitlab)
             shift

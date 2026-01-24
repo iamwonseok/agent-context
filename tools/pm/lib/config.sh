@@ -53,6 +53,11 @@ load_config() {
         JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" "jira.project_key")
         JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "jira.email")
 
+        # Confluence config
+        CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" "confluence.base_url")
+        CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" "confluence.space_key")
+        CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "confluence.email")
+
         # GitLab config
         GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" "gitlab.base_url")
         GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" "gitlab.project")
@@ -78,6 +83,19 @@ load_config() {
     fi
     JIRA_EMAIL="${JIRA_EMAIL:-$JIRA_EMAIL_CONFIG}"
 
+    # Confluence (separate token, with fallback to Atlassian token)
+    if [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/confluence-api-token" ]]; then
+        CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/confluence-api-token")
+    elif [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
+        CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
+    fi
+    # Fallback to JIRA_TOKEN if CONFLUENCE_TOKEN not set
+    CONFLUENCE_TOKEN="${CONFLUENCE_TOKEN:-$JIRA_TOKEN}"
+    # Confluence email: config > JIRA_EMAIL fallback
+    CONFLUENCE_EMAIL="${CONFLUENCE_EMAIL:-${CONFLUENCE_EMAIL_CONFIG:-$JIRA_EMAIL}}"
+    # Confluence base URL: fallback to JIRA base URL (same Atlassian instance)
+    CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$JIRA_BASE_URL}"
+
     # GitLab
     if [[ -z "$GITLAB_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/gitlab-api-token" ]]; then
         GITLAB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/gitlab-api-token")
@@ -90,6 +108,7 @@ load_config() {
 
     export PROJECT_ROOT CONFIG_FILE
     export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
+    export CONFLUENCE_BASE_URL CONFLUENCE_SPACE_KEY CONFLUENCE_EMAIL CONFLUENCE_TOKEN
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN
     export GITHUB_REPO GITHUB_TOKEN
     export BRANCH_FEATURE_PREFIX BRANCH_BUGFIX_PREFIX BRANCH_HOTFIX_PREFIX
@@ -98,6 +117,11 @@ load_config() {
 # Check if Jira is configured
 jira_configured() {
     [[ -n "$JIRA_BASE_URL" ]] && [[ -n "$JIRA_TOKEN" ]] && [[ -n "$JIRA_EMAIL" ]]
+}
+
+# Check if Confluence is configured
+confluence_configured() {
+    [[ -n "$CONFLUENCE_BASE_URL" ]] && [[ -n "$CONFLUENCE_TOKEN" ]] && [[ -n "$CONFLUENCE_EMAIL" ]]
 }
 
 # Check if GitLab is configured
@@ -123,6 +147,16 @@ print_config() {
         echo "  Project Key: $JIRA_PROJECT_KEY"
         echo "  Email:       $JIRA_EMAIL"
         echo "  Token:       (set)"
+    else
+        echo "  (not configured)"
+    fi
+    echo ""
+    echo "[Confluence]"
+    if confluence_configured; then
+        echo "  Base URL:  $CONFLUENCE_BASE_URL"
+        echo "  Space Key: ${CONFLUENCE_SPACE_KEY:-(not set)}"
+        echo "  Email:     $CONFLUENCE_EMAIL"
+        echo "  Token:     (set)"
     else
         echo "  (not configured)"
     fi
@@ -162,6 +196,12 @@ create_default_config() {
 jira:
   base_url: https://your-domain.atlassian.net
   project_key: PROJ
+  email: your-email@example.com
+
+# Documentation (optional, shares Atlassian token with Jira)
+confluence:
+  base_url: https://your-domain.atlassian.net
+  space_key: SPACE
   email: your-email@example.com
 
 # Git Platform (choose one: gitlab or github)

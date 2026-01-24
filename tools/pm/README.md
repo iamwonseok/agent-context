@@ -1,6 +1,6 @@
 # Project Management CLI
 
-Jira/GitLab integration CLI for development workflow automation.
+Jira/Confluence/GitLab integration CLI for development workflow automation.
 
 ## Requirements
 
@@ -43,6 +43,12 @@ This creates `.project.yaml` in your project root:
 jira:
   base_url: https://your-domain.atlassian.net
   project_key: PROJ
+  email: your-email@example.com
+
+# Confluence shares Atlassian token with Jira
+confluence:
+  base_url: https://your-domain.atlassian.net
+  space_key: SPACE
   email: your-email@example.com
 
 gitlab:
@@ -99,6 +105,22 @@ pm jira issue view PROJ-123         # View issue details
 pm jira issue create "Title"        # Create issue
 pm jira issue create "Bug" --type Bug
 pm jira issue create "Task" --description "Details here"
+```
+
+### Confluence
+
+```bash
+pm confluence me                        # Show current user
+pm confluence space list                # List spaces
+pm confluence space list --limit 50
+pm confluence page list                 # List pages (uses default space)
+pm confluence page list --space SFP     # List pages in specific space
+pm confluence page view 7574650944      # View page details (by ID)
+pm confluence page text 7574650944      # View page as plain text
+pm confluence page create --space SFP --title "New Page" --content "<p>Hello</p>"
+pm confluence page create --space SFP --title "Child Page" --parent 7574650944
+pm confluence search "type=page AND space=SFP"
+pm confluence search "title ~ 'Review'"
 ```
 
 ### GitLab
@@ -190,7 +212,9 @@ tools/pm/
 +-- lib/
 |   +-- config.sh             # Configuration loader
 |   +-- jira.sh               # Jira API functions
+|   +-- confluence.sh         # Confluence API functions
 |   +-- gitlab.sh             # GitLab API functions
+|   +-- github.sh             # GitHub API functions
 |   +-- workflow.sh           # Workflow functions (init, finish)
 +-- README.md
 ```
@@ -202,6 +226,16 @@ tools/pm/
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
 2. Click "Create API token"
 3. Copy the token
+
+### Confluence API Token
+
+Confluence uses the same Atlassian API token as Jira. If you've configured Jira, Confluence will automatically use the same token.
+
+For Confluence-only setup:
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click "Create API token"
+3. Copy the token
+4. Store in `.secrets/atlassian-api-token` or set `CONFLUENCE_TOKEN` environment variable
 
 ### GitLab Personal Access Token
 
