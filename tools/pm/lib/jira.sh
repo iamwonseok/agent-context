@@ -463,8 +463,8 @@ jira_bulk_create() {
     local failed=0
     local line_num=0
 
-    # Read CSV (skip header)
-    while IFS=',' read -r summary type assignee_email description || [[ -n "$summary" ]]; do
+    # Read CSV (skip header) - supports: summary,type,assignee_email,description,epic
+    while IFS=',' read -r summary type assignee_email description epic || [[ -n "$summary" ]]; do
         ((line_num++))
 
         # Skip header
@@ -488,6 +488,7 @@ jira_bulk_create() {
         type=$(echo "$type" | sed 's/^"//;s/"$//')
         assignee_email=$(echo "$assignee_email" | sed 's/^"//;s/"$//')
         description=$(echo "$description" | sed 's/^"//;s/"$//')
+        epic=$(echo "$epic" | sed 's/^"//;s/"$//' | tr -d '[:space:]')
 
         # Default type
         type="${type:-Task}"
@@ -497,47 +498,97 @@ jira_bulk_create() {
         # Create issue (Jira Cloud API v3 requires ADF for description)
         local payload
         if is_jira_cloud && [[ -n "$description" ]]; then
-            payload=$(jq -n \
-                --arg project "$JIRA_PROJECT_KEY" \
-                --arg summary "$summary" \
-                --arg type "$type" \
-                --arg desc "$description" \
-                '{
-                    fields: {
-                        project: { key: $project },
-                        summary: $summary,
-                        issuetype: { name: $type },
-                        description: {
-                            type: "doc",
-                            version: 1,
-                            content: [
-                                {
-                                    type: "paragraph",
-                                    content: [
-                                        {
-                                            type: "text",
-                                            text: $desc
-                                        }
-                                    ]
-                                }
-                            ]
+            if [[ -n "$epic" ]]; then
+                payload=$(jq -n \
+                    --arg project "$JIRA_PROJECT_KEY" \
+                    --arg summary "$summary" \
+                    --arg type "$type" \
+                    --arg desc "$description" \
+                    --arg epic "$epic" \
+                    '{
+                        fields: {
+                            project: { key: $project },
+                            summary: $summary,
+                            issuetype: { name: $type },
+                            parent: { key: $epic },
+                            description: {
+                                type: "doc",
+                                version: 1,
+                                content: [
+                                    {
+                                        type: "paragraph",
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: $desc
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
                         }
-                    }
-                }')
+                    }')
+            else
+                payload=$(jq -n \
+                    --arg project "$JIRA_PROJECT_KEY" \
+                    --arg summary "$summary" \
+                    --arg type "$type" \
+                    --arg desc "$description" \
+                    '{
+                        fields: {
+                            project: { key: $project },
+                            summary: $summary,
+                            issuetype: { name: $type },
+                            description: {
+                                type: "doc",
+                                version: 1,
+                                content: [
+                                    {
+                                        type: "paragraph",
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: $desc
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }')
+            fi
         else
-            payload=$(jq -n \
-                --arg project "$JIRA_PROJECT_KEY" \
-                --arg summary "$summary" \
-                --arg type "$type" \
-                --arg desc "$description" \
-                '{
-                    fields: {
-                        project: { key: $project },
-                        summary: $summary,
-                        issuetype: { name: $type },
-                        description: (if $desc != "" then $desc else null end)
-                    }
-                }')
+            if [[ -n "$epic" ]]; then
+                payload=$(jq -n \
+                    --arg project "$JIRA_PROJECT_KEY" \
+                    --arg summary "$summary" \
+                    --arg type "$type" \
+                    --arg desc "$description" \
+                    --arg epic "$epic" \
+                    '{
+                        fields: {
+                            project: { key: $project },
+                            summary: $summary,
+                            issuetype: { name: $type },
+                            parent: { key: $epic },
+                            description: (if $desc != "" then $desc else null end)
+                        }
+                    }')
+            else
+                payload=$(jq -n \
+                    --arg project "$JIRA_PROJECT_KEY" \
+                    --arg summary "$summary" \
+                    --arg type "$type" \
+                    --arg desc "$description" \
+                    '{
+                        fields: {
+                            project: { key: $project },
+                            summary: $summary,
+                            issuetype: { name: $type },
+                            description: (if $desc != "" then $desc else null end)
+                        }
+                    }')
+            fi
         fi
 
         local response
@@ -554,6 +605,11 @@ jira_bulk_create() {
         fi
 
         echo -n " $key"
+
+        # Show epic link if present
+        if [[ -n "$epic" ]]; then
+            echo -n " (Epic: $epic)"
+        fi
 
         # Assign if email provided
         if [[ -n "$assignee_email" ]]; then
