@@ -32,3 +32,6 @@ tests/*.log
 
 # Local secrets (never commit) - root only
 /.secrets/
+
+# Test reports (local only)
+tests/reports/

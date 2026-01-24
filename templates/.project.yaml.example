@@ -1,28 +1,56 @@
 # Project Configuration Example
 # Copy this file to .project.yaml and edit with your settings
 #
-# See: project-management/README.md
+# This file uses a role-based structure:
+# 1. Define which platform handles each role (vcs, issue, review, docs)
+# 2. Configure connection details for each platform
 
-# Issue Tracker (optional - choose one or both)
-jira:
-  base_url: https://your-org.atlassian.net
-  project_key: PROJ
-  email: your-email@example.com
+# ============================================================
+# Role Assignment (which platform handles what)
+# ============================================================
+roles:
+  vcs: gitlab           # Version Control: github | gitlab
+  issue: jira           # Issue Tracking: jira | github | gitlab
+  review: gitlab        # Code Review: github | gitlab (defaults to vcs)
+  docs: confluence      # Documentation: confluence | github | gitlab
+  wiki: gitlab          # Wiki Pages: github | gitlab (optional)
+  planning: jira        # Milestones/Sprints: jira | github | gitlab (optional)
 
-# Git Platform (choose one: gitlab or github)
-gitlab:
-  base_url: https://gitlab.example.com
-  project: namespace/project    # e.g., myorg/myrepo
+# ============================================================
+# Platform Configurations
+# ============================================================
+platforms:
+  # GitHub Configuration
+  github:
+    repo: owner/repo              # e.g., myorg/myrepo
 
-github:
-  repo: owner/repo              # e.g., myorg/myrepo
+  # GitLab Configuration
+  gitlab:
+    base_url: https://gitlab.example.com
+    project: namespace/project    # e.g., myorg/myrepo
 
+  # JIRA Configuration
+  jira:
+    base_url: https://your-org.atlassian.net
+    project_key: PROJ
+    email: your-email@example.com
+
+  # Confluence Configuration
+  confluence:
+    base_url: https://your-org.atlassian.net
+    space_key: SPACE
+
+# ============================================================
+# Branch Naming Convention
+# ============================================================
 branch:
   feature_prefix: feat/
   bugfix_prefix: fix/
   hotfix_prefix: hotfix/
 
-# Authentication:
+# ============================================================
+# Authentication
+# ============================================================
 # Option 1: Environment variables (recommended for CI)
 #   export JIRA_TOKEN="your-token"
 #   export JIRA_EMAIL="your-email"
@@ -30,6 +58,49 @@ branch:
 #   export GITHUB_TOKEN="your-token"
 #
 # Option 2: Secret files (gitignored, recommended for local dev)
-#   .secrets/atlassian-api-token
+#   .secrets/atlassian-api-token   # For JIRA and Confluence
 #   .secrets/gitlab-api-token
 #   .secrets/github-api-token
+
+# ============================================================
+# Example Configurations
+# ============================================================
+
+# --- GitHub Only ---
+# roles:
+#   vcs: github
+#   issue: github
+#   review: github
+#   docs: github
+# platforms:
+#   github:
+#     repo: myorg/myproject
+
+# --- GitLab Only ---
+# roles:
+#   vcs: gitlab
+#   issue: gitlab
+#   review: gitlab
+#   docs: gitlab
+# platforms:
+#   gitlab:
+#     base_url: https://gitlab.example.com
+#     project: myorg/myproject
+
+# --- JIRA + GitLab (Enterprise) ---
+# roles:
+#   vcs: gitlab
+#   issue: jira
+#   review: gitlab
+#   docs: confluence
+# platforms:
+#   gitlab:
+#     base_url: https://gitlab.example.com
+#     project: myorg/myproject
+#   jira:
+#     base_url: https://company.atlassian.net
+#     project_key: PROJ
+#     email: user@company.com
+#   confluence:
+#     base_url: https://company.atlassian.net
+#     space_key: TEAM

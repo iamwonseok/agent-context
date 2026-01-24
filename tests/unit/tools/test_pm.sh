@@ -4,9 +4,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PM_BIN="${TOOLS_DIR}/pm/bin/pm"
-PM_LIB="${TOOLS_DIR}/pm/lib"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+PM_BIN="${PROJECT_ROOT}/tools/pm/bin/pm"
+PM_LIB="${PROJECT_ROOT}/tools/pm/lib"
 
 # Colors
 RED='\033[0;31m'
@@ -184,6 +184,40 @@ test_error_handling() {
         test_pass "pm github unknown (error)"
     else
         test_fail "pm github unknown (error)"
+    fi
+
+    # Issue create without title (should error)
+    if "$PM_BIN" github issue create 2>&1 | grep -q "ERROR"; then
+        test_pass "pm github issue create (no title error)"
+    else
+        test_fail "pm github issue create (no title error)"
+    fi
+
+    if "$PM_BIN" gitlab issue create 2>&1 | grep -q "ERROR"; then
+        test_pass "pm gitlab issue create (no title error)"
+    else
+        test_fail "pm gitlab issue create (no title error)"
+    fi
+
+    # Unified issue create without title (should error)
+    if "$PM_BIN" issue create 2>&1 | grep -q "ERROR"; then
+        test_pass "pm issue create (no title error)"
+    else
+        test_fail "pm issue create (no title error)"
+    fi
+
+    # Unified review without subcommand (should show usage)
+    if "$PM_BIN" review 2>&1 | grep -q "Usage:"; then
+        test_pass "pm review (usage)"
+    else
+        test_fail "pm review (usage)"
+    fi
+
+    # Provider show (should work without tokens)
+    if "$PM_BIN" provider show 2>&1 | grep -q "Provider Configuration"; then
+        test_pass "pm provider show"
+    else
+        test_fail "pm provider show"
     fi
 }
 

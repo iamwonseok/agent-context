@@ -48,6 +48,7 @@ push_branch() {
 }
 
 # pm create - Create new feature/task
+# Uses unified provider for issue creation (supports JIRA, GitLab, GitHub)
 pm_create() {
     local title="$1"
     local issue_type="${2:-Task}"
@@ -59,45 +60,61 @@ pm_create() {
         return 1
     fi
 
-    local jira_key=""
-    local gitlab_iid=""
+    local issue_key=""
+    local issue_provider=""
 
-    # Create Jira issue
-    if jira_configured; then
-        echo "[INFO] Creating Jira issue..."
-        local jira_response
-        jira_response=$(jira_api POST "/issue" "$(jq -n \
-            --arg project "$JIRA_PROJECT_KEY" \
-            --arg summary "$title" \
-            --arg type "$issue_type" \
-            '{
-                fields: {
-                    project: { key: $project },
-                    summary: $summary,
-                    issuetype: { name: $type }
-                }
-            }')")
+    # Get configured issue provider
+    issue_provider=$(get_issue_provider)
 
-        jira_key=$(echo "$jira_response" | jq -r '.key // empty')
+    # Create issue using unified provider
+    if [[ "$issue_provider" != "none" ]]; then
+        echo "[INFO] Creating issue via $issue_provider..."
 
-        if [[ -n "$jira_key" ]]; then
-            echo "(v) Jira issue: $jira_key"
-        else
-            echo "[WARN] Failed to create Jira issue"
-        fi
-    fi
+        case "$issue_provider" in
+            jira)
+                local jira_response
+                jira_response=$(jira_api POST "/issue" "$(jq -n \
+                    --arg project "$JIRA_PROJECT_KEY" \
+                    --arg summary "$title" \
+                    --arg type "$issue_type" \
+                    '{
+                        fields: {
+                            project: { key: $project },
+                            summary: $summary,
+                            issuetype: { name: $type }
+                        }
+                    }')")
 
-    # Create GitLab issue
-    if gitlab_configured; then
-        echo "[INFO] Creating GitLab issue..."
-        gitlab_iid=$(gitlab_issue_create "$title")
-
-        if [[ -n "$gitlab_iid" ]] && [[ "$gitlab_iid" != "null" ]]; then
-            echo "(v) GitLab issue: #$gitlab_iid"
-        else
-            echo "[WARN] Failed to create GitLab issue"
-            gitlab_iid=""
-        fi
+                issue_key=$(echo "$jira_response" | jq -r '.key // empty')
+                if [[ -n "$issue_key" ]]; then
+                    echo "(v) Jira issue: $issue_key"
+                else
+                    echo "[WARN] Failed to create Jira issue"
+                fi
+                ;;
+            gitlab)
+                local gitlab_iid
+                gitlab_iid=$(gitlab_issue_create "$title")
+                if [[ -n "$gitlab_iid" ]] && [[ "$gitlab_iid" != "null" ]]; then
+                    issue_key="gl-$gitlab_iid"
+                    echo "(v) GitLab issue: #$gitlab_iid"
+                else
+                    echo "[WARN] Failed to create GitLab issue"
+                fi
+                ;;
+            github)
+                local github_num
+                github_num=$(github_issue_create "$title")
+                if [[ -n "$github_num" ]] && [[ "$github_num" != "null" ]]; then
+                    issue_key="gh-$github_num"
+                    echo "(v) GitHub issue: #$github_num"
+                else
+                    echo "[WARN] Failed to create GitHub issue"
+                fi
+                ;;
+        esac
+    else
+        echo "[INFO] No issue provider configured, creating branch only"
     fi
 
     # Determine branch prefix
@@ -114,8 +131,8 @@ pm_create() {
     slug=$(slugify "$title")
 
     local branch_name
-    if [[ -n "$jira_key" ]]; then
-        branch_name="${prefix}${jira_key}-${slug}"
+    if [[ -n "$issue_key" ]]; then
+        branch_name="${prefix}${issue_key}-${slug}"
     else
         branch_name="${prefix}${slug}"
     fi
@@ -136,6 +153,7 @@ pm_create() {
 }
 
 # pm finish - Finish current feature/task
+# Uses unified provider for MR/PR creation (supports GitLab MR and GitHub PR)
 pm_finish() {
     local target_branch="${1:-$(get_default_branch)}"
     local skip_lint="${2:-false}"
@@ -180,27 +198,42 @@ pm_finish() {
     fi
     echo "(v) Branch pushed"
 
-    # Create MR
-    if gitlab_configured; then
-        echo "[INFO] Creating merge request..."
+    # Generate title from branch name
+    local title="$current_branch"
+    # Remove prefix
+    for prefix in "$BRANCH_FEATURE_PREFIX" "$BRANCH_BUGFIX_PREFIX" "$BRANCH_HOTFIX_PREFIX"; do
+        if [[ "$title" == "$prefix"* ]]; then
+            title="${title#$prefix}"
+            break
+        fi
+    done
+    # Convert hyphens to spaces and capitalize
+    title=$(echo "$title" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
 
-        # Generate title from branch name
-        local title="$current_branch"
-        # Remove prefix
-        for prefix in "$BRANCH_FEATURE_PREFIX" "$BRANCH_BUGFIX_PREFIX" "$BRANCH_HOTFIX_PREFIX"; do
-            if [[ "$title" == "$prefix"* ]]; then
-                title="${title#$prefix}"
-                break
-            fi
-        done
-        # Convert hyphens to spaces and capitalize
-        title=$(echo "$title" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+    # Get configured review provider
+    local review_provider
+    review_provider=$(get_review_provider)
 
-        gitlab_mr_create "$current_branch" "$target_branch" "$title" "" "$draft"
-    fi
+    # Create MR/PR using unified provider
+    case "$review_provider" in
+        gitlab)
+            echo "[INFO] Creating GitLab merge request..."
+            gitlab_mr_create "$current_branch" "$target_branch" "$title" "" "$draft"
+            ;;
+        github)
+            echo "[INFO] Creating GitHub pull request..."
+            github_pr_create "$current_branch" "$target_branch" "$title" "" "$draft"
+            ;;
+        none)
+            echo "[WARN] No code review provider configured, skipping MR/PR creation"
+            ;;
+    esac
 
-    # Update Jira status
-    if jira_configured; then
+    # Update Jira status (if JIRA is configured as issue provider)
+    local issue_provider
+    issue_provider=$(get_issue_provider)
+
+    if [[ "$issue_provider" == "jira" ]]; then
         # Try to extract Jira key from branch name
         local jira_key
         jira_key=$(echo "$current_branch" | grep -oE "${JIRA_PROJECT_KEY}-[0-9]+" | head -1)

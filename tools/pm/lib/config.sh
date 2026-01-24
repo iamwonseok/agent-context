@@ -1,5 +1,6 @@
 #!/bin/bash
 # Configuration loader for project-management
+# Supports role-based structure (new) and legacy flat structure
 # Sources: Environment variables > .secrets/ files > .project.yaml
 
 set -e
@@ -18,26 +19,37 @@ find_project_root() {
     return 1
 }
 
-# Load YAML value using yq or grep fallback
+# Load YAML value using yq (mikefarah/yq)
 yaml_get() {
     local file="$1"
     local key="$2"
-
-    if command -v yq &>/dev/null; then
-        yq -r "$key // empty" "$file" 2>/dev/null
+    
+    if ! command -v yq &>/dev/null; then
+        echo "[ERROR] yq is required. Install with: brew install yq" >&2
+        return 1
+    fi
+    
+    local result
+    result=$(yq -r "$key" "$file" 2>/dev/null)
+    
+    # Return empty string for null values
+    if [[ "$result" == "null" ]]; then
+        echo ""
     else
-        # Simple grep-based fallback for flat YAML
-        # Converts "jira.base_url" to search pattern
-        local section="${key%%.*}"
-        local field="${key#*.}"
-        awk -v section="$section" -v field="$field" '
-            /^[a-z]/ { current_section = $1; gsub(/:/, "", current_section) }
-            current_section == section && $1 == field":" {
-                gsub(/^[^:]+:[ ]*/, "");
-                gsub(/^["'\'']|["'\'']$/, "");
-                print; exit
-            }
-        ' "$file" 2>/dev/null
+        echo "$result"
+    fi
+}
+
+# Detect config format (new role-based or legacy flat)
+detect_config_format() {
+    local file="$1"
+    local has_roles
+    has_roles=$(yq -r '.roles' "$file" 2>/dev/null)
+    
+    if [[ -n "$has_roles" ]] && [[ "$has_roles" != "null" ]]; then
+        echo "role-based"
+    else
+        echo "legacy"
     fi
 }
 
@@ -46,29 +58,63 @@ load_config() {
     PROJECT_ROOT=$(find_project_root) || return 1
     CONFIG_FILE="$PROJECT_ROOT/.project.yaml"
 
-    # Load config from file
+    # Detect config format
+    local config_format="legacy"
     if [[ -f "$CONFIG_FILE" ]]; then
-        # Jira config
-        JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" "jira.base_url")
-        JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" "jira.project_key")
-        JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "jira.email")
+        config_format=$(detect_config_format "$CONFIG_FILE")
+    fi
 
-        # Confluence config
-        CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" "confluence.base_url")
-        CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" "confluence.space_key")
-        CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" "confluence.email")
-
-        # GitLab config
-        GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" "gitlab.base_url")
-        GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" "gitlab.project")
-
-        # GitHub config
-        GITHUB_REPO=$(yaml_get "$CONFIG_FILE" "github.repo")
-
-        # Branch prefixes
-        BRANCH_FEATURE_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.feature_prefix")
-        BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.bugfix_prefix")
-        BRANCH_HOTFIX_PREFIX=$(yaml_get "$CONFIG_FILE" "branch.hotfix_prefix")
+    # Load config based on format
+    if [[ -f "$CONFIG_FILE" ]]; then
+        if [[ "$config_format" == "role-based" ]]; then
+            # New role-based format
+            ROLE_VCS=$(yaml_get "$CONFIG_FILE" '.roles.vcs')
+            ROLE_ISSUE=$(yaml_get "$CONFIG_FILE" '.roles.issue')
+            ROLE_REVIEW=$(yaml_get "$CONFIG_FILE" '.roles.review')
+            ROLE_DOCS=$(yaml_get "$CONFIG_FILE" '.roles.docs')
+            
+            # Default review to vcs if not set
+            ROLE_REVIEW="${ROLE_REVIEW:-$ROLE_VCS}"
+            
+            # Load platform configs
+            JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.jira.base_url')
+            JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" '.platforms.jira.project_key')
+            JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.jira.email')
+            
+            CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.base_url')
+            CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.space_key')
+            CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.email')
+            
+            GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.base_url')
+            GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.project')
+            
+            GITHUB_REPO=$(yaml_get "$CONFIG_FILE" '.platforms.github.repo')
+        else
+            # Legacy flat format (backward compatibility)
+            JIRA_BASE_URL=$(yaml_get "$CONFIG_FILE" '.jira.base_url')
+            JIRA_PROJECT_KEY=$(yaml_get "$CONFIG_FILE" '.jira.project_key')
+            JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.jira.email')
+            
+            CONFLUENCE_BASE_URL=$(yaml_get "$CONFIG_FILE" '.confluence.base_url')
+            CONFLUENCE_SPACE_KEY=$(yaml_get "$CONFIG_FILE" '.confluence.space_key')
+            CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.confluence.email')
+            
+            GITLAB_BASE_URL=$(yaml_get "$CONFIG_FILE" '.gitlab.base_url')
+            GITLAB_PROJECT=$(yaml_get "$CONFIG_FILE" '.gitlab.project')
+            
+            GITHUB_REPO=$(yaml_get "$CONFIG_FILE" '.github.repo')
+            
+            # Legacy: no explicit roles
+            ROLE_VCS=""
+            ROLE_ISSUE=""
+            ROLE_REVIEW=""
+            ROLE_DOCS=""
+        fi
+        
+        # Branch prefixes (same for both formats)
+        BRANCH_FEATURE_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.feature_prefix')
+        BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.bugfix_prefix')
+        BRANCH_HOTFIX_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.hotfix_prefix')
     fi
 
     # Defaults
@@ -77,23 +123,20 @@ load_config() {
     BRANCH_HOTFIX_PREFIX="${BRANCH_HOTFIX_PREFIX:-hotfix/}"
 
     # Auth: Environment > .secrets files
-    # Jira
+    # Jira/Atlassian
     if [[ -z "$JIRA_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         JIRA_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
     fi
     JIRA_EMAIL="${JIRA_EMAIL:-$JIRA_EMAIL_CONFIG}"
 
-    # Confluence (separate token, with fallback to Atlassian token)
+    # Confluence
     if [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/confluence-api-token" ]]; then
         CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/confluence-api-token")
     elif [[ -z "$CONFLUENCE_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         CONFLUENCE_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
     fi
-    # Fallback to JIRA_TOKEN if CONFLUENCE_TOKEN not set
     CONFLUENCE_TOKEN="${CONFLUENCE_TOKEN:-$JIRA_TOKEN}"
-    # Confluence email: config > JIRA_EMAIL fallback
     CONFLUENCE_EMAIL="${CONFLUENCE_EMAIL:-${CONFLUENCE_EMAIL_CONFIG:-$JIRA_EMAIL}}"
-    # Confluence base URL: fallback to JIRA base URL (same Atlassian instance)
     CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$JIRA_BASE_URL}"
 
     # GitLab
@@ -106,7 +149,9 @@ load_config() {
         GITHUB_TOKEN=$(cat "$PROJECT_ROOT/.secrets/github-api-token")
     fi
 
+    # Export all
     export PROJECT_ROOT CONFIG_FILE
+    export ROLE_VCS ROLE_ISSUE ROLE_REVIEW ROLE_DOCS
     export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
     export CONFLUENCE_BASE_URL CONFLUENCE_SPACE_KEY CONFLUENCE_EMAIL CONFLUENCE_TOKEN
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN
@@ -136,46 +181,64 @@ github_configured() {
 
 # Print configuration
 print_config() {
+    local config_format="legacy"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        config_format=$(detect_config_format "$CONFIG_FILE")
+    fi
+
     echo "=================================================="
     echo "Project Configuration"
     echo "=================================================="
     echo "Project Root: $PROJECT_ROOT"
+    echo "Config Format: $config_format"
     echo ""
-    echo "[Jira]"
+    
+    if [[ "$config_format" == "role-based" ]]; then
+        echo "[Roles]"
+        echo "  VCS:    ${ROLE_VCS:-(not set)}"
+        echo "  Issue:  ${ROLE_ISSUE:-(not set)}"
+        echo "  Review: ${ROLE_REVIEW:-(not set)}"
+        echo "  Docs:   ${ROLE_DOCS:-(not set)}"
+        echo ""
+    fi
+    
+    echo "[Platforms]"
+    echo ""
+    echo "  [Jira]"
     if jira_configured; then
-        echo "  Base URL:    $JIRA_BASE_URL"
-        echo "  Project Key: $JIRA_PROJECT_KEY"
-        echo "  Email:       $JIRA_EMAIL"
-        echo "  Token:       (set)"
+        echo "    Base URL:    $JIRA_BASE_URL"
+        echo "    Project Key: $JIRA_PROJECT_KEY"
+        echo "    Email:       $JIRA_EMAIL"
+        echo "    Token:       (set)"
     else
-        echo "  (not configured)"
+        echo "    (not configured)"
     fi
     echo ""
-    echo "[Confluence]"
+    echo "  [Confluence]"
     if confluence_configured; then
-        echo "  Base URL:  $CONFLUENCE_BASE_URL"
-        echo "  Space Key: ${CONFLUENCE_SPACE_KEY:-(not set)}"
-        echo "  Email:     $CONFLUENCE_EMAIL"
-        echo "  Token:     (set)"
+        echo "    Base URL:  $CONFLUENCE_BASE_URL"
+        echo "    Space Key: ${CONFLUENCE_SPACE_KEY:-(not set)}"
+        echo "    Email:     $CONFLUENCE_EMAIL"
+        echo "    Token:     (set)"
     else
-        echo "  (not configured)"
+        echo "    (not configured)"
     fi
     echo ""
-    echo "[GitLab]"
+    echo "  [GitLab]"
     if gitlab_configured; then
-        echo "  Base URL: $GITLAB_BASE_URL"
-        echo "  Project:  $GITLAB_PROJECT"
-        echo "  Token:    (set)"
+        echo "    Base URL: $GITLAB_BASE_URL"
+        echo "    Project:  $GITLAB_PROJECT"
+        echo "    Token:    (set)"
     else
-        echo "  (not configured)"
+        echo "    (not configured)"
     fi
     echo ""
-    echo "[GitHub]"
+    echo "  [GitHub]"
     if github_configured; then
-        echo "  Repo:  $GITHUB_REPO"
-        echo "  Token: (set)"
+        echo "    Repo:  $GITHUB_REPO"
+        echo "    Token: (set)"
     else
-        echo "  (not configured)"
+        echo "    (not configured)"
     fi
     echo ""
     echo "[Branch Prefixes]"
@@ -185,33 +248,45 @@ print_config() {
     echo "=================================================="
 }
 
-# Create default config file
+# Create default config file (new role-based format)
 create_default_config() {
     local target="${1:-.project.yaml}"
     cat > "$target" << 'EOF'
 # Project Configuration
-# See: project-management/README.md
+# Role-based platform assignment
 
-# Issue Tracker (optional)
-jira:
-  base_url: https://your-domain.atlassian.net
-  project_key: PROJ
-  email: your-email@example.com
+# ============================================================
+# Role Assignment (which platform handles what)
+# ============================================================
+roles:
+  vcs: gitlab           # Version Control: github | gitlab
+  issue: jira           # Issue Tracking: jira | github | gitlab
+  review: gitlab        # Code Review: github | gitlab (follows vcs if not set)
+  docs: confluence      # Documentation: confluence | github | gitlab
 
-# Documentation (optional, shares Atlassian token with Jira)
-confluence:
-  base_url: https://your-domain.atlassian.net
-  space_key: SPACE
-  email: your-email@example.com
+# ============================================================
+# Platform Configurations
+# ============================================================
+platforms:
+  github:
+    repo: owner/repo
 
-# Git Platform (choose one: gitlab or github)
-gitlab:
-  base_url: https://gitlab.example.com
-  project: namespace/project
+  gitlab:
+    base_url: https://gitlab.example.com
+    project: namespace/project
 
-github:
-  repo: owner/repo
+  jira:
+    base_url: https://your-domain.atlassian.net
+    project_key: PROJ
+    email: your-email@example.com
 
+  confluence:
+    base_url: https://your-domain.atlassian.net
+    space_key: SPACE
+
+# ============================================================
+# Branch Naming Convention
+# ============================================================
 branch:
   feature_prefix: feat/
   bugfix_prefix: fix/
