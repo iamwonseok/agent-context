@@ -75,9 +75,22 @@ agent status
 
 **Jira**
 - `pm jira me`
+- `pm jira user search <QUERY>` - 사용자 검색 (email/name)
 - `pm jira issue list [--jql <jql>] [--limit <n>]`
 - `pm jira issue view <KEY>`
 - `pm jira issue create <TITLE> [-t|--type <Task|Bug|...>] [-d|--description <text>]`
+- `pm jira issue assign <KEY> <EMAIL>` - Assignee 할당
+- `pm jira issue update <KEY> [--labels <a,b>] [--priority <High>] [--due-date <YYYY-MM-DD>]`
+- `pm jira issue transition <KEY> <STATUS>` - 상태 전환 (To Do → In Progress → Done)
+- `pm jira sprint list [BOARD_ID]` - Sprint 목록 (board_id 없으면 보드 목록)
+- `pm jira sprint move <KEY> <SPRINT_ID>` - Issue를 Sprint로 이동
+- `pm jira workflow transitions <KEY>` - 가능한 상태 전환 조회
+- `pm jira workflow statuses` - 전체 상태 목록
+- `pm jira link types` - 링크 타입 목록 (Blocks, Relates 등)
+- `pm jira link view <KEY>` - Issue의 링크(의존관계) 조회
+- `pm jira link create <FROM> <TO> <TYPE>` - 링크 생성 (예: "Blocks")
+- `pm jira link delete <LINK_ID>` - 링크 삭제
+- `pm jira bulk-create --csv <FILE>` - CSV 일괄 생성 (summary,type,assignee,desc,epic)
 
 **GitLab**
 - `pm gitlab me`
@@ -126,31 +139,54 @@ agent status
 - `007-project-setup-bulk-assign.md`
   - 프로젝트 초기 세팅: CSV 일괄 이슈 생성 + Assignee 할당 (pm jira bulk-create)
 
+### Jira 워크플로우 (역할별)
+
+- `008-dev-task-workflow.md` **(Dev)**
+  - 개발자 Task 워크플로우: 할당 이슈 → 상태 전환 → 의존관계 관리 → MR 제출
+- `009-mgr-sprint-planning.md` **(Mgr)**
+  - 매니저 Sprint 계획: Epic 하위 이슈 일괄 생성 → Sprint 배치 → 의존관계 설정 → 모니터링
+- `010-agile-full-cycle.md` **(Dev + Mgr)**
+  - 전체 Agile 사이클: Sprint Planning → Development → Review → Retrospective
+
 ---
 
 ## 역할별 시나리오 가이드
 
 ### 개발자(Developer) 시나리오
 
-| 시나리오 | 흐름 |
-|----------|------|
-| Feature 개발 | `start` → 구현 → `check` → `verify` → `retro` → `submit` |
-| Bug fix | 재현 테스트 → 수정 → `check` → `submit` |
-| Hotfix | 최소 수정 + 핵심 테스트 → `submit` (리뷰는 사후 가능) |
-| Refactor | 목표/범위 설계 → 작은 변경/테스트/작은 커밋 반복 → `submit` |
+| 시나리오 | 흐름 | 문서 |
+|----------|------|------|
+| Feature 개발 | `start` → 구현 → `check` → `verify` → `retro` → `submit` | 001 |
+| Bug fix | 재현 테스트 → 수정 → `check` → `submit` | 002 |
+| Hotfix | 최소 수정 + 핵심 테스트 → `submit` (리뷰는 사후 가능) | - |
+| Refactor | 목표/범위 설계 → 작은 변경/테스트/작은 커밋 반복 → `submit` | - |
+| **Task 워크플로우** | 상태 전환 → 의존관계 확인 → 작업 → 완료 → MR 제출 | **008** |
 
 ### 매니저(Manager) 시나리오
 
-| 시나리오 | 흐름 |
-|----------|------|
-| 리뷰 인박스 운영 | `mgr pending` → `mgr review` → `mgr approve` |
-| 현황 브리핑 | `mgr status` + `pm gitlab mr list` + `pm jira issue list` |
+| 시나리오 | 흐름 | 문서 |
+|----------|------|------|
+| 리뷰 인박스 운영 | `mgr pending` → `mgr review` → `mgr approve` | - |
+| 현황 브리핑 | `mgr status` + `pm gitlab mr list` + `pm jira issue list` | - |
+| **Sprint 계획** | CSV 준비 → bulk-create → Sprint 배치 → 의존관계 설정 → 모니터링 | **009** |
+| **프로젝트 세팅** | CSV 일괄 생성 + Assignee 할당 | **007** |
 
 ### 혼용(End-to-End) 시나리오
 
+| 시나리오 | 흐름 | 문서 |
+|----------|------|------|
+| 기본 E2E | Mgr: 작업 요청 → Dev: 작업 → Mgr: 리뷰/승인 | - |
+| **Agile Full Cycle** | Sprint Planning → Development → Review → Retrospective | **010** |
+
+#### 기본 E2E 흐름
 1. 매니저: `pm`으로 업무 큐 확인 → 개발자에게 작업 요청
 2. 개발자: `agent dev start` → 작업 → `agent dev submit`
 3. 매니저: `agent mgr pending` → `mgr review` → `mgr approve`
+
+#### Agile Full Cycle 흐름 (010)
+1. 매니저: `pm jira bulk-create` → Sprint 배치 → 의존관계 설정
+2. 개발자: 상태 전환 → 블로커 확인 → 작업 → MR 제출
+3. 매니저: MR 리뷰 → 승인 → 다음 Sprint 계획
 
 ---
 
