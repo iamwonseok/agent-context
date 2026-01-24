@@ -6,9 +6,15 @@ Design proposals and implementation plans for agent-context framework.
 
 | # | Title | File | Status |
 |---|-------|------|--------|
-| 002 | Proposal | [002-proposal.md](002-proposal.md) | Active |
-| 004 | Agent Workflow System | [004-agent-workflow-system.md](004-agent-workflow-system.md) | Active |
+| 002 | Proposal v2.0 | [002-proposal.md](002-proposal.md) | Active |
+| 004 | Agent Workflow System v2.0 | [004-agent-workflow-system.md](004-agent-workflow-system.md) | Active |
 | 005 | Manual Fallback Improvement | [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md) | Active |
+
+## Future Work
+
+| Title | File | Description |
+|-------|------|-------------|
+| Future Work | [future-work.md](future-work.md) | 장기 발전 방향 (Phase 2 완료 후 리뷰) |
 
 ## Archived RFCs
 

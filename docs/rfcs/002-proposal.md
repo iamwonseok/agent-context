@@ -681,6 +681,9 @@ generate_quick_summary() {
 
 ### Phase 3: 선택적 기능 추가 (장기 검토, ROI ★★★☆☆)
 
+> **Note**: Phase 3 상세 내용은 [future-work.md](future-work.md)로 이동되었습니다.
+> Phase 2 완료 후 일괄 리뷰 예정입니다.
+
 #### Task 7: Automated Execution (--auto-submit)
 
 **철학적 고려사항**:
