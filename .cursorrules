@@ -140,6 +140,11 @@ If the exact workflow file is unclear, look under:
   - Prefer keeping logs in Issue/MR description (see Issue N/A policy)
 - Keep the **main working directory clean** (no long-lived generated artifacts)
 
+## Handoff Policy
+- **Branch-level** (`.context/handoff-*.md`): Local only (gitignore), auto-archive on show
+- **Project-level** (`docs/internal/handoff.md`): Git-tracked, delete after takeover
+- See `docs/internal/README.md` for detailed lifecycle policy
+
 ## Hybrid Mode Guidance (Git Strategy)
 - Default: **Interactive Mode = branch workflow in current directory**
 - For parallel/background work: **Detached Mode = worktree in `.worktrees/`**

@@ -22,13 +22,13 @@ docs/
 │   ├── python.md
 │   └── yaml.md
 ├── rfcs/                    # RFC/계획 문서 (plan)
-│   ├── proposal.md
-│   ├── proposal-v2.md
-│   ├── agent-workflow-system-plan.md
-│   ├── agent-workflow-system-plan-v2.md
-│   └── manual-fallback-improvement-plan.md
-└── internal/                # 내부 문서
-    └── handoff.md
+│   ├── 002-proposal.md
+│   ├── 004-agent-workflow-system.md
+│   ├── 005-manual-fallback-improvement.md
+│   └── archive/             # 이전 버전 아카이브
+└── internal/                # 내부 임시 문서 (handoff, draft)
+    ├── README.md            # 정책 및 lifecycle
+    └── handoff.md           # 세션 인수인계 (완료 후 삭제)
 ```
 
 ## Quick Links
@@ -39,6 +39,7 @@ docs/
 | [cli/agent.md](cli/agent.md) | CLI 전체 개요 |
 | [cli/agent-dev.md](cli/agent-dev.md) | 개발자 명령어 상세 |
 | [cli/agent-mgr.md](cli/agent-mgr.md) | 매니저 명령어 상세 |
+| [internal/README.md](internal/README.md) | 내부 문서 정책 (handoff lifecycle) |
 
 ## 관련 문서
 
