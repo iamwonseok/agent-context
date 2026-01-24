@@ -580,3 +580,272 @@ jira_bulk_create() {
     echo "Result: $success created, $failed failed"
     echo "=========================================="
 }
+
+# Update issue fields
+jira_issue_update() {
+    local key="$1"
+    shift
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local labels=""
+    local priority=""
+    local due_date=""
+    local summary=""
+    local components=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --labels) labels="$2"; shift ;;
+            --priority) priority="$2"; shift ;;
+            --due-date) due_date="$2"; shift ;;
+            --summary) summary="$2"; shift ;;
+            --components) components="$2"; shift ;;
+        esac
+        shift
+    done
+
+    # Build payload dynamically
+    local payload='{"fields":{}}'
+
+    if [[ -n "$labels" ]]; then
+        # Convert comma-separated to JSON array
+        local labels_json
+        labels_json=$(echo "$labels" | tr ',' '\n' | jq -R . | jq -s .)
+        payload=$(echo "$payload" | jq --argjson labels "$labels_json" '.fields.labels = $labels')
+    fi
+
+    if [[ -n "$priority" ]]; then
+        payload=$(echo "$payload" | jq --arg p "$priority" '.fields.priority = {name: $p}')
+    fi
+
+    if [[ -n "$due_date" ]]; then
+        payload=$(echo "$payload" | jq --arg d "$due_date" '.fields.duedate = $d')
+    fi
+
+    if [[ -n "$summary" ]]; then
+        payload=$(echo "$payload" | jq --arg s "$summary" '.fields.summary = $s')
+    fi
+
+    if [[ -n "$components" ]]; then
+        local comp_json
+        comp_json=$(echo "$components" | tr ',' '\n' | jq -R '{name: .}' | jq -s .)
+        payload=$(echo "$payload" | jq --argjson c "$comp_json" '.fields.components = $c')
+    fi
+
+    local response
+    response=$(jira_api PUT "/issue/${key}" "$payload")
+
+    # Jira PUT returns empty response on success (204 No Content)
+    if [[ -n "$response" ]]; then
+        local has_errors
+        has_errors=$(echo "$response" | jq -r 'if .errors then "yes" else "no" end' 2>/dev/null || echo "no")
+        if [[ "$has_errors" == "yes" ]]; then
+            echo "[ERROR] Failed to update issue:" >&2
+            echo "$response" | jq -r '.errors // .errorMessages // .' >&2
+            return 1
+        fi
+    fi
+
+    echo "(v) Updated $key"
+    
+    # Show what was updated
+    [[ -n "$labels" ]] && echo "  - labels: $labels"
+    [[ -n "$priority" ]] && echo "  - priority: $priority"
+    [[ -n "$due_date" ]] && echo "  - due-date: $due_date"
+    [[ -n "$summary" ]] && echo "  - summary: $summary"
+    [[ -n "$components" ]] && echo "  - components: $components"
+    
+    return 0
+}
+
+# List available sprints for a board
+jira_sprint_list() {
+    local board_id="$1"
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    # If no board_id, try to find boards for the project
+    if [[ -z "$board_id" ]]; then
+        local base_url
+        base_url=$(resolve_jira_url)
+        local auth
+        if is_jira_cloud; then
+            auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
+        fi
+
+        local boards_response
+        boards_response=$(curl -s -X GET \
+            -H "Authorization: Basic $auth" \
+            -H "Accept: application/json" \
+            "${base_url}/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}")
+
+        echo "=========================================="
+        echo "Boards for project $JIRA_PROJECT_KEY"
+        echo "=========================================="
+        echo "$boards_response" | jq -r '.values[] | "[\(.id)] \(.name) (\(.type))"'
+        echo ""
+        echo "Use: pm jira sprint list <board-id>"
+        return 0
+    fi
+
+    local base_url
+    base_url=$(resolve_jira_url)
+    local auth
+    if is_jira_cloud; then
+        auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
+    fi
+
+    local response
+    response=$(curl -s -X GET \
+        -H "Authorization: Basic $auth" \
+        -H "Accept: application/json" \
+        "${base_url}/rest/agile/1.0/board/${board_id}/sprint?state=active,future")
+
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-10s | %-30s | %s\n" "ID" "State" "Name" "Dates"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.values[] | [.id, .state, .name, (.startDate // "N/A") + " - " + (.endDate // "N/A")] | @tsv' | \
+    while IFS=$'\t' read -r id state name dates; do
+        printf "%-6s | %-10s | %-30s | %s\n" "$id" "$state" "${name:0:30}" "$dates"
+    done
+
+    echo "------------------------------------------------------------------------"
+}
+
+# Move issue to sprint
+jira_issue_move_to_sprint() {
+    local key="$1"
+    local sprint_id="$2"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if [[ -z "$sprint_id" ]]; then
+        echo "[ERROR] Sprint ID required" >&2
+        echo "Use 'pm jira sprint list <board-id>' to find sprint IDs"
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local base_url
+    base_url=$(resolve_jira_url)
+    local auth
+    if is_jira_cloud; then
+        auth=$(echo -n "${JIRA_EMAIL}:${JIRA_TOKEN}" | base64)
+    fi
+
+    local payload
+    payload=$(jq -n --arg key "$key" '{ issues: [$key] }')
+
+    local response
+    response=$(curl -s -X POST \
+        -H "Authorization: Basic $auth" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        "${base_url}/rest/agile/1.0/sprint/${sprint_id}/issue" \
+        -d "$payload")
+
+    if [[ -n "$response" ]] && echo "$response" | jq -e '.errorMessages' > /dev/null 2>&1; then
+        echo "[ERROR] Failed to move issue to sprint:" >&2
+        echo "$response" | jq -r '.errorMessages[]' >&2
+        return 1
+    fi
+
+    echo "(v) Moved $key to sprint $sprint_id"
+}
+
+# List workflow transitions for an issue
+jira_workflow_transitions() {
+    local key="$1"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/issue/${key}/transitions")
+
+    echo "=========================================="
+    echo "Available transitions for $key"
+    echo "=========================================="
+    echo ""
+
+    echo "$response" | jq -r '.transitions[] | "[\(.id)] \(.name) -> \(.to.name)"'
+
+    echo ""
+    echo "Use: pm jira issue transition $key \"<status-name>\""
+}
+
+# List workflows in project
+jira_workflow_list() {
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/workflow/search?projectId=${JIRA_PROJECT_KEY}&expand=statuses")
+
+    # If project ID doesn't work, try without filter
+    if echo "$response" | jq -e '.errorMessages' > /dev/null 2>&1; then
+        response=$(jira_api GET "/workflow/search")
+    fi
+
+    echo "=========================================="
+    echo "Workflows"
+    echo "=========================================="
+    echo ""
+
+    echo "$response" | jq -r '.values[] | "[\(.id.name)] \(.description // "No description")"' 2>/dev/null || \
+    echo "$response" | jq -r '.[] | "[\(.name)] \(.description // "No description")"' 2>/dev/null || \
+    echo "[WARN] Could not parse workflow response"
+
+    echo ""
+}
+
+# Get workflow statuses
+jira_workflow_statuses() {
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/status")
+
+    echo "------------------------------------------------------------------------"
+    printf "%-6s | %-15s | %-15s | %s\n" "ID" "Name" "Category" "Description"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.[] | [.id, .name, .statusCategory.name, .description // ""] | @tsv' | \
+    while IFS=$'\t' read -r id name category desc; do
+        printf "%-6s | %-15s | %-15s | %s\n" "$id" "${name:0:15}" "${category:0:15}" "${desc:0:30}"
+    done
+
+    echo "------------------------------------------------------------------------"
+}
