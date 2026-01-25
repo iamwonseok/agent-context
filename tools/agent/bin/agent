@@ -24,6 +24,7 @@ source "$LIB_DIR/permissions.sh"
 source "$LIB_DIR/executor.sh"
 source "$LIB_DIR/init.sh"
 source "$LIB_DIR/manager.sh"
+source "$LIB_DIR/setup.sh"
 
 # Version
 VERSION="0.1.0"
@@ -65,6 +66,7 @@ COMMON COMMANDS:
     version                 Show version
     config show             Show configuration
     init                    Initialize project for agent workflow
+    setup                   Install templates to project (idempotent)
 
 OPTIONS:
     -h, --help              Show this help
@@ -255,6 +257,9 @@ main() {
             ;;
         init)
             agent_init "$@"
+            ;;
+        setup)
+            agent_setup "$@"
             ;;
         # Auto-detect role based on command
         start|list|switch|sync|submit|cleanup)
