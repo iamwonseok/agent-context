@@ -26,16 +26,15 @@
 1. Check `git status` and `git branch`
 2. Ensure on feature branch (NOT main)
 3. If on main, create/checkout feature branch before work
-4. Read `.agent/skills/git-workflow/references/multi-agent-rules.md` for git rules
 
 ### Before Starting Work
 | Task Type | Read First |
 |-----------|------------|
-| New feature | `.agent/workflows/feature.md` |
-| Bug fix | `.agent/workflows/bug-fix.md` |
-| Hotfix | `.agent/workflows/hotfix.md` |
-| Refactoring | `.agent/workflows/refactor.md` |
-| Large/complex task | `.agent/skills/plan/design-solution/SKILL.md` |
+| New feature | `.agent/workflows/developer/feature.md` |
+| Bug fix | `.agent/workflows/developer/bug-fix.md` |
+| Hotfix | `.agent/workflows/developer/hotfix.md` |
+| Refactoring | `.agent/workflows/developer/refactor.md` |
+| Large/complex task | `.agent/skills/planning/design-solution/SKILL.md` |
 
 ### Before Committing
 1. Read `.agent/skills/integrate/commit-changes/SKILL.md` for message format
@@ -49,7 +48,7 @@
 
 ### Concurrent Work
 - Multiple agents on different tasks -> Use git worktree
-- See `.agent/skills/git-workflow/references/worktree-guide.md`
+- See `.agent/docs/guides/` for worktree guidance
 
 ## Project Overview
 Workflow + CI/CD template for agent-driven development.
@@ -61,8 +60,8 @@ project/
 │   ├── skills/                # Workflow building blocks
 │   ├── workflows/             # Workflow combinations
 │   ├── tools/                 # CLI tools (lint, pm)
-│   ├── coding-convention/     # Language rule docs
-│   └── plan/                  # Framework plans (internal)
+│   ├── docs/style/            # Language coding conventions
+│   └── docs/rfcs/             # Framework plans (internal)
 │
 ├── plan/                      # YOUR project plans
 │   └── *.md                   # Implementation plans
@@ -73,28 +72,28 @@ project/
 ### Plan Directories
 | Directory | Purpose |
 |-----------|---------|
-| `.agent/plan/` | Agent-context framework plans (do not modify) |
+| `.agent/docs/rfcs/` | Agent-context framework plans (do not modify) |
 | `plan/` | Your project implementation plans |
 
-For writing plans, see `.agent/skills/plan/design-solution/SKILL.md`.
+For writing plans, see `.agent/skills/planning/design-solution/SKILL.md`.
 
 ## Skills & Workflows
 
 ### Skills (`.agent/skills/`)
 Organized into 5 categories:
 - `analyze/` - Understand situation (parse-requirement, inspect-codebase, ...)
-- `plan/` - Design approach (design-solution, breakdown-work, ...)
+- `planning/` - Design approach (design-solution, breakdown-work, ...)
 - `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
 - `validate/` - Verify quality (run-tests, check-style, review-code, ...)
 - `integrate/` - Deliver results (commit-changes, create-merge-request, ...)
-- `git-workflow/` - Manage branches (cross-cutting)
 
 ### Workflows (`.agent/workflows/`)
 Skill combinations for scenarios:
-- `feature.md` - Full feature development
-- `bug-fix.md` - Standard bug fix
-- `hotfix.md` - Emergency fix
-- `refactor.md` - Code refactoring
+- `developer/feature.md` - Full feature development
+- `developer/bug-fix.md` - Standard bug fix
+- `developer/hotfix.md` - Emergency fix
+- `developer/refactor.md` - Code refactoring
+- `manager/` - Manager workflows (approval, monitoring, ...)
 
 ### Quality Gates
 | Gate | Criteria |
