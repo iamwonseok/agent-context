@@ -54,6 +54,7 @@ See [agent-mgr](agent-mgr.md) for detailed documentation.
 | version | Show version |
 | config  | Show/manage configuration |
 | init    | Initialize project for agent workflow |
+| setup   | Install templates to project (idempotent) |
 
 See [agent-init](agent-init.md) for initialization details.
 
