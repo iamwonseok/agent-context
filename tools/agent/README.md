@@ -19,8 +19,11 @@ Or use directly:
 ## Quick Start
 
 ```bash
-# Initialize project
-agent init
+# Activate (for project-local installation)
+source .agent/activate.sh
+
+# Install templates to project
+agent setup
 
 # Start a task (Interactive Mode - default)
 agent dev start TASK-123
@@ -94,6 +97,8 @@ Best for:
 | `agent status` | Show status |
 | `agent config show` | Show configuration |
 | `agent init` | Initialize project |
+| `agent setup` | Install templates (idempotent) |
+| `agent setup --force` | Force overwrite templates |
 
 ## Context Management
 
@@ -242,7 +247,8 @@ agent dev submit
 │   ├── upload.sh       # JIRA/GitLab upload
 │   ├── permissions.sh  # Permission model
 │   ├── executor.sh     # Execution model
-│   └── init.sh         # Project initialization
+│   ├── init.sh         # Project initialization
+│   └── setup.sh        # Template installation
 ├── templates/
 │   ├── try.yaml        # Context template
 │   └── attempt.yaml    # Attempt template

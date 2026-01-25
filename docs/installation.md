@@ -117,10 +117,16 @@ export PATH="$PATH:$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin"
 
 ```bash
 cd your-project
-/path/to/agent-context/setup.sh
+git clone https://github.com/example/agent-context.git .agent
+
+# Activate for this session
+source .agent/activate.sh
+
+# Install templates
+agent setup
 ```
 
-Creates `.agent/` symlink or copies files to your project.
+Creates `.agent/` directory and installs templates to your project.
 
 **Option C: One-liner (from GitHub)**
 
@@ -137,18 +143,31 @@ agent status
 
 ## Configuration
 
-After installation, configure your project:
+After installation, install templates and configure your project:
 
 ```bash
 cd your-project
-setup.sh  # Interactive configuration
+
+# Install templates (idempotent)
+agent setup
+
+# Or force overwrite existing files
+agent setup --force
 ```
 
 This creates:
 - `.cursorrules` - AI agent rules
 - `configs/` - Project configuration templates
+- `policies/` - Domain-specific knowledge templates
+
+For JIRA/GitLab configuration, run the interactive setup:
+
+```bash
+./setup.sh  # or .agent/setup.sh for project-local
+```
+
+This creates:
 - `.secrets/` - API tokens (gitignored)
-- `plan/` - Project planning directory
 - `.project.yaml` - Project settings
 
 ### Secrets Setup
