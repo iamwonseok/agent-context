@@ -27,22 +27,26 @@ A comprehensive workflow and CI/CD template for agent-driven development.
 Install once, use in all projects:
 
 ```bash
-# Clone to ~/.agent
+# 1. Clone to ~/.agent
 git clone https://github.com/your-org/agent-context.git ~/.agent
 
-# Or run installer
+# 2. Run global setup
 cd ~/.agent
 ./setup.sh --global
 
-# Add to shell profile (~/.bashrc or ~/.zshrc)
+# 3. Add to shell profile (~/.bashrc or ~/.zshrc)
 export AGENT_CONTEXT_PATH="$HOME/.agent"
 export PATH="$PATH:$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin:$HOME/.agent/tools/lint/bin"
+
+# 4. Reload shell
+source ~/.bashrc  # or ~/.zshrc
 ```
 
 Then in any project:
 ```bash
 cd your-project
-~/.agent/setup.sh
+agent setup        # Install templates (idempotent)
+agent setup --force  # Force overwrite existing files
 ```
 
 ### Option 2: Project-Local Installation
@@ -50,18 +54,33 @@ cd your-project
 Install per-project for version pinning:
 
 ```bash
+# 1. Clone to project
 cd your-project
 git clone https://github.com/your-org/agent-context.git .agent
 
-# Run setup
-.agent/setup.sh
+# 2. Activate for this session
+source .agent/activate.sh
+
+# 3. Install templates
+agent setup
 ```
 
-### Configuration
+### What Gets Installed
 
-Setup creates these files in your project:
-- `.cursorrules` - Agent behavior rules
-- `configs/` - Tool configurations (clang-format, flake8, etc.)
+`agent setup` creates these files in your project:
+
+| File | Description |
+|------|-------------|
+| `.cursorrules` | Agent behavior rules |
+| `configs/` | Tool configurations (clang-format, flake8, etc.) |
+| `policies/` | Domain-specific knowledge templates |
+
+For JIRA/GitLab configuration, run the interactive setup:
+```bash
+./setup.sh  # or .agent/setup.sh for local install
+```
+
+This creates:
 - `.secrets/` - API tokens (gitignored)
 - `.project.yaml` - JIRA/GitLab settings
 
@@ -94,6 +113,7 @@ agent-context/                  # Repository root = deployable unit
 │   └── lint/                  # Code quality checks
 ├── templates/                  # User project templates
 │   ├── configs/               # Tool configurations
+│   ├── policies/              # Domain policy templates
 │   ├── planning/              # Plan templates
 │   └── secrets-examples/      # API token examples
 ├── tests/                      # All tests
@@ -113,9 +133,10 @@ agent-context/                  # Repository root = deployable unit
 your-project/
 ├── .agent/                    # Local install (optional)
 ├── .cursorrules               # Agent behavior rules
-├── .project.yaml              # JIRA/GitLab config
-├── .secrets/                  # API tokens (gitignored)
+├── .project.yaml              # JIRA/GitLab config (from setup.sh)
+├── .secrets/                  # API tokens (gitignored, from setup.sh)
 ├── configs/                   # Tool configurations
+├── policies/                  # Domain-specific knowledge
 ├── .context/                  # Work context (gitignored)
 └── src/                       # Your source code
 ```
