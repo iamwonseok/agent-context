@@ -221,6 +221,137 @@ agent dev start TASK-123 --auto-submit
 
 ---
 
+### FW-6: VCS Abstraction Layer (Architecture Feedback)
+
+**목표**: Git 의존성 제거, Vertical 추상화 레이어 도입
+
+**배경**: Architecture feedback에서 agent CLI가 Git에 하드코딩되어 있다는 지적
+
+**제안 구조**:
+```
+tools/agent/lib/vcs/
+├── provider.sh   # VCS 추상화 인터페이스
+├── git.sh        # Git 구현체
+└── (hg.sh)       # 미래: Mercurial
+```
+
+**인터페이스 예시**:
+```bash
+# provider.sh
+vcs_init()           # Initialize repository
+vcs_commit()         # Create commit
+vcs_branch()         # Branch operations
+vcs_push()           # Push to remote
+vcs_status()         # Get status
+vcs_diff()           # Show differences
+```
+
+**철학 검증**:
+- ✅ Composability 유지 (플러그인 구조)
+- ✅ Simplicity 유지 (기존 코드 분리만)
+- ⚠️ 당장 필요성 낮음 (Git이 사실상 표준)
+
+**Go/No-Go 조건**:
+- 다른 VCS 지원 요청 발생 시
+- 기존 git-strategy.sh 복잡도 증가 시
+
+---
+
+### FW-7: Skill Executor Abstraction (Architecture Feedback)
+
+**목표**: bash 외 다른 언어로 Skill 구현 지원 (Vertical 확장)
+
+**배경**: Architecture feedback에서 Skill 실행 엔진이 bash로 고정되어 있다는 지적
+
+**제안 방식**:
+```yaml
+# SKILL.md frontmatter
+---
+name: complex-analysis
+executor: python  # bash | python | cli
+script: run.py
+---
+```
+
+**구현 위치**:
+```bash
+# tools/agent/lib/skill-executor.sh
+execute_skill() {
+    local skill_path=$1
+    local executor=$(get_skill_executor "$skill_path")
+    
+    case $executor in
+        bash) bash "$skill_path/run.sh" ;;
+        python) python3 "$skill_path/run.py" ;;
+        cli) "$skill_path/run-cli.sh" ;;
+    esac
+}
+```
+
+**철학 검증**:
+- ✅ Composability 유지 (실행 방식만 다름)
+- ⚠️ Simplicity 충돌 (복잡도 증가)
+- ✅ User Autonomy 유지 (선택적 사용)
+
+**Go/No-Go 조건**:
+- 복잡한 로직 처리 필요 시
+- 외부 도구 연동 증가 시
+
+---
+
+### FW-8: AOP-style Aspects (Architecture Feedback)
+
+**목표**: Cross-cutting concerns를 Aspect로 분리 (Horizontal + Vertical 조합)
+
+**배경**: Architecture feedback에서 Layer 1, 2 (State Visibility, Feedback Loops)를 
+AOP 스타일로 분리하면 코드 중복이 줄어든다는 제안
+
+**제안 구조**:
+```bash
+# tools/agent/lib/aspects.sh
+
+# Before advice - Skill 실행 전
+aspect_state_before() {
+    local skill_name="$1"
+    echo "AGENT MODE: $skill_name"
+    echo "Mode: $(get_skill_mode "$skill_name")"
+    echo "Cursor Mode: $(get_skill_cursor_mode "$skill_name")"
+}
+
+# After advice - Skill 실행 후
+aspect_feedback_after() {
+    local skill_name="$1"
+    local exit_code="$2"
+    if [[ "$exit_code" -eq 0 ]]; then
+        echo "[PASS] $skill_name completed"
+    else
+        echo "[FAIL] $skill_name failed (exit: $exit_code)"
+    fi
+}
+
+# Around advice - 모드 위반 감지
+aspect_self_correction() {
+    local skill_name="$1"
+    local mode=$(get_current_mode)
+    if detect_mode_violation "$mode"; then
+        trigger_self_correction
+    fi
+}
+```
+
+**관계**: RFC-004 Phase 2 (Self-Correction Protocol)와 연계
+
+**철학 검증**:
+- ✅ Feedback Over Enforcement 유지 (가시성 레이어)
+- ✅ Composability 유지 (관심사 분리)
+- ⚠️ Simplicity 충돌 가능 (추상화 레이어 추가)
+
+**Go/No-Go 조건**:
+- RFC-004 Phase 2 완료 후
+- 코드 중복이 실제로 문제가 될 때
+
+---
+
 ## 자율성 향상 로드맵
 
 현재 Phase 1-2 완료 시 자율성 개선 경로:
@@ -267,6 +398,9 @@ Future Work (선택적):
 | FW-3 (Auto) | 낮 | 낮 | 높 | TBD |
 | FW-4 (MCP) | 낮 | 높 | 중 | TBD |
 | FW-5 (Multi) | 낮 | 높 | 높 | TBD |
+| FW-6 (VCS) | 낮 | 중 | 낮 | TBD |
+| FW-7 (Executor) | 낮 | 중 | 중 | TBD |
+| FW-8 (AOP) | 중 | 중 | 중 | TBD |
 
 ---
 
@@ -284,6 +418,7 @@ Future Work (선택적):
 - [002-proposal.md](002-proposal.md): v2.0 통합 제안서
 - [004-agent-workflow-system.md](004-agent-workflow-system.md): v2.0 구현 계획
 - [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md): Manual Fallback 개선
+- [007-architecture-improvements.md](007-architecture-improvements.md): Architecture Pattern Improvements (FW-6,7,8 관련)
 
 ---
 
@@ -292,6 +427,7 @@ Future Work (선택적):
 | 날짜 | 변경 내용 | 작성자 |
 |------|----------|--------|
 | 2026-01-25 | 초안 작성 (NotebookLM 분석 기반) | AI Agent |
+| 2026-01-25 | FW-6,7,8 추가 (Architecture Feedback 반영) | AI Agent |
 
 ---
 
