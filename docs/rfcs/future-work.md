@@ -201,7 +201,7 @@ agent dev start TASK-123 --auto-submit
 
 ---
 
-### FW-5: Multi-Agent Coordination
+### FW-5: Multi-Agent Coordination (Low Priority - 철학 충돌 위험)
 
 **목표**: 여러 에이전트가 협업하는 시나리오 지원
 
@@ -215,9 +215,15 @@ agent dev start TASK-123 --auto-submit
 - Multi-Agent는 복잡도 대폭 증가
 - 단일 Agent + 여러 Skill 조합으로 대부분 해결 가능
 
-**Go/No-Go 조건**:
-- 단일 Agent 한계 명확히 확인
-- 실제 사용 사례 수집
+**철학 검증**:
+- **Simplicity 충돌**: 복잡도 예산 초과 위험 높음
+- **권장**: 단일 Agent + Skill 조합으로 먼저 시도
+- **우선순위**: 최하위 (다른 모든 FW 완료 후 재검토)
+
+**Go/No-Go 조건** (엄격):
+- 단일 Agent로 해결 불가능한 실제 사례 3건 이상 수집
+- 복잡도 예산 내 구현 방안 확보
+- 팀 합의 필수
 
 ---
 
@@ -397,7 +403,7 @@ Future Work (선택적):
 | FW-2 (LSP) | 중 | 낮 | 낮 | TBD |
 | FW-3 (Auto) | 낮 | 낮 | 높 | TBD |
 | FW-4 (MCP) | 낮 | 높 | 중 | TBD |
-| FW-5 (Multi) | 낮 | 높 | 높 | TBD |
+| FW-5 (Multi) | 낮 | 높 | 높 | **최하위** |
 | FW-6 (VCS) | 낮 | 중 | 낮 | TBD |
 | FW-7 (Executor) | 낮 | 중 | 중 | TBD |
 | FW-8 (AOP) | 중 | 중 | 중 | TBD |

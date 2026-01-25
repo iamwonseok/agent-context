@@ -72,11 +72,12 @@
   - Agent: 다중 파일 변경
   - Debug: 런타임 증거 수집
 
-- [ ] **Mode Boundaries**: 각 Mode별 허용/금지 행동 정의
-  - planning: 분석/설계/문서화 (코드 변경 금지)
-  - implementation: 코드 작성/테스트 (요구사항 변경 금지)
-  - verification: 테스트/리뷰 (새 기능 추가 금지)
-  - research: 탐색/읽기 (파일 수정 금지)
+- [ ] **Mode Boundaries**: 각 Mode별 권장/비권장 행동 정의 (경고만, 강제 아님)
+  - planning: 분석/설계/문서화 권장 (코드 변경 시 경고)
+  - implementation: 코드 작성/테스트 권장 (요구사항 변경 시 경고)
+  - verification: 테스트/리뷰 권장 (새 기능 추가 시 경고)
+  - research: 탐색/읽기 권장 (파일 수정 시 경고)
+  - **User Autonomy**: 모든 경고는 무시 가능, --force로 우회 가능
 
 #### Feedback Loop Requirements
 
@@ -90,10 +91,11 @@
   - agent dev debrief: 답변 처리 및 설계 갱신
   - 요구사항 오해율 15% → 5% 목표
 
-- [ ] **Self-Correction Protocol**: 오류 조기 감지
-  - DETECT → STOP → CORRECT → RESUME
-  - Mode 위반 자동 감지 (planning 중 코드 변경 등)
-  - 제안만, 강제 없음 (User Autonomy 유지)
+- [ ] **Self-Correction Protocol**: 오류 조기 감지 및 제안
+  - DETECT → WARN → SUGGEST → (User decides)
+  - Mode 위반 감지 시 경고 표시 (planning 중 코드 변경 등)
+  - **제안만, 자동 수정 없음** (User Autonomy 유지)
+  - 사용자가 무시하면 그대로 진행
 
 - [ ] **AI-Optimized Summary**: MR 리뷰 효율화
   - quick-summary.md: 3-5 bullet points
