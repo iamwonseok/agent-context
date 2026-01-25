@@ -1,94 +1,96 @@
-# Handoff: Config Environment Variable Priority
+# Handoff: Architecture Feedback Integration & RFC Updates
 
 **Date**: 2026-01-25
-**Branch**: main
-**Previous Commit**: 20258c1
+**Previous Agent**: Claude Opus 4.5
 
 ---
 
-## Session Summary
+## Completed Work
 
-config.sh 환경변수 우선순위 통합 및 글로벌 토큰 폴백 추가.
+### 1. Architecture Feedback Analysis
+- Reviewed 4 feedback documents in `/tmp/architecture/*.md`
+- Identified common patterns: Horizontal (Pipeline) + Vertical (Abstraction)
+- Mapped to current project structure
 
----
+### 2. Documentation Updates (Committed)
+- `ARCHITECTURE.md` - Added "Architecture Patterns" section
+  - Horizontal Pattern: Skills Pipeline
+  - Vertical Pattern: Platform Abstraction
+- `skills/PIPELINE.md` - New file documenting inter-skill data flow
+- `docs/rfcs/007-architecture-improvements.md` - New RFC for IR and interface.sh
+- `docs/rfcs/future-work.md` - Added FW-6, FW-7, FW-8
 
-## Completed
+### 3. Philosophy Alignment (Committed)
+- RFC-004: Mode Boundaries changed from "forbidden" to "warn only"
+- RFC-004: Self-Correction changed from CORRECT to SUGGEST (user decides)
+- FW-5 (Multi-Agent): Marked as lowest priority due to Simplicity conflict
 
-| Task | Status |
-|------|--------|
-| 환경변수가 config 파일보다 우선되도록 수정 | Done |
-| 모든 플랫폼에 글로벌 토큰 폴백 추가 | Done |
-| E2E 테스트 (15 PASS, 1 WARN, 1 FAIL) | Done |
-| Wiki 테스트 (wonseok/demo, wonseok/agent-context) | Done |
-
----
-
-## Changes
-
-### `tools/pm/lib/config.sh`
-
-**1. 환경변수 우선순위 (모든 플랫폼)**
-
+### 4. Commits Created
 ```
-1. 환경변수 (GITLAB_PROJECT, JIRA_BASE_URL 등)
-2. 프로젝트 config ($PROJECT_ROOT/.project.yaml)
-```
-
-**2. 토큰 로딩 우선순위 (모든 플랫폼)**
-
-```
-1. 환경변수 (GITLAB_TOKEN, GITHUB_TOKEN 등)
-2. 프로젝트 토큰 ($PROJECT_ROOT/.secrets/xxx-api-token)
-3. 글로벌 토큰 (~/.secrets/xxx-api-token)
+023d0eb docs(rfcs): align RFC-004 and future-work with design philosophy
+fb8c467 docs(architecture): add horizontal/vertical pattern documentation
 ```
 
 ---
 
-## E2E Test Results
+## Remaining Work
 
-| Category | PASS | WARN | FAIL |
-|----------|------|------|------|
-| Config/Provider | 2 | 0 | 0 |
-| GitLab | 5 | 0 | 0 |
-| GitHub | 3 | 0 | 0 |
-| JIRA | 1 | 1 | 0 |
-| Confluence | 0 | 0 | 1 |
-| 환경변수 | 4 | 0 | 0 |
-| **Total** | **15** | **1** | **1** |
+### Recommended Next: RFC-004 Phase 1 (State Visibility)
 
-**Notes:**
-- JIRA Milestone: Board ID 기반 (WARN)
-- Confluence: Space Key 미설정 (FAIL)
+| Task | Estimated | Files |
+|------|-----------|-------|
+| State Assertion | ~50 lines | `tools/agent/lib/executor.sh` |
+| Cursor Mode Mapping | ~30 lines | `skills/**/SKILL.md` |
+| Mode Boundaries (warn) | ~50 lines | `tools/agent/lib/checks.sh` |
 
----
+### Full Roadmap
 
-## Next Session Tasks
-
-### 1. Push main to Remotes (HIGH)
-
-```bash
-git push gitlab main
-git push origin main
+```
+Phase 1: RFC-004 State Visibility (Next)
+    ↓
+Phase 2: RFC-004 Feedback Loops + RFC-007 Architecture
+    ↓
+Phase 3: Optional extensions (FW-1,2,6,7,8)
 ```
 
-### 2. Confluence Space Key 설정 (선택)
-
-`.project.yaml`에 space_key 추가 후 테스트.
-
----
-
-## Quick Start
-
-```bash
-cd ~/project-iamwonseok/agent-context
-git status
-git log --oneline -3
-
-# Push to remotes
-git push gitlab main
-git push origin main
-```
+### Low Priority / Not Recommended
+- FW-3: Automated Execution (User Autonomy conflict)
+- FW-5: Multi-Agent (Simplicity conflict)
 
 ---
 
-*Delete this document after takeover*
+## Important Context
+
+### Design Philosophy (5 Core Principles)
+1. **Simplicity Over Completeness** - Simple > Complex
+2. **User Autonomy** - Warnings > Blocking, always --force
+3. **Feedback Over Enforcement** - Teach, don't force
+4. **Composability** - Small skills, workflows as composition
+5. **State Through Artifacts** - Files (YAML/MD), not databases
+
+### Complexity Budget
+| Component | Limit |
+|-----------|-------|
+| Single skill | 200 lines |
+| Workflow | 100 lines |
+| CLI command | 100 lines |
+| Helper library | 300 lines |
+
+### Key Files
+- `ARCHITECTURE.md` - Design philosophy
+- `docs/rfcs/004-agent-workflow-system.md` - v2.0 plan
+- `docs/rfcs/007-architecture-improvements.md` - Architecture improvements
+- `docs/rfcs/future-work.md` - Long-term roadmap
+
+---
+
+## Notes for Next Agent
+
+1. **Philosophy first**: Always check against 5 core principles before implementing
+2. **Warnings over blocking**: Any enforcement must have --force escape
+3. **File-based state**: Use .context/, YAML, Markdown - no complex state machines
+4. **Feedback documents**: Located in `/tmp/architecture/*.md` (external, may be deleted)
+
+---
+
+**Delete this handoff after taking over and understanding context.**
