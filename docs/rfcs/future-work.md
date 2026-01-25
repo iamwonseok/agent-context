@@ -358,6 +358,70 @@ aspect_self_correction() {
 
 ---
 
+### FW-9: Domain Extension Ecosystem (RFC-008 관련)
+
+**목표**: 커뮤니티가 도메인별 확장을 공유하는 생태계 구축
+
+**제안 CLI**:
+```bash
+agent extension search opentitan
+agent extension install opentitan-hw
+agent extension list
+```
+
+**구현 고려사항**:
+- 확장 레지스트리 서버 필요 (복잡도 높음)
+- 초기에는 GitHub Topics로 대체 가능
+- RFC-008 Phase 1-3 완료 후 필요성 재검토
+
+**철학 검증**:
+- ⚠️ Simplicity 충돌 (레지스트리 서버)
+- ✅ User Autonomy 유지 (opt-in 설치)
+- ✅ Composability 유지 (독립 패키지)
+
+**Go/No-Go 조건**:
+- RFC-008 구현 완료
+- 3개 이상 도메인 팩 존재
+- 사용자 요청 발생
+
+---
+
+### FW-10: Retrospective Skill (RFC-008 관련)
+
+**목표**: 버그 수정 후 회고록 자동 생성 및 지식 베이스 축적
+
+**스킬 구조**:
+```
+skills/integrate/create-retrospective/
+├── SKILL.md
+└── templates/
+    └── retrospective.md
+```
+
+**워크플로우**:
+1. 버그 수정 완료
+2. `agent dev retro` 실행
+3. `docs/retrospectives/{task-id}.md` 생성
+4. MR에 포함하여 팀 리뷰
+5. 승인 후 병합 -> policies/에 반영 검토
+
+**제안 CLI**:
+```bash
+agent dev retro              # 회고록 생성
+agent dev retro --to-policy  # 정책 후보 추출
+```
+
+**철학 검증**:
+- ✅ Simplicity 유지 (문서 생성만)
+- ✅ User Autonomy 유지 (수동 병합)
+- ✅ Artifacts as State 유지 (파일 기반)
+
+**Go/No-Go 조건**:
+- RFC-008 Phase 2 완료
+- 회고록 수요 확인
+
+---
+
 ## 자율성 향상 로드맵
 
 현재 Phase 1-2 완료 시 자율성 개선 경로:
@@ -407,6 +471,8 @@ Future Work (선택적):
 | FW-6 (VCS) | 낮 | 중 | 낮 | TBD |
 | FW-7 (Executor) | 낮 | 중 | 중 | TBD |
 | FW-8 (AOP) | 중 | 중 | 중 | TBD |
+| FW-9 (Domain Ext) | 낮 | 높 | 중 | RFC-008 후 |
+| FW-10 (Retro) | 중 | 낮 | 낮 | RFC-008 후 |
 
 ---
 
@@ -425,6 +491,7 @@ Future Work (선택적):
 - [004-agent-workflow-system.md](004-agent-workflow-system.md): v2.0 구현 계획
 - [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md): Manual Fallback 개선
 - [007-architecture-improvements.md](007-architecture-improvements.md): Architecture Pattern Improvements (FW-6,7,8 관련)
+- [008-domain-extension.md](008-domain-extension.md): Domain Extension & Installation (FW-9,10 관련)
 
 ---
 
@@ -434,6 +501,7 @@ Future Work (선택적):
 |------|----------|--------|
 | 2026-01-25 | 초안 작성 (NotebookLM 분석 기반) | AI Agent |
 | 2026-01-25 | FW-6,7,8 추가 (Architecture Feedback 반영) | AI Agent |
+| 2026-01-25 | FW-9,10 추가 (RFC-008 Domain Extension 관련) | AI Agent |
 
 ---
 

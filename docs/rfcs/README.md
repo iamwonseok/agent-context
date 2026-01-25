@@ -11,6 +11,7 @@ Design proposals and implementation plans for agent-context framework.
 | 005 | Manual Fallback Improvement | [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md) | Active |
 | 006 | Unified Platform Abstraction | [006-unified-platform-abstraction.md](006-unified-platform-abstraction.md) | Draft |
 | 007 | Architecture Pattern Improvements | [007-architecture-improvements.md](007-architecture-improvements.md) | Draft |
+| 008 | Domain Extension & Installation | [008-domain-extension.md](008-domain-extension.md) | Draft |
 
 ## Future Work
 
