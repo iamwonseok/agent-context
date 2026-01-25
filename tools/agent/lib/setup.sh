@@ -34,6 +34,7 @@ find_agent_context_root() {
 }
 
 # Install a single template file or directory
+# Outputs status to stderr, returns "created skipped" counts to stdout
 install_template() {
     local src="$1"
     local dest="$2"
@@ -43,7 +44,7 @@ install_template() {
 
     if [[ -e "$dest" ]]; then
         if [[ "$force" == "true" ]]; then
-            echo "[WARN] Overwriting $dest"
+            echo "[WARN] Overwriting $dest" >&2
             rm -rf "$dest"
             if [[ -d "$src" ]]; then
                 cp -r "$src" "$dest"
@@ -52,11 +53,11 @@ install_template() {
             fi
             created=1
         else
-            echo "[INFO] $dest already exists, skipping"
+            echo "[INFO] $dest already exists, skipping" >&2
             skipped=1
         fi
     else
-        echo "[OK] Created $dest"
+        echo "[OK] Created $dest" >&2
         if [[ -d "$src" ]]; then
             cp -r "$src" "$dest"
         else
