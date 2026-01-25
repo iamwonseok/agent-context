@@ -93,6 +93,84 @@ Continue anyway? [y/N]
 
 ---
 
+## Architecture Patterns
+
+This project uses two fundamental software engineering patterns that complement each other.
+
+### Horizontal Pattern: Skills Pipeline
+
+Data flows through distinct stages, each with clear responsibilities:
+
+```
+Input -> [analyze] -> [planning] -> [execute] -> [validate] -> [integrate] -> Output
+```
+
+**Key characteristics:**
+- **Stage separation**: Each stage transforms data independently
+- **Composability**: Stages can be rearranged or skipped
+- **Testability**: Each stage can be tested in isolation
+- **Debugging**: Problems can be traced to specific stages
+
+**In this project:**
+- `skills/analyze/` - Parse requirements, inspect codebase
+- `skills/planning/` - Design solution, breakdown work
+- `skills/execute/` - Write code, fix defects
+- `skills/validate/` - Run tests, review code
+- `skills/integrate/` - Commit changes, create MR
+
+**Similar patterns:** Compiler pipelines, CI/CD pipelines, ETL processes
+
+### Vertical Pattern: Platform Abstraction
+
+Abstract interfaces hide implementation details, enabling extensibility:
+
+```
+        Unified Interface (pm CLI)
+               |
+        Provider Layer (provider.sh)
+               |
+    +----------+----------+----------+
+    |          |          |          |
+  JIRA      GitLab     GitHub   Confluence
+```
+
+**Key characteristics:**
+- **Interface contract**: Implementations must follow defined API
+- **Runtime selection**: Provider chosen based on configuration
+- **Extensibility**: New implementations without changing interface
+- **Platform independence**: Same commands work across platforms
+
+**In this project:**
+- `tools/pm/lib/provider.sh` - Provider selection logic
+- `tools/pm/lib/jira.sh` - JIRA implementation
+- `tools/pm/lib/gitlab.sh` - GitLab implementation
+- `tools/pm/lib/github.sh` - GitHub implementation
+
+**Similar patterns:** OS driver models, database adapters, plugin systems
+
+### Combining Both Patterns
+
+The two patterns work together:
+
+```
+Horizontal (Workflow stages):
+    analyze -> planning -> execute -> validate -> integrate
+                                         |
+Vertical (Platform abstraction):         v
+                              [run-tests skill]
+                                    |
+                         +---------+---------+
+                         |         |         |
+                       pytest    jest     go test
+```
+
+**Benefits of combination:**
+- Horizontal: Clear workflow progression
+- Vertical: Platform-specific optimizations at each stage
+- Together: Flexible, extensible, maintainable system
+
+---
+
 ## What We Avoid
 
 ### Over-Engineering Patterns
