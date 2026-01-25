@@ -88,7 +88,7 @@ Read `ARCHITECTURE.md` for the full rationale. Key principles:
 - Unicode symbols allowed (arrows, box chars, block elements, math symbols)
   - Allowed: `→`, `├`, `└`, `│`, `─`, `█`, `░`, `×`, `±`
 - No icon-style Unicode:
-  - No checkmarks: use `[x]`, `[ ]` instead of `✓`, `✗`
+  - No checkmarks: use `[v]`, `[ ]` instead of `✓`, `✗`
   - No stars: use numbers instead of `★`
   - No emoji: use `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]` instead of ⚠️✅🔴
 
