@@ -1,6 +1,6 @@
 # RFC-011: Language Policy & Internationalization
 
-## Status: Draft
+## Status: Active
 ## Author: AI Agent
 ## Created: 2026-01-26
 

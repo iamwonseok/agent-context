@@ -1,6 +1,6 @@
 # RFC-006: Unified Platform Abstraction Layer
 
-## Status: Draft
+## Status: Active
 ## Author: wonseok
 ## Created: 2026-01-25
 
