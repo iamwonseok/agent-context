@@ -15,12 +15,9 @@ skills:
 
 # Refactor
 
-## Implementation Status
+## Status
 
-- **Status**: Implemented
-- **CLI Coverage**: 95% (Jira auto-transition optional)
-- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#refactor-manual)
-- **Last Updated**: 2026-01-24
+Implemented | CLI 95% | [Manual Guide](../../docs/guides/manual-fallback-guide.md#refactor)
 
 ## When to Use
 
@@ -35,78 +32,19 @@ skills:
 
 ## Flow
 
-```
-+---------------------+
-|  design-solution    | <- Plan refactoring scope
-+---------+-----------+
-          |
-          v
-+---------------------+
-|    write-code       | <- Ensure tests exist first
-+---------+-----------+
-          |
-          v
-    +------------+
-    |    Loop    |
-    | per change |
-    +-----+------+
-          |
-          v
-    +-----------+
-    | refactor  | <- Make one change
-    +-----+-----+
-          |
-          v
-    +-----------+
-    | run-tests | <- All tests still pass?
-    +-----+-----+
-          |
-    Pass? --No--> Revert, try again
-          |
-         Yes
-          |
-          v
-    +---------------+
-    |commit-changes | <- Small commit
-    +-------+-------+
-            |
-    More changes? --Yes--> Loop
-            |
-            No
-            |
-            v
-+---------------------+
-|    check-style      | <- Final check
-+---------+-----------+
-          |
-          v
-+---------------------+
-|    review-code      | <- Review all changes
-+---------+-----------+
-          |
-          v
-+------------------------+
-|  verify-requirements   | <- Check against refactoring goals
-+-----------+------------+
-            |
-            v
-+------------------------+
-| create-merge-request   | <- MR and merge
-+------------------------+
-```
+1. `design-solution` - Plan refactoring scope
+2. `write-code` - Ensure tests exist first
+3. Loop per change: `refactor` -> `run-tests` -> `commit-changes`
+4. `check-style` -> `review-code` -> `verify-requirements`
+5. `create-merge-request` - MR and merge
 
-## Quality Gates (Recommended)
+## Quality Gates
 
-> These are **recommended targets**, not hard blocks.
-> In exceptional cases, document the rationale in MR description and proceed.
-> See: [ARCHITECTURE.md](../../ARCHITECTURE.md#3-feedback-over-enforcement)
-
-| After | Gate | Target |
-|-------|------|--------|
-| run-tests (each) | Test | All pass |
-| check-style | Lint | 0 violations |
-| review-code | Review | 0 critical |
-| verify-requirements | Verify | Refactoring goals met |
+| Gate | Target |
+|------|--------|
+| Test (each loop) | All pass |
+| Lint | 0 violations |
+| Review | 0 critical |
 
 ## Example
 
@@ -114,40 +52,19 @@ skills:
 Task: "Extract repository pattern from services"
 
 1. design-solution
-   -> List files to change
-   -> Define refactoring steps
+   -> List files, define steps
 
 2. write-code
-   -> Verify existing tests cover behavior
-   -> Add tests if missing
+   -> Verify tests exist, add if missing
 
 3. Loop (small steps):
-   -> Extract BaseRepository
-   -> run-tests -> Pass
-   -> commit-changes: "refactor: add BaseRepository"
-   
-   -> Update UserService
-   -> run-tests -> Pass
-   -> commit-changes: "refactor: use repository in UserService"
-   
-   -> Update OrderService
-   -> run-tests -> Pass
-   -> commit-changes: "refactor: use repository in OrderService"
+   -> Extract BaseRepository -> test -> commit
+   -> Update UserService -> test -> commit
+   -> Update OrderService -> test -> commit
 
-4. check-style
-   -> Final lint check
+4. check-style -> review-code -> verify-requirements
 
-5. review-code
-   -> Verify no behavior change
-   -> Check code quality improved
-
-6. verify-requirements
-   -> Check planning/refactor-repository.md
-   -> All goals achieved?
-   -> No missing items?
-
-7. create-merge-request
-   -> MR, merge
+5. create-merge-request -> merge
 ```
 
 ## Notes

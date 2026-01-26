@@ -14,17 +14,11 @@ references:
 
 # Epic Management
 
-> [!NOTE]
-> Refer to [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md) for PM hierarchy operation rules.
-> Use [Confluence Epic Template](../../templates/planning/confluence-epic.md) for Confluence pages.
+> Refer to [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md) for PM hierarchy rules.
 
-## Implementation Status
+## Status
 
-- **Status**: Roadmap
-- **CLI Coverage**: 0% (documentation only)
-- **Manual Alternative**: Create Epic in Jira UI + Link sub-Tasks/Stories
-- **Last Updated**: 2026-01-24
-- **Note**: `agent mgr epic` command is currently not implemented.
+Roadmap | CLI 0% | Manual: Create Epic in Jira UI + Link sub-Tasks/Stories
 
 ## When to Use
 
@@ -32,61 +26,12 @@ references:
 - Managing feature group delivery
 - Tracking multi-sprint work
 
-## Command Flow
+## Flow (NOT IMPLEMENTED)
 
-> **Note**: Commands below are **not yet implemented**. Use Manual Alternative in the meantime.
-
-### Step 1: Create Epic
-
-```bash
-# [NOT IMPLEMENTED] Future CLI example
-agent mgr epic create "User Authentication System" --initiative=INIT-1
-```
-
-- Define epic scope
-- Set acceptance criteria
-- Create in JIRA/GitLab
-
-**Skills**: `analyze/parse-requirement`
-
-### Step 2: Break Down to Tasks
-
-```bash
-# [NOT IMPLEMENTED] Future CLI example
-agent mgr breakdown EPIC-50
-```
-
-- Create user stories
-- Define tasks
-- Set dependencies
-
-**Skills**: `planning/breakdown-work`
-
-### Step 3: Estimate
-
-```bash
-# [NOT IMPLEMENTED] Future CLI example
-agent mgr estimate EPIC-50
-```
-
-- Size each task
-- Calculate total effort
-- Identify risks
-
-**Skills**: `planning/estimate-effort`
-
-### Step 4: Track Progress
-
-```bash
-# [NOT IMPLEMENTED] Future CLI example
-agent mgr status EPIC-50
-```
-
-- Monitor completion
-- Identify blockers
-- Update stakeholders
-
-**Skills**: `analyze/assess-status`
+1. `agent mgr epic create "Title" --initiative=INIT-1` - Define scope, criteria
+2. `agent mgr breakdown EPIC-50` - Create stories/tasks, set dependencies
+3. `agent mgr estimate EPIC-50` - Size tasks, calculate effort
+4. `agent mgr status EPIC-50` - Monitor completion, identify blockers
 
 ## Outputs
 
@@ -97,24 +42,12 @@ agent mgr status EPIC-50
 | Estimates | Effort sizing |
 | Status | Progress tracking |
 
-## Example
+## Example (Future)
 
 ```bash
-# [NOT IMPLEMENTED] Future CLI workflow example
-# For now, use Jira UI to create Epic and link Tasks
-
-# Create epic
+# For now, use Jira UI
 agent mgr epic create "Auth System" --initiative=INIT-1
-
-# Break down
-agent mgr breakdown EPIC-50
-# Creates: TASK-51, TASK-52, TASK-53, ...
-
-# Estimate
-agent mgr estimate EPIC-50
-# Output: Total 40 story points
-
-# Track
-agent mgr status EPIC-50
-# Output: 60% complete, on track
+agent mgr breakdown EPIC-50    # Creates: TASK-51, 52, 53
+agent mgr estimate EPIC-50     # Total 40 story points
+agent mgr status EPIC-50       # 60% complete
 ```

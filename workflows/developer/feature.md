@@ -17,12 +17,9 @@ skills:
 
 # Feature Development
 
-## Implementation Status
+## Status
 
-- **Status**: Implemented
-- **CLI Coverage**: 95% (Jira auto-transition optional)
-- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#feature-development-manual)
-- **Last Updated**: 2026-01-24
+Implemented | CLI 95% | [Manual Guide](../../docs/guides/manual-fallback-guide.md#feature)
 
 ## When to Use
 
@@ -37,102 +34,32 @@ skills:
 
 ## Flow
 
-```
-+---------------------+
-| parse-requirement   | <- Clarify requirements
-+---------+-----------+
-          |
-          v
-+---------------------+
-|  design-solution    | <- Plan tasks
-+---------+-----------+
-          |
-          v
-    +------------+
-    |    Loop    |
-    |  per task  |
-    +-----+------+
-          |
-          v
-    +-----------+
-    | write-code| <- Write code (TDD)
-    +-----+-----+
-          |
-          v
-    +-----------+
-    |check-style| <- Check style
-    +-----+-----+
-          |
-          v
-    +-----------+
-    | run-tests | <- Run tests
-    +-----+-----+
-          |
-          v
-    +-----------+
-    |review-code| <- Review code quality
-    +-----+-----+
-          |
-          v
-    +---------------+
-    |commit-changes | <- Commit changes
-    +-------+-------+
-            |
-    More tasks? --Yes--> Loop back to write-code
-            |
-            No
-            |
-            v
-+------------------------+
-|  verify-requirements   | <- Check against original intent
-+-----------+------------+
-            |
-            v
-+------------------------+
-| create-merge-request   | <- Create MR, merge
-+------------------------+
-```
+1. `parse-requirement` - Clarify requirements
+2. `design-solution` - Plan tasks
+3. Loop per task:
+   - `write-code` (TDD) -> `check-style` -> `run-tests` -> `review-code` -> `commit-changes`
+4. `verify-requirements` - Check against original intent
+5. `create-merge-request` - Create MR, merge
 
-## Quality Gates (Recommended)
+## Quality Gates
 
-> These are **recommended targets**, not hard blocks.
-> In exceptional cases, document the rationale in MR description and proceed.
-> See: [ARCHITECTURE.md](../../ARCHITECTURE.md#3-feedback-over-enforcement)
-
-| After | Gate | Target |
-|-------|------|--------|
-| check-style | Lint | 0 violations |
-| run-tests | Test | All pass, >=80% coverage |
-| review-code | Review | 0 critical issues |
-| verify-requirements | Verify | All requirements met |
+| Gate | Target |
+|------|--------|
+| Lint | 0 violations |
+| Test | All pass, >=80% coverage |
+| Review | 0 critical issues |
 
 ## Example
 
 ```
 User: "Add SPI flash driver"
 
-1. parse-requirement
-   -> Questions about flash chip, interface, etc.
-   -> Output: design/spi-flash.md
-
-2. design-solution
-   -> Break into tasks: SPI init, read, write, erase
-   -> Output: planning/spi-flash-plan.md
-
+1. parse-requirement -> design/spi-flash.md
+2. design-solution -> planning/spi-flash-plan.md
 3. For each task:
-   write-code   -> Write tests, then code
-   check-style  -> make lint
-   run-tests    -> make test
-   review-code  -> Check quality
-   commit-changes -> git commit -m "feat(flash): ..."
-
-4. verify-requirements
-   -> Re-read design/spi-flash.md
-   -> Check all requirements met
-   -> Confirm no gaps
-
-5. create-merge-request
-   -> Push, create MR, merge
+   write-code -> check-style -> run-tests -> review-code -> commit
+4. verify-requirements -> Check all met
+5. create-merge-request -> merge
 ```
 
 ## Notes
@@ -140,4 +67,3 @@ User: "Add SPI flash driver"
 - Skip parse-requirement if requirements are clear
 - Skip design-solution for simple features
 - Always run check-style -> run-tests -> review-code before commit
-- verify-requirements ensures implementation matches original intent (design/*.md)
