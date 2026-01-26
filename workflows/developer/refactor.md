@@ -3,7 +3,7 @@ name: refactor
 description: Code refactoring workflow
 role: developer
 skills:
-  - plan/design-solution
+  - planning/design-solution
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -142,7 +142,7 @@ Task: "Extract repository pattern from services"
    -> Check code quality improved
 
 6. verify-requirements
-   -> Check plan/refactor-repository.md
+   -> Check planning/refactor-repository.md
    -> All goals achieved?
    -> No missing items?
 

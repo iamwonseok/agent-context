@@ -2,7 +2,7 @@
 # Skills Framework Test Suite
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILLS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SKILLS_DIR="$(cd "${SCRIPT_DIR}/../../../skills" && pwd)"
 
 # Colors
 RED='\033[0;31m'
@@ -45,11 +45,11 @@ analyze/inspect-codebase
 analyze/inspect-logs
 analyze/evaluate-priority
 analyze/assess-status
-plan/design-solution
-plan/breakdown-work
-plan/estimate-effort
-plan/schedule-timeline
-plan/allocate-resources
+planning/design-solution
+planning/breakdown-work
+planning/estimate-effort
+planning/schedule-timeline
+planning/allocate-resources
 execute/write-code
 execute/refactor-code
 execute/fix-defect
@@ -235,16 +235,17 @@ test_workflows() {
         test_fail "workflows/README.md missing"
     fi
 
+    # Test developer workflows
     for wf in feature bug-fix hotfix refactor; do
-        local wf_file="$workflows_dir/${wf}.md"
+        local wf_file="$workflows_dir/developer/${wf}.md"
 
         if [ ! -f "$wf_file" ]; then
-            test_fail "Missing: ${wf}.md"
+            test_fail "Missing: developer/${wf}.md"
             continue
         fi
 
         echo ""
-        echo "  [${wf}]"
+        echo "  [developer/${wf}]"
         test_pass "File exists"
 
         # YAML frontmatter
@@ -273,15 +274,58 @@ test_workflows() {
             fi
         done
 
-        # Verify referenced skills exist (supports category/skill-name format)
-        local skills_list=$(sed -n '/^skills:/,/^---/p' "$wf_file" | grep "^  - " | sed 's/^  - //' | sed 's/ .*//')
+        # Verify referenced skills exist
+        local skills_list=$(sed -n '/^skills:/,/^[a-z].*:/p' "$wf_file" | grep "^  - " | sed 's/^  - //' | sed 's/ .*//')
         for skill in $skills_list; do
             # Skip special cases like "git-workflow (worktree)"
             skill=$(echo "$skill" | sed 's/(.*//')
             if [ -d "${SKILLS_DIR}/${skill}" ]; then
                 test_pass "Skill exists: ${skill}"
             else
-                test_warn "Skill path: ${skill} (may be category/name format)"
+                test_fail "Skill not found: ${skill}"
+            fi
+        done
+    done
+
+    # Test manager workflows
+    for wf in initiative epic task-assignment monitoring approval; do
+        local wf_file="$workflows_dir/manager/${wf}.md"
+
+        if [ ! -f "$wf_file" ]; then
+            test_fail "Missing: manager/${wf}.md"
+            continue
+        fi
+
+        echo ""
+        echo "  [manager/${wf}]"
+        test_pass "File exists"
+
+        # YAML frontmatter
+        local first_line=$(head -1 "$wf_file")
+        if [ "$first_line" = "---" ]; then
+            test_pass "YAML frontmatter"
+        else
+            test_fail "YAML frontmatter missing"
+        fi
+
+        # Required YAML fields
+        for field in "name:" "description:" "skills:"; do
+            if grep -q "${field}" "$wf_file" 2>/dev/null; then
+                test_pass "Has: ${field}"
+            else
+                test_fail "Missing: ${field}"
+            fi
+        done
+
+        # Verify referenced skills exist
+        local skills_list=$(sed -n '/^skills:/,/^[a-z].*:/p' "$wf_file" | grep "^  - " | sed 's/^  - //' | sed 's/ .*//')
+        for skill in $skills_list; do
+            # Skip special cases like "git-workflow (worktree)"
+            skill=$(echo "$skill" | sed 's/(.*//')
+            if [ -d "${SKILLS_DIR}/${skill}" ]; then
+                test_pass "Skill exists: ${skill}"
+            else
+                test_fail "Skill not found: ${skill}"
             fi
         done
     done

@@ -15,17 +15,17 @@ Guide for AI agents to use skills and workflows effectively.
 User request
     |
     v
-New feature? --Yes--> workflows/feature.md
+New feature? --Yes--> workflows/developer/feature.md
     |
     No
     |
     v
 Bug fix? --Yes--> Production issue?
     |                  |
-    No            Yes: workflows/hotfix.md
-    |              No: workflows/bug-fix.md
+    No            Yes: workflows/developer/hotfix.md
+    |              No: workflows/developer/bug-fix.md
     v
-Code improvement? --Yes--> workflows/refactor.md
+Code improvement? --Yes--> workflows/developer/refactor.md
 ```
 
 ## Workflow Execution
@@ -33,7 +33,7 @@ Code improvement? --Yes--> workflows/refactor.md
 ### 1. Read Workflow File
 
 ```
-Read workflows/{workflow}.md
+Read workflows/developer/{workflow}.md or workflows/manager/{workflow}.md
 - Check skills: field in YAML
 - Understand flow diagram
 - Note quality gates
@@ -73,7 +73,7 @@ If gate not met: fix if possible, or document rationale in MR and proceed.
 
 ### Step 1: Choose Workflow
 
-New feature -> `workflows/feature.md`
+New feature -> `workflows/developer/feature.md`
 
 ### Step 2: Parse Requirement
 
@@ -158,7 +158,7 @@ AI: Running pre-merge checks...
 
 ### Step 1: Choose Workflow
 
-Bug fix, not production -> `workflows/bug-fix.md`
+Bug fix, not production -> `workflows/developer/bug-fix.md`
 
 ### Step 2: Write Code (TDD)
 
@@ -205,7 +205,7 @@ gh pr create --title "fix(dma): adjust timeout for large transfers"
 
 ### Step 1: Choose Workflow
 
-Production issue -> `workflows/hotfix.md`
+Production issue -> `workflows/developer/hotfix.md`
 
 ### Step 2: Quick Fix
 
@@ -256,5 +256,5 @@ AI: "This could be a bug fix or a new feature.
 ## Reference
 
 - Skills: `skills/*/SKILL.md`
-- Workflows: `workflows/*.md`
+- Workflows: `workflows/developer/*.md`, `workflows/manager/*.md`
 - Quality gates: Each workflow's "Quality Gates" section
