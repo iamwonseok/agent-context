@@ -265,27 +265,228 @@ Track in task summaries:
 
 ---
 
-## 6. Implementation
+## 6. Implementation Plan
 
-### 6.1 .cursorrules Integration
+### 6.1 Phase 0: Foundation (Completed)
 
-Added sections:
-- "Batch Operations & Efficiency"
-- "Common Task Patterns"
-- "Agent Efficiency Metrics"
+**Status**: ✅ Completed
 
-### 6.2 Documentation
+- [x] RFC-010 document creation
+- [x] .cursorrules integration
+  - Batch Operations & Efficiency section
+  - Common Task Patterns quick reference
+  - Agent Efficiency Metrics table
+- [x] Language Policy enforcement matrix
+- [x] Basic documentation structure
 
-- This RFC: Detailed rationale and patterns
-- `.cursorrules`: Agent-readable quick reference
-- `docs/guides/troubleshooting.md`: User-facing examples
+**Deliverables**:
+- `docs/rfcs/010-agent-efficiency-best-practices.md`
+- Updated `.cursorrules`
+- `ARCHITECTURE.md` language policy section
 
-### 6.3 Testing
+---
 
-No automated enforcement (by design):
-- Agents should self-optimize based on patterns
-- Human review can catch excessive tool calls
+### 6.2 Phase 1: Test Plan & Validation Framework
+
+**Goal**: Define how to measure and validate efficiency improvements
+
+**Tasks**:
+
+1. **Create Test Scenarios** (`tests/efficiency/`)
+   ```bash
+   tests/efficiency/
+   ├── README.md                    # Testing methodology
+   ├── scenario-path-update.md      # Pattern 1 test
+   ├── scenario-language-cleanup.md # Pattern 2 test
+   └── measure-efficiency.sh        # Metrics collection script
+   ```
+
+2. **Define Metrics Collection**
+   - Tool call counter (manual tracking for now)
+   - Test run counter
+   - File operation grouping analysis
+
+3. **Success Criteria**
+   ```yaml
+   # tests/efficiency/success-criteria.yaml
+   pattern_1_path_update:
+     max_tool_calls: 15
+     max_test_runs: 2
+     target_reduction: 70%
+   
+   pattern_2_language_cleanup:
+     max_tool_calls: 12
+     max_test_runs: 1
+     target_reduction: 66%
+   ```
+
+**Deliverables**:
+- Test scenario documents
+- Metrics collection methodology
+- Success criteria definition
+
+**Estimated effort**: 2-3 hours
+**Context window**: ~20k tokens (safe)
+
+---
+
+### 6.3 Phase 2: Example Implementation & Validation
+
+**Goal**: Demonstrate patterns with real examples
+
+**Tasks**:
+
+1. **Create "Before" Baseline**
+   - Document current inefficient approach
+   - Measure actual tool calls/time
+
+2. **Apply Pattern 1: Path Reference Updates**
+   - Create example with 10+ files to update
+   - Apply batch strategy
+   - Measure improvement
+
+3. **Apply Pattern 2: Language Policy Cleanup**
+   - Use actual Phase 5 as case study
+   - Document the 30→10 calls improvement
+   - Extract lessons learned
+
+4. **Document Results**
+   ```markdown
+   # docs/rfcs/010-implementation-results.md
+   
+   ## Pattern 1 Results
+   - Before: 42 tool calls
+   - After: 12 tool calls
+   - Reduction: 71%
+   
+   ## Pattern 2 Results
+   - Before: 30 tool calls
+   - After: 10 tool calls
+   - Reduction: 66%
+   ```
+
+**Deliverables**:
+- Implementation examples
+- Measurement results
+- Lessons learned document
+
+**Estimated effort**: 3-4 hours
+**Context window**: ~30k tokens (safe)
+
+---
+
+### 6.4 Phase 3: Documentation Integration
+
+**Goal**: Integrate efficiency patterns into existing workflows
+
+**Tasks**:
+
+1. **Update Workflow Templates**
+   - Add efficiency checklist to workflows
+   - Reference patterns in SKILL.md templates
+
+2. **Create Quick Reference Card**
+   ```markdown
+   # docs/guides/efficiency-quick-reference.md
+   
+   ## Before You Start
+   - [ ] Will you repeat the same operation 3+ times?
+   - [ ] Can you find ALL files at once?
+   - [ ] Can you group by pattern type?
+   
+   ## Pattern Selection
+   - Path updates → Pattern 1
+   - Language cleanup → Pattern 2
+   - Documentation → Pattern 3
+   ```
+
+3. **Update Troubleshooting Guide**
+   - Add "Task taking too long?" section
+   - Reference efficiency patterns
+
+**Deliverables**:
+- Updated workflow templates
+- Efficiency quick reference card
+- Enhanced troubleshooting guide
+
+**Estimated effort**: 2 hours
+**Context window**: ~15k tokens (safe)
+
+---
+
+### 6.5 Phase 4: Final Validation & Handoff
+
+**Goal**: Verify all components work together
+
+**Tasks**:
+
+1. **Run Complete Test Suite**
+   ```bash
+   # All tests must pass
+   bash tests/unit/run-all-unit-tests.sh
+   bash tests/integration/test_skills_tools.sh
+   bash tests/efficiency/validate-patterns.sh  # New
+   ```
+
+2. **Measure Efficiency Baseline**
+   - Track next 3-5 tasks
+   - Collect actual metrics
+   - Compare against targets
+
+3. **Update Documentation**
+   - Final polish on all docs
+   - Ensure cross-references work
+   - Add to main README
+
+4. **Create Handoff Document**
+   - Summary of what was implemented
+   - How to use efficiency patterns
+   - Next steps (optional improvements)
+
+**Deliverables**:
+- All tests passing
+- Efficiency baseline established
+- Complete documentation set
+- Handoff document
+
+**Estimated effort**: 2 hours
+**Context window**: ~15k tokens (safe)
+
+---
+
+### 6.6 Testing Strategy
+
+**No automated enforcement** (by design, per ARCHITECTURE.md):
+- Agents self-optimize based on patterns
+- Human review catches excessive tool calls
 - Metrics tracked in task summaries
+
+**Validation approach**:
+1. Scenario-based testing (Phase 1)
+2. Real-world examples (Phase 2)
+3. Metric collection (Phase 4)
+4. Continuous improvement (ongoing)
+
+---
+
+### 6.7 Rollout Plan
+
+| Phase | Duration | Context Window | Dependencies |
+|-------|----------|----------------|--------------|
+| Phase 0 | Completed | - | None |
+| Phase 1 | 2-3 hours | ~20k tokens | Phase 0 |
+| Phase 2 | 3-4 hours | ~30k tokens | Phase 1 |
+| Phase 3 | 2 hours | ~15k tokens | Phase 2 |
+| Phase 4 | 2 hours | ~15k tokens | Phase 3 |
+
+**Total estimated effort**: 9-11 hours
+**Total context window budget**: ~80k tokens (well within 1M limit)
+
+**Checkpoints**:
+- ✅ Checkpoint 1: Phase 0 complete (current)
+- ⏸️ Checkpoint 2: Phase 1 test plan ready
+- ⏸️ Checkpoint 3: Phase 2 examples validated
+- ⏸️ Checkpoint 4: Phase 3-4 documentation complete
 
 ---
 
@@ -340,20 +541,282 @@ efficiency:
 
 ---
 
-## 9. References
+## 9. Detailed Test Plan
 
-- `.cursorrules`: Implementation
-- `ARCHITECTURE.md`: Design philosophy
-- Phase 1-5 implementation: Real-world examples
+### 9.1 Phase 1: Test Scenarios
+
+**Objective**: Define measurable test cases for each pattern
+
+#### Scenario 1: Path Reference Updates (Pattern 1)
+
+**Setup**:
+```bash
+# Create test environment
+mkdir -p tests/efficiency/fixtures/path-update/
+cp -r workflows/ tests/efficiency/fixtures/path-update/
+```
+
+**Test case**:
+```yaml
+name: path-reference-update
+description: Update 10 files with path references
+baseline_approach:
+  steps:
+    - Read file 1
+    - Find pattern
+    - Replace
+    - Repeat for files 2-10
+  tool_calls: 40
+  test_runs: 10
+
+efficient_approach:
+  steps:
+    - grep -r to find ALL files
+    - Show all matches
+    - Batch replace by type
+    - Test once
+  tool_calls: 15
+  test_runs: 1
+
+success_criteria:
+  tool_call_reduction: ">60%"
+  test_run_reduction: ">80%"
+  all_tests_pass: true
+```
+
+**Validation**:
+```bash
+bash tests/efficiency/scenario-01-path-update.sh
+# Expected output:
+# Baseline: 40 calls
+# Efficient: 15 calls
+# Reduction: 62.5% ✅
+```
 
 ---
 
-## 10. Change Log
+#### Scenario 2: Language Policy Cleanup (Pattern 2)
+
+**Setup**:
+```bash
+# Use Phase 5 as real-world data
+git log --oneline | grep "language"
+```
+
+**Test case**:
+```yaml
+name: language-cleanup
+description: Remove Korean from 8 files
+baseline_approach:
+  steps:
+    - Read each file individually
+    - Find Korean lines
+    - Translate
+    - Repeat 8 times
+  tool_calls: 30
+
+efficient_approach:
+  steps:
+    - grep -r for ALL Korean files
+    - Show all Korean lines together
+    - Group by content type
+    - Batch translate
+    - Test once
+  tool_calls: 10
+
+success_criteria:
+  tool_call_reduction: ">65%"
+  all_korean_removed: true
+  tests_pass: true
+```
+
+**Validation**:
+```bash
+# Verify no Korean in skills/workflows
+LC_ALL=C grep -r -l $'[\xEA-\xED]' skills/ workflows/
+# Expected: empty
+
+bash tests/unit/skills/test_skills.sh | grep "Language Policy"
+# Expected: "No Korean characters" ✅
+```
+
+---
+
+#### Scenario 3-5: Additional Patterns
+
+**Similar structure** for:
+- Scenario 3: Documentation creation (Pattern 3)
+- Scenario 4: Test updates (Pattern 4)
+- Scenario 5: Batch file operations (Pattern 5)
+
+---
+
+### 9.2 Phase 2: Measurement Methodology
+
+**Tool call counting**:
+
+```bash
+# Manual counting (for now)
+# Count from task start to task end
+
+# Example log format:
+Task: Update path references
+Start: 10:00:00
+End: 10:15:00
+
+Tool calls:
+1. grep -r "plan/" workflows/    # Find all
+2. grep -n "plan/" file1.md      # Show context
+3. StrReplace file1.md           # Replace
+4. StrReplace file2.md           # Replace (batched)
+5. StrReplace file3.md           # Replace (batched)
+6. bash tests/unit/test.sh       # Test once
+
+Total: 6 calls
+
+Baseline estimate: 25 calls
+Reduction: 76%
+```
+
+**Metrics to track**:
+
+```yaml
+# tests/efficiency/results/task-{id}.yaml
+task_id: TASK-123
+pattern_used: pattern-2-language-cleanup
+start_time: "2026-01-26T10:00:00Z"
+end_time: "2026-01-26T10:15:00Z"
+duration_minutes: 15
+
+metrics:
+  tool_calls: 10
+  baseline_estimate: 30
+  reduction_percent: 66.7
+  test_runs: 1
+  files_modified: 8
+  tests_passed: true
+
+notes: |
+  Used batch grep to find all files at once.
+  Grouped translations by content type.
+  Single test run at end.
+```
+
+---
+
+### 9.3 Phase 3: Regression Testing
+
+**After implementing efficiency patterns, ensure:**
+
+1. **Functional correctness maintained**:
+   ```bash
+   # All unit tests still pass
+   bash tests/unit/run-all-unit-tests.sh
+   # Expected: 401/401
+   
+   # Integration tests still pass
+   bash tests/integration/test_skills_tools.sh
+   # Expected: 14/14
+   ```
+
+2. **No degradation in quality**:
+   ```bash
+   # Skills still well-formed
+   grep "## When to Use" skills/*/SKILL.md | wc -l
+   # Expected: 26 (all skills have it)
+   
+   # Workflows still valid
+   bash tests/unit/skills/test_skills.sh | grep "Workflows"
+   # Expected: All workflows pass
+   ```
+
+3. **Documentation completeness**:
+   ```bash
+   # All patterns documented
+   grep -c "Pattern [1-5]" docs/rfcs/010-*.md
+   # Expected: >=5
+   
+   # Cross-references valid
+   grep -r "\[.*\](.*\.md)" docs/ | wc -l
+   # Expected: >50 (many valid links)
+   ```
+
+---
+
+### 9.4 Success Criteria Per Checkpoint
+
+**Checkpoint 2 Success**:
+- [ ] 5 scenario files created
+- [ ] `success-criteria.yaml` defined
+- [ ] `measure-efficiency.sh` executable
+- [ ] README explains methodology
+
+**Checkpoint 3 Success**:
+- [ ] Pattern 1 example shows >60% reduction
+- [ ] Pattern 2 example shows >60% reduction
+- [ ] Case study documented
+- [ ] Lessons learned captured
+
+**Checkpoint 4 Success**:
+- [ ] Quick reference card created
+- [ ] Templates updated with efficiency hints
+- [ ] Main docs reference efficiency guide
+- [ ] All tests still passing (no regression)
+
+---
+
+### 9.5 Automated Test Commands
+
+**Quick validation** (run after each checkpoint):
+
+```bash
+#!/bin/bash
+# tests/efficiency/quick-validate.sh
+
+echo "Phase 0 Validation..."
+bash tests/unit/run-all-unit-tests.sh || exit 1
+bash tests/integration/test_skills_tools.sh || exit 1
+
+echo "Phase 1 Validation..."
+[ -f tests/efficiency/success-criteria.yaml ] || exit 1
+[ $(ls tests/efficiency/scenario-*.md 2>/dev/null | wc -l) -eq 5 ] || exit 1
+
+echo "Phase 2 Validation..."
+[ -d docs/examples/efficiency ] || exit 1
+[ -f docs/rfcs/010-case-study-phase-5.md ] || exit 1
+
+echo "Phase 3 Validation..."
+[ -f docs/guides/efficiency-quick-reference.md ] || exit 1
+grep -q "efficiency" README.md || exit 1
+
+echo "All checkpoints validated! ✅"
+```
+
+---
+
+## 10. References
+
+- `.cursorrules`: Agent-readable quick reference
+- `ARCHITECTURE.md`: Design philosophy and complexity budget
+- `docs/internal/handoff.md`: Detailed work plan and progress tracking
+- Phase 1-5 implementation: Real-world efficiency examples
+
+### Related RFCs
+
+- RFC-004: Agent Workflow System (State Visibility)
+- RFC-007: Architecture Improvements (IR, Skill selection)
+- RFC-009: CLI Documentation Policy
+
+---
+
+## 11. Change Log
 
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-01-26 | Initial draft | AI Agent |
+| 2026-01-26 | Added Implementation Plan (Phase 0-4) | AI Agent |
+| 2026-01-26 | Added Detailed Test Plan (Section 9) | AI Agent |
 
 ---
 
-**Next Review**: After 3-5 tasks using these patterns
+**Next Review**: After Checkpoint 4 completion (~9-11 hours of work)
