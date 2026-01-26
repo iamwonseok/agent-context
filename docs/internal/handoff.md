@@ -1,95 +1,83 @@
-# Handoff: Architecture Feedback Integration & RFC Updates
+# Handoff: RFC-009 CLI Documentation Policy
 
-**Date**: 2026-01-25
+**Date**: 2026-01-26  
+**Branch**: `chore/cli-docs-structure-plan`  
 **Previous Agent**: Claude Opus 4.5
 
 ---
 
 ## Completed Work
 
-### 1. Architecture Feedback Analysis
-- Reviewed 4 feedback documents in `/tmp/architecture/*.md`
-- Identified common patterns: Horizontal (Pipeline) + Vertical (Abstraction)
-- Mapped to current project structure
+### 1. RFC-009 작성 및 검토
 
-### 2. Documentation Updates (Committed)
-- `ARCHITECTURE.md` - Added "Architecture Patterns" section
-  - Horizontal Pattern: Skills Pipeline
-  - Vertical Pattern: Platform Abstraction
-- `skills/PIPELINE.md` - New file documenting inter-skill data flow
-- `docs/rfcs/007-architecture-improvements.md` - New RFC for IR and interface.sh
-- `docs/rfcs/future-work.md` - Added FW-6, FW-7, FW-8
+- RFC 초안 생성 (Gemini 피드백 기반)
+- ARCHITECTURE.md 및 .cursorrules 기준으로 검토 완료
+- 최종 수정 반영
 
-### 3. Philosophy Alignment (Committed)
-- RFC-004: Mode Boundaries changed from "forbidden" to "warn only"
-- RFC-004: Self-Correction changed from CORRECT to SUGGEST (user decides)
-- FW-5 (Multi-Agent): Marked as lowest priority due to Simplicity conflict
+### 2. RFC-009 수정 사항
 
-### 4. Commits Created
+| 항목 | 변경 내용 |
+|------|----------|
+| 파일명 | `009-cli-documentation-unification.md` → `009-cli-documentation-policy.md` |
+| 제목 | "CLI Documentation Unification" → "CLI Documentation Policy" |
+| Related | `ARCHITECTURE.md` 추가 |
+| Section 2.3 | "설계 원칙과의 정합" 신규 추가 |
+| 용어 통일 | "구현/유지보수 문서" → "구현/내부 문서 (Implementation Notes)" |
+
+### 3. 파일 변경 목록
+
 ```
-023d0eb docs(rfcs): align RFC-004 and future-work with design philosophy
-fb8c467 docs(architecture): add horizontal/vertical pattern documentation
+ M docs/rfcs/README.md                      # 009 제목/링크 업데이트
+ A docs/rfcs/009-cli-documentation-policy.md # RFC 신규 생성
 ```
 
 ---
 
 ## Remaining Work
 
-### Recommended Next: RFC-004 Phase 1 (State Visibility)
+### Phase 0 (RFC-009 구현)
 
-| Task | Estimated | Files |
-|------|-----------|-------|
-| State Assertion | ~50 lines | `tools/agent/lib/executor.sh` |
-| Cursor Mode Mapping | ~30 lines | `skills/**/SKILL.md` |
-| Mode Boundaries (warn) | ~50 lines | `tools/agent/lib/checks.sh` |
+RFC-009 Section 5의 Phase 0 작업:
 
-### Full Roadmap
+- [ ] `docs/cli/pm.md` 생성 (Stub)
+  - NAME/SYNOPSIS/대표 예제 + 상세는 `tools/pm/README.md` 링크
+- [ ] `docs/cli/README.md`의 Tools 표에 `pm` 추가
+- [ ] `tools/pm/README.md` 상단에 "User manual: `docs/cli/pm.md`" 링크 추가
 
-```
-Phase 1: RFC-004 State Visibility (Next)
-    ↓
-Phase 2: RFC-004 Feedback Loops + RFC-007 Architecture
-    ↓
-Phase 3: Optional extensions (FW-1,2,6,7,8)
-```
+### 커밋 및 MR
 
-### Low Priority / Not Recommended
-- FW-3: Automated Execution (User Autonomy conflict)
-- FW-5: Multi-Agent (Simplicity conflict)
+- [ ] 현재 변경사항 커밋
+- [ ] Phase 0 구현 후 MR 생성
 
 ---
 
-## Important Context
+## Key Context
 
-### Design Philosophy (5 Core Principles)
-1. **Simplicity Over Completeness** - Simple > Complex
-2. **User Autonomy** - Warnings > Blocking, always --force
-3. **Feedback Over Enforcement** - Teach, don't force
-4. **Composability** - Small skills, workflows as composition
-5. **State Through Artifacts** - Files (YAML/MD), not databases
+### RFC-009 핵심 정책
 
-### Complexity Budget
-| Component | Limit |
-|-----------|-------|
-| Single skill | 200 lines |
-| Workflow | 100 lines |
-| CLI command | 100 lines |
-| Helper library | 300 lines |
+| 구분 | 위치 |
+|------|------|
+| 사용자용 매뉴얼 (User Manual) | `docs/cli/<command>.md` |
+| 구현/내부 문서 (Implementation Notes) | `tools/<tool>/README.md` |
 
-### Key Files
-- `ARCHITECTURE.md` - Design philosophy
-- `docs/rfcs/004-agent-workflow-system.md` - v2.0 plan
-- `docs/rfcs/007-architecture-improvements.md` - Architecture improvements
-- `docs/rfcs/future-work.md` - Long-term roadmap
+### 설계 원칙 연결 (ARCHITECTURE.md)
+
+- **Human-readable > Machine-optimized**: Markdown 유지
+- **Simplicity Over Completeness**: Phase 분리, 대규모 리라이트 지양
+- **Composability**: 역할별 분리
+
+### Non-goals (범위 밖)
+
+- CLI 기능/옵션/출력 포맷 변경 없음
+- 문서 전면 리라이트 아님
 
 ---
 
 ## Notes for Next Agent
 
-1. **Philosophy first**: Always check against 5 core principles before implementing
-2. **Warnings over blocking**: Any enforcement must have --force escape
-3. **File-based state**: Use .context/, YAML, Markdown - no complex state machines
-4. **Feedback documents**: Located in `/tmp/architecture/*.md` (external, may be deleted)
+1. **Phase 0부터 시작**: Stub 전략으로 최소 실행 가능 상태 먼저 만들기
+2. **Simplicity 원칙**: Phase 0은 stub, Phase 1에서 content split
+3. **docs/cli/README.md Related 섹션**: pm 링크가 중복될 수 있음 → Phase 1에서 정리 대상
 
 ---
 
