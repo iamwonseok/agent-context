@@ -11,12 +11,9 @@ skills:
 
 # MR Approval
 
-## Implementation Status
+## Status
 
-- **Status**: Implemented
-- **CLI Coverage**: 85% (inline comments via UI recommended)
-- **Manual Alternative**: MR review/approval via GitLab/GitHub UI or `glab`/`gh` CLI
-- **Last Updated**: 2026-01-24
+Implemented | CLI 85% | Manual: GitLab/GitHub UI or `glab`/`gh` CLI
 
 ## When to Use
 
@@ -24,68 +21,14 @@ skills:
 - Code quality verification
 - Release gate
 
-## Command Flow
+## Flow
 
-### Step 1: List Pending MRs
-
-```bash
-agent mgr pending
-```
-
-- Show MRs awaiting review
-- Display CI status
-- Show age/priority
-
-### Step 2: Review MR
-
-```bash
-agent mgr review MR-456
-```
-
-- Check CI status
-- Analyze changes
-- Show metrics (coverage, complexity)
-- Auto-review findings
-
-**Skills**: `validate/review-code`, `validate/analyze-impact`
-
-### Step 3: Decision
-
-#### Approve
-
-```bash
-agent mgr approve MR-456
-```
-
-- GitLab/GitHub approval
-- Update JIRA status
-- Notify author
-
-#### Request Changes
-
-```bash
-agent mgr review MR-456 --comment "Please fix complexity issue"
-```
-
-- Add review comments
-- Notify author
-- Track follow-up
-
-**Skills**: `integrate/notify-stakeholders`
-
-### Step 4: Post-Approval
-
-```bash
-agent mgr merge MR-456  # If auto-merge not enabled
-```
-
-## Outputs
-
-| Output | Description |
-|--------|-------------|
-| Review | Approval or feedback |
-| Comments | Review notes |
-| Notification | Author notified |
+1. `agent mgr pending` - List pending MRs with CI status
+2. `agent mgr review MR-456` - Check CI, analyze changes, show metrics
+3. Decision:
+   - Approve: `agent mgr approve MR-456`
+   - Request changes: `agent mgr review MR-456 --comment "..."`
+4. `agent mgr merge MR-456` - If auto-merge not enabled
 
 ## Review Checklist
 
@@ -95,24 +38,20 @@ agent mgr merge MR-456  # If auto-merge not enabled
 - [ ] Documentation updated
 - [ ] Follows conventions
 
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| Review | Approval or feedback |
+| Comments | Review notes |
+| Notification | Author notified |
+
 ## Example
 
 ```bash
-# Check pending
-agent mgr pending
-# Output: MR-456 (TASK-123), MR-457 (BUG-789)
-
-# Review
-agent mgr review MR-456
-# Output: 
-#   CI: PASSED
-#   Coverage: 85%
-#   Changes: +150 -30
-#   Findings: 0 critical, 2 minor
-
-# Approve
-agent mgr approve MR-456
-# Output: MR-456 approved, author notified
+agent mgr pending           # MR-456 (TASK-123)
+agent mgr review MR-456     # CI: PASSED, Coverage: 85%
+agent mgr approve MR-456    # MR-456 approved
 ```
 
 ## Notes

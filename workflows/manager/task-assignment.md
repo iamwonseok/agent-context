@@ -10,13 +10,9 @@ skills:
 
 # Task Assignment
 
-## Implementation Status
+## Status
 
-- **Status**: Partial
-- **CLI Coverage**: 40% (query only, assignment requires UI)
-- **Manual Alternative**: Query available capacity via JQL + Assign in Jira UI
-- **Last Updated**: 2026-01-24
-- **Gaps**: `agent mgr inbox`, `agent mgr assign` commands not implemented
+Partial | CLI 40% | Manual: JQL query + Assign in Jira UI
 
 ## When to Use
 
@@ -24,92 +20,30 @@ skills:
 - Rebalancing workload
 - Sprint planning
 
-## Command Flow
+## Flow
 
-### Step 1: Review Inbox
-
-```bash
-agent mgr inbox
-```
-
-- List unassigned tasks
-- Show priority indicators
-
-### Step 2: Evaluate Priority
-
-```bash
-agent mgr evaluate TASK-123
-```
-
-- Assess urgency
-- Assess impact
-- Recommend priority level
-
-**Skills**: `analyze/evaluate-priority`
-
-### Step 3: Check Availability
-
-```bash
-agent mgr capacity
-```
-
-- Show team workload
-- Identify available capacity
-
-**Skills**: `planning/allocate-resources`
-
-### Step 4: Assign & Validate Dependencies
-
-```bash
-agent mgr assign TASK-123 --to=@john --priority=P2
-```
-
-- Update JIRA/GitLab
-- Set priority
-- Set sprint/milestone
-- **Validate Dependencies**: 
-    - If `Is blocked by` link exists, verify that prerequisite task is already completed or included in same sprint.
-    - If prerequisite task belongs to another team, use `Relates to` to facilitate early communication between assignees.
-
-### Step 5: Notify
-
-```bash
-agent mgr notify TASK-123
-```
-
-- Notify assignee
-- Provide context
-
-**Skills**: `integrate/notify-stakeholders`
+1. `agent mgr inbox` - List unassigned tasks with priority
+2. `agent mgr evaluate TASK-123` - Assess urgency/impact
+3. `agent mgr capacity` - Show team workload
+4. `agent mgr assign TASK-123 --to=@john --priority=P2` - Assign with validation
+   - Check `Is blocked by` links - ensure prerequisites complete
+   - Use `Relates to` for cross-team coordination
+5. `agent mgr notify TASK-123` - Notify assignee with context
 
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| Assignment | Task assigned to developer |
+| Assignment | Task assigned |
 | Notification | Developer notified |
 | Updated status | Task in sprint backlog |
 
 ## Example
 
 ```bash
-# Review unassigned
-agent mgr inbox
-# Shows: TASK-123, TASK-124, TASK-125
-
-# Evaluate
-agent mgr evaluate TASK-123
-# Output: P2 - High priority, customer impact
-
-# Check capacity
-agent mgr capacity
-# Output: John at 60%, Jane at 80%
-
-# Assign
+agent mgr inbox               # TASK-123, 124, 125
+agent mgr evaluate TASK-123   # P2 - High priority
+agent mgr capacity            # John 60%, Jane 80%
 agent mgr assign TASK-123 --to=@john --priority=P2
-# Output: Assigned TASK-123 to John
-
-# Notify
-agent mgr notify TASK-123
-# Output: John notified via Slack
+agent mgr notify TASK-123     # John notified
 ```
