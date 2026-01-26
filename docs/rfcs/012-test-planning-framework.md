@@ -1,6 +1,6 @@
 # RFC-012: Test Planning Framework
 
-## Status: Draft
+## Status: Active
 ## Author: AI Agent (based on implementation feedback)
 ## Created: 2026-01-26
 
@@ -662,6 +662,7 @@ done
 |------|--------|--------|
 | 2026-01-26 | Initial draft | AI Agent |
 | 2026-01-26 | Added detailed test plan and implementation tasks | AI Agent |
+| 2026-01-27 | Status: Draft → Active (framework established) | AI Agent |
 
 ---
 
