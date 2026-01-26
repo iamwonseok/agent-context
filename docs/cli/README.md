@@ -11,6 +11,7 @@ Command-line interface documentation for agent-context tools.
 | [agent-mgr.md](agent-mgr.md) | `agent mgr` | Manager commands |
 | [agent-init.md](agent-init.md) | `agent init` | Project initialization |
 | [lint.md](lint.md) | `lint` | Code quality checker |
+| [pm.md](pm.md) | `pm` | Project management (JIRA/GitLab/GitHub) |
 
 ## Quick Reference
 
