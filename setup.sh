@@ -12,6 +12,7 @@ set -e
 # Parse arguments
 GLOBAL_INSTALL=false
 NON_INTERACTIVE=false
+SKIP_SECRETS=false
 for arg in "$@"; do
     case $arg in
         --global)
@@ -20,12 +21,16 @@ for arg in "$@"; do
         --non-interactive)
             NON_INTERACTIVE=true
             ;;
+        --skip-secrets)
+            SKIP_SECRETS=true
+            ;;
         --help|-h)
             echo "Usage: setup.sh [OPTIONS]"
             echo ""
             echo "Options:"
             echo "  --global           Install to ~/.agent (global installation)"
             echo "  --non-interactive  Skip interactive prompts (use defaults)"
+            echo "  --skip-secrets     Skip .secrets/ directory setup (for CI environments)"
             echo "  --help, -h         Show this help message"
             exit 0
             ;;
@@ -134,10 +139,12 @@ else
 fi
 
 # 3. .secrets/ handling
-if [[ ! -d "${PROJECT_ROOT}/.secrets" ]]; then
+if [[ "$SKIP_SECRETS" == "true" ]]; then
+    echo "[INFO] Skipping .secrets/ setup (--skip-secrets)"
+elif [[ ! -d "${PROJECT_ROOT}/.secrets" ]]; then
     echo "[INFO] Creating .secrets/ directory from template"
     mkdir -p "${PROJECT_ROOT}/.secrets"
-    SECRETS_TEMPLATE=$(resolve_template_path ".secrets")
+    SECRETS_TEMPLATE=$(resolve_template_path "secrets-examples")
     if [[ -d "$SECRETS_TEMPLATE" ]]; then
         cp "${SECRETS_TEMPLATE}/"*.example "${PROJECT_ROOT}/.secrets/" 2>/dev/null || true
         cp "${SECRETS_TEMPLATE}/README.md" "${PROJECT_ROOT}/.secrets/" 2>/dev/null || true

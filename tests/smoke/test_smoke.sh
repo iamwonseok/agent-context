@@ -114,6 +114,13 @@ for file in .cursorrules .gitignore; do
     fi
 done
 
+# Verify --skip-secrets works (no .secrets/ directory should be created)
+if [ ! -d ".secrets" ]; then
+    test_pass "--skip-secrets: .secrets/ not created"
+else
+    test_fail "--skip-secrets: .secrets/ should not be created"
+fi
+
 # 4. setup.sh re-run (idempotent)
 section "4. Setup Idempotency"
 
