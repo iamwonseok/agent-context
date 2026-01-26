@@ -73,17 +73,17 @@ Check for:
 - Dependencies on external teams
 - Technical blockers
 - **Linking Analysis**:
-    - `Is blocked by`: 선행 작업이 완료되지 않아 시작하지 못하는 이슈 식별
-    - `Blocks`: 현재 작업이 지연될 경우 영향을 받는 후행 작업 범위 파악
+    - `Is blocked by`: Identify issues that cannot start due to incomplete prerequisite tasks
+    - `Blocks`: Identify downstream tasks affected if current task is delayed
 
 ### 5. Assess Risks & Root Causes
 
 | Risk Category | Indicators | Root Cause Analysis (RCA) |
 |---------------|------------|---------------------------|
-| Schedule | Velocity dropping, scope creep | `Split from`: 작업이 너무 커서 분리된 이력 확인 |
-| Technical | Repeated failures, unknown tech | `Is caused by`: 특정 기능 도입 후 반복되는 버그 추적 |
-| Resource | Team changes, overallocation | `Relates to`: 문맥 공유 부족으로 인한 중복 작업 확인 |
-| External | Vendor delays, API changes | `Blocks`: 외부 팀의 차단 요인 시각화 |
+| Schedule | Velocity dropping, scope creep | `Split from`: Check history of tasks split due to size |
+| Technical | Repeated failures, unknown tech | `Is caused by`: Track recurring bugs after feature introduction |
+| Resource | Team changes, overallocation | `Relates to`: Identify duplicate work due to lack of context sharing |
+| External | Vendor delays, API changes | `Blocks`: Visualize blocking factors from external teams |
 
 Risk Score: Probability × Impact (1-25)
 

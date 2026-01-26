@@ -16,9 +16,9 @@ skills:
 
 - **Status**: Implemented
 - **CLI Coverage**: 90% (verification/retro skippable)
-- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#hotfix-manual---fastest) - **Manual이 더 빠름**
+- **Manual Alternative**: [Manual Fallback Guide](../../docs/manual-fallback-guide.md#hotfix-manual---fastest) - **Manual is faster**
 - **Last Updated**: 2026-01-24
-- **Note**: 긴급 상황에서는 Manual 방식이 Agent보다 빠르고 직접적입니다.
+- **Note**: In emergency situations, manual approach is faster and more direct than using agent.
 
 ## When to Use
 

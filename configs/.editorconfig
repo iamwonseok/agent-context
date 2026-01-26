@@ -1,0 +1,63 @@
+# EditorConfig - IDE/Editor 공통 설정
+# https://editorconfig.org
+
+root = true
+
+# 모든 파일 기본 설정
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C/C++ - 탭 들여쓰기 (C-01-01)
+[*.{c,h,cpp,hpp}]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+max_line_length = 100
+
+# Bash - 탭 들여쓰기 (Bash-02-01)
+[*.sh]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+max_line_length = 100
+
+# Makefile - 레시피는 반드시 탭 (Make-02-01)
+[Makefile]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+[*.mk]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Python - 공백 4칸 (Py-02-01)
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# YAML - 공백 2칸
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+
+# Dockerfile
+[Dockerfile*]
+indent_style = space
+indent_size = 4

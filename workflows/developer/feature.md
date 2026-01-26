@@ -4,7 +4,7 @@ description: Full feature development workflow
 role: developer
 skills:
   - analyze/parse-requirement
-  - plan/design-solution
+  - planning/design-solution
   - execute/write-code
   - validate/check-style
   - validate/run-tests
@@ -116,7 +116,7 @@ User: "Add SPI flash driver"
 
 2. design-solution
    -> Break into tasks: SPI init, read, write, erase
-   -> Output: plan/spi-flash-plan.md
+   -> Output: planning/spi-flash-plan.md
 
 3. For each task:
    write-code   -> Write tests, then code

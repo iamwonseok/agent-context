@@ -4,8 +4,8 @@ description: Epic management workflow
 role: manager
 skills:
   - analyze/parse-requirement
-  - plan/breakdown-work
-  - plan/estimate-effort
+  - planning/breakdown-work
+  - planning/estimate-effort
   - analyze/assess-status
 references:
   - docs/guides/pm-hierarchy-sync.md
@@ -15,16 +15,16 @@ references:
 # Epic Management
 
 > [!NOTE]
-> PM 계층 운영 규칙은 [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md)를 참조하세요.
-> Confluence 페이지 템플릿은 [Confluence Epic Template](../../templates/planning/confluence-epic.md)을 사용하세요.
+> Refer to [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md) for PM hierarchy operation rules.
+> Use [Confluence Epic Template](../../templates/planning/confluence-epic.md) for Confluence pages.
 
 ## Implementation Status
 
 - **Status**: Roadmap
-- **CLI Coverage**: 0% (문서 정의만 존재)
-- **Manual Alternative**: Jira UI에서 Epic 생성 + 하위 Task/Story 연결
+- **CLI Coverage**: 0% (documentation only)
+- **Manual Alternative**: Create Epic in Jira UI + Link sub-Tasks/Stories
 - **Last Updated**: 2026-01-24
-- **Note**: 현재 `agent mgr epic` 명령어는 미구현 상태입니다.
+- **Note**: `agent mgr epic` command is currently not implemented.
 
 ## When to Use
 
@@ -60,7 +60,7 @@ agent mgr breakdown EPIC-50
 - Define tasks
 - Set dependencies
 
-**Skills**: `plan/breakdown-work`
+**Skills**: `planning/breakdown-work`
 
 ### Step 3: Estimate
 
@@ -73,7 +73,7 @@ agent mgr estimate EPIC-50
 - Calculate total effort
 - Identify risks
 
-**Skills**: `plan/estimate-effort`
+**Skills**: `planning/estimate-effort`
 
 ### Step 4: Track Progress
 

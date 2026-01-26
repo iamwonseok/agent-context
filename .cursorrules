@@ -74,13 +74,46 @@ Read `ARCHITECTURE.md` for the full rationale. Key principles:
 5. Always keep escape hatches
 
 ## Language Policy
-- **Execution code and commit artifacts: English only**
-  - Source code, scripts, config, and code comments MUST be in English
-  - Variable/function/class names MUST be in English
-  - Commit messages MUST be in English
-- **Docs exception (this repo only)**: Korean is allowed in Markdown documents (`*.md`) in this repository
-  - Rationale: Document-language exception is defined in `docs/rfcs/agent-workflow-system-plan.md` (Quality Requirements)
-  - This exception does NOT apply to executable code or code comments
+
+### Enforcement Matrix
+
+| File Type | English | Korean | Enforcement |
+|-----------|:-------:|:------:|-------------|
+| Code (`*.sh`, `*.py`) | Required | Forbidden | Automated test |
+| Code comments | Required | Forbidden | Automated test |
+| **Skills** (`skills/**/*.md`) | **Required** | **Forbidden** | Automated test |
+| **Workflows** (`workflows/**/*.md`) | **Required** | **Forbidden** | Automated test |
+| Internal docs (`docs/**/*.md`) | Recommended | Allowed | No enforcement |
+| Test scenarios (`tests/scenario/*.md`) | Recommended | Allowed | No enforcement |
+
+**Critical:** Skills and Workflows are AI-readable instructions, NOT documentation.
+
+### Rationale
+
+- **Why English for Skills/Workflows?** AI agents read these as instructions
+- **Why Korean allowed for docs?** Internal team communication (per RFC-004)
+- **Validation:** `tests/unit/skills/test_skills.sh` enforces this policy
+
+### Language Policy Violations
+
+If you find Korean in skills/ or workflows/:
+
+1. **Batch find all violations:**
+   ```bash
+   LC_ALL=C grep -r -l $'[\xEA-\xED]' skills/ workflows/
+   ```
+
+2. **Show context for each:**
+   ```bash
+   LC_ALL=C grep -n $'[\xEA-\xED]' <file> | head -3
+   ```
+
+3. **Replace in batches** (group by similar content)
+
+4. **Verify once:**
+   ```bash
+   bash tests/unit/skills/test_skills.sh
+   ```
 
 ## Output Style
 - **No Korean characters in executable code or code comments**
@@ -91,6 +124,82 @@ Read `ARCHITECTURE.md` for the full rationale. Key principles:
   - No checkmarks: use `[v]`, `[ ]` instead of `✓`, `✗`
   - No stars: use numbers instead of `★`
   - No emoji: use `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]` instead of ⚠️✅🔴
+
+## Batch Operations & Efficiency
+
+### Detecting Repetitive Patterns
+
+When you notice the same operation being repeated 3+ times, STOP and:
+
+1. **Identify the pattern:**
+   ```bash
+   # Example: Converting Korean to English in multiple files
+   # Pattern: Find Korean → Read file → Replace → Verify
+   ```
+
+2. **Use batch tools instead:**
+   ```bash
+   # Good: Single grep to find all files
+   grep -r -l $'[\xEA-\xED]' skills/ workflows/
+   
+   # Bad: Reading each file individually
+   Read file1 → Read file2 → Read file3...
+   ```
+
+3. **Parallelize independent operations:**
+   - If files don't depend on each other, batch read them in one tool call
+   - Use shell commands for batch operations when appropriate
+
+### Batch Operation Strategies
+
+| Task Type | Strategy | Example |
+|-----------|----------|---------|
+| Find files with pattern | Use grep/find ONCE | `grep -r "pattern" dir/` |
+| Replace in multiple files | Group by pattern type | Replace all `plan/` → `planning/` at once |
+| Verify changes | Single test run | Run test suite once after all changes |
+| Read multiple files | Parallel reads | Read all 5 workflows in one message |
+
+### When to Use Shell vs Individual Tools
+
+**Use Shell commands for:**
+- Finding patterns across many files (`grep -r`)
+- Listing files (`ls`, `find`)
+- Batch operations (`sed`, `awk` for simple replacements)
+- Testing (`bash script.sh`)
+
+**Use Individual tools for:**
+- Precise content replacement (StrReplace for complex logic)
+- File creation/deletion
+- Git operations
+
+### Efficiency Checklist
+
+Before making a change, ask:
+
+- [ ] Can I find ALL affected files in one command?
+- [ ] Can I group similar changes together?
+- [ ] Can I verify the pattern before fixing each file?
+- [ ] Can I run tests once at the end instead of incrementally?
+
+### Example: Efficient Batch Operation
+
+**Bad (Repetitive):**
+```
+1. Read workflows/developer/feature.md
+2. Find Korean text
+3. Replace Korean → English
+4. Repeat for workflows/developer/bug-fix.md
+5. Repeat for workflows/developer/hotfix.md
+... (7 more times)
+```
+
+**Good (Batch):**
+```
+1. grep -r Korean in workflows/ (find ALL at once)
+2. Show all Korean lines in all files
+3. Replace in batches by pattern type
+4. Run test once at the end
+```
 
 ## Agent Behavior
 
@@ -271,3 +380,166 @@ Total: {N} | Passed: {N} | Failed: {N}
 - Python: Py-XX-XX
 - YAML: YAML-XX-XX
 - Dockerfile: Docker-XX-XX
+
+---
+
+## Common Task Patterns (Quick Reference)
+
+### Pattern 1: Fix All Path References
+
+**When:** Changing skill/workflow paths across multiple files
+
+**Command:**
+```bash
+# 1. Find all affected files
+grep -r "old-path/" workflows/ skills/ tests/
+
+# 2. Show context
+grep -n "old-path/" <files>
+
+# 3. Replace in batch (group by file type)
+# - All workflows together
+# - All skills together
+# - All tests together
+
+# 4. Verify once
+bash tests/unit/skills/test_skills.sh
+```
+
+### Pattern 2: Language Policy Cleanup
+
+**When:** Removing Korean from skills/workflows
+
+**Command:**
+```bash
+# 1. Find ALL violations at once
+LC_ALL=C grep -r -l $'[\xEA-\xED]' skills/ workflows/
+
+# 2. Show ALL Korean lines (group by file)
+for file in <files>; do
+  echo "=== $file ==="
+  LC_ALL=C grep -n $'[\xEA-\xED]' "$file"
+done
+
+# 3. Translate in batches (similar content together)
+
+# 4. Verify once
+bash tests/unit/skills/test_skills.sh | tail -20
+```
+
+### Pattern 3: Add New Documentation
+
+**When:** Creating new guide/troubleshooting/reference docs
+
+**Structure:**
+```bash
+# 1. Check existing docs structure
+ls docs/guides/ docs/architecture/
+
+# 2. Create all related docs at once:
+# - Main guide (troubleshooting.md)
+# - Examples (platform-setup-examples.md)
+# - Architecture (skills-tools-mapping.md)
+
+# 3. Link from main README once
+```
+
+### Pattern 4: Update Tests After Structure Change
+
+**When:** Modified skills/workflows/tools structure
+
+**Command:**
+```bash
+# 1. Update test scripts (SKILL_PATHS, etc.)
+vim tests/unit/skills/test_skills.sh
+
+# 2. Run ALL tests once
+bash tests/unit/run-all-unit-tests.sh
+
+# 3. Fix failures in batch
+
+# 4. Verify CI config includes new tests
+grep -A 5 "test:" .gitlab-ci.yml
+```
+
+### Pattern 5: Batch File Operations
+
+**When:** Need to modify 5+ similar files
+
+**Strategy:**
+```bash
+# DON'T: Read → Modify → Read → Modify (one by one)
+# DO: Batch read → Batch modify → Single verify
+
+# Example: Update 10 workflow files
+# 1. Read all frontmatter at once (parallel reads)
+# 2. Identify common pattern
+# 3. Replace all at once (grouped by pattern)
+# 4. Test once
+```
+
+---
+
+## Agent Efficiency Metrics
+
+Track and optimize:
+
+| Metric | Target | Red Flag |
+|--------|--------|----------|
+| Tool calls per task | <20 for simple, <50 for complex | >100 calls |
+| Repeated identical operations | 0 | Same operation 3+ times |
+| Test runs per change batch | 1-2 | Testing after each file |
+| Files read individually | Group related | Reading 10+ files one-by-one |
+
+**Optimization Rule:** If you're about to do the same thing for the 3rd time, STOP and batch it.
+
+---
+
+## Skill Selection Validation (Future Work)
+
+### Current State
+
+**What is tested:**
+- ✅ "When to Use" section exists (structure)
+- ✅ Required sections are present
+
+**What is NOT tested:**
+- ❌ "When to Use" content is accurate
+- ❌ AI selects correct skill for given context
+- ❌ Skill usage patterns match documentation
+
+### Planned Improvements
+
+**Short-term (RFC-007 prerequisite):**
+```bash
+# Add scenario-based skill selection tests
+tests/scenario/skill-selection/
+├── test_bug_fix_selection.sh      # Verify bug-fix workflow selected
+├── test_feature_selection.sh      # Verify feature workflow selected
+└── test_hotfix_selection.sh       # Verify hotfix workflow selected
+```
+
+**Medium-term (RFC-007 implementation):**
+```yaml
+# IR tracks skill usage for validation
+.context/TASK-123/intermediate.yaml:
+  stages:
+    analyze:
+      skill_used: analyze/parse-requirement
+      context:
+        trigger: "User request unclear"
+        matched_when_to_use: true  # ← Auto-validation
+```
+
+**Long-term (AI self-improvement):**
+- Collect skill usage patterns
+- Generate "When to Use" recommendations
+- AI self-evaluates skill selection
+
+### References
+
+- RFC-007: Intermediate Representation (IR)
+- tests/scenario/README.md: Scenario testing guidelines
+- docs/architecture/skills-tools-mapping.md: Current skill-tool relationships
+
+---

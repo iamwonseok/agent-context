@@ -4,7 +4,7 @@ description: Task assignment workflow
 role: manager
 skills:
   - analyze/evaluate-priority
-  - plan/allocate-resources
+  - planning/allocate-resources
   - integrate/notify-stakeholders
 ---
 
@@ -13,10 +13,10 @@ skills:
 ## Implementation Status
 
 - **Status**: Partial
-- **CLI Coverage**: 40% (조회만 가능, 할당은 UI 필요)
-- **Manual Alternative**: JQL로 유휴 인력 조회 + Jira UI에서 Assignee 할당
+- **CLI Coverage**: 40% (query only, assignment requires UI)
+- **Manual Alternative**: Query available capacity via JQL + Assign in Jira UI
 - **Last Updated**: 2026-01-24
-- **Gaps**: `agent mgr inbox`, `agent mgr assign` 명령어 미구현
+- **Gaps**: `agent mgr inbox`, `agent mgr assign` commands not implemented
 
 ## When to Use
 
@@ -56,7 +56,7 @@ agent mgr capacity
 - Show team workload
 - Identify available capacity
 
-**Skills**: `plan/allocate-resources`
+**Skills**: `planning/allocate-resources`
 
 ### Step 4: Assign & Validate Dependencies
 
@@ -68,8 +68,8 @@ agent mgr assign TASK-123 --to=@john --priority=P2
 - Set priority
 - Set sprint/milestone
 - **Validate Dependencies**: 
-    - `Is blocked by` 링크가 걸린 경우, 선행 작업이 이미 완료되었거나 동일 스프린트에 포함되었는지 확인합니다.
-    - 선행 작업이 다른 팀 소관일 경우, `Relates to`를 통해 미리 담당자 간 소통을 유도합니다.
+    - If `Is blocked by` link exists, verify that prerequisite task is already completed or included in same sprint.
+    - If prerequisite task belongs to another team, use `Relates to` to facilitate early communication between assignees.
 
 ### Step 5: Notify
 

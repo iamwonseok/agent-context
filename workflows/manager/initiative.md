@@ -4,10 +4,10 @@ description: Initiative planning workflow
 role: manager
 skills:
   - analyze/parse-requirement
-  - plan/design-solution
-  - plan/breakdown-work
-  - plan/schedule-timeline
-  - plan/allocate-resources
+  - planning/design-solution
+  - planning/breakdown-work
+  - planning/schedule-timeline
+  - planning/allocate-resources
 references:
   - docs/guides/pm-hierarchy-sync.md
   - templates/planning/confluence-initiative.md
@@ -16,16 +16,16 @@ references:
 # Initiative Planning
 
 > [!NOTE]
-> PM 계층 운영 규칙은 [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md)를 참조하세요.
-> Confluence 페이지 템플릿은 [Confluence Initiative Template](../../templates/planning/confluence-initiative.md)을 사용하세요.
+> Refer to [PM Hierarchy Sync Guide](../../docs/guides/pm-hierarchy-sync.md) for PM hierarchy operation rules.
+> Use [Confluence Initiative Template](../../templates/planning/confluence-initiative.md) for Confluence pages.
 
 ## Implementation Status
 
 - **Status**: Roadmap
-- **CLI Coverage**: 0% (문서 정의만 존재)
-- **Manual Alternative**: Jira UI에서 Epic 또는 Initiative 타입 Issue 생성 + 하위 Epic/Task 연결
+- **CLI Coverage**: 0% (documentation only)
+- **Manual Alternative**: Create Epic or Initiative type Issue in Jira UI + Link sub-Epics/Tasks
 - **Last Updated**: 2026-01-24
-- **Note**: 현재 `agent mgr initiative` 명령어는 미구현 상태입니다.
+- **Note**: `agent mgr initiative` command is currently not implemented.
 
 ## When to Use
 
@@ -64,7 +64,7 @@ agent mgr epic create "Phase 3: Caching" --initiative=INIT-1
 - Create JIRA Epics
 - Create GitLab Milestones
 
-**Skills**: `plan/design-solution`, `plan/breakdown-work`
+**Skills**: `planning/design-solution`, `planning/breakdown-work`
 
 ### Step 3: Schedule Timeline
 
@@ -77,7 +77,7 @@ agent mgr schedule INIT-1
 - Set deadlines
 - Identify dependencies
 
-**Skills**: `plan/schedule-timeline`  
+**Skills**: `planning/schedule-timeline`  
 **Output**: Timeline document
 
 ### Step 4: Allocate Resources
@@ -91,7 +91,7 @@ agent mgr allocate INIT-1
 - Balance workload
 - Identify gaps
 
-**Skills**: `plan/allocate-resources`
+**Skills**: `planning/allocate-resources`
 
 ### Step 5: Communicate
 

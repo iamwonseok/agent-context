@@ -15,7 +15,7 @@ skills:
 
 - **Status**: Implemented
 - **CLI Coverage**: 85% (inline comments via UI recommended)
-- **Manual Alternative**: MR 리뷰/승인은 GitLab/GitHub UI 또는 `glab`/`gh` CLI로 가능
+- **Manual Alternative**: MR review/approval via GitLab/GitHub UI or `glab`/`gh` CLI
 - **Last Updated**: 2026-01-24
 
 ## When to Use
