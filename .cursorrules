@@ -462,7 +462,7 @@ ls docs/guides/ docs/architecture/
 
 ### Pattern 4: Update Tests After Structure Change
 
-**When:** Modified skills/workflows/tools structure
+**When:** Modified skills, workflows, or tools structure
 
 **Command:**
 ```bash

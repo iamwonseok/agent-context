@@ -5,6 +5,7 @@ role: developer
 skills:
   - analyze/parse-requirement
   - planning/design-solution
+  - planning/design-test-plan
   - execute/write-code
   - validate/check-style
   - validate/run-tests

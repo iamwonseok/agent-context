@@ -1032,6 +1032,51 @@ A5: 예. 모든 Agent 기능은 Manual 대안을 제공하며, Hybrid 접근 (Ma
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Phase 1: State Assertion, Self-Correction, Cursor Mode Integration
+- Phase 2: Knowledge Caching, Question-Driven Planning
+- Phase 3: Automated Execution (optional)
+
+**Levels:**
+- Unit: Individual function tests (executor.sh, checks.sh, context.sh)
+- Integration: Full workflow tests (agent dev start → submit)
+- E2E: Scenario-based validation
+
+### Test Cases
+
+| ID | Phase | Component | Test Case | Expected |
+|----|-------|-----------|-----------|----------|
+| UT-1 | 1 | State Assertion | Skill outputs mode info | Mode/Purpose/Boundaries displayed |
+| UT-2 | 1 | Self-Correction | detect_mode_violation() | Returns error on planning mode with code changes |
+| UT-3 | 2 | Knowledge Caching | create_llm_context() | llm_context.md created |
+| UT-4 | 2 | Questions | create_questions() | questions.md created |
+| IT-1 | 1 | Workflow | feature workflow with State Assertion | All skills output state info |
+| IT-2 | 2 | Workflow | debrief command | design/*.md updated from answers |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] State Assertion output on all skill executions
+- [ ] Self-Correction detects mode violations
+- [ ] Knowledge caching reduces token usage
+
+**Should Have:**
+- [ ] User satisfaction score >= 4.0/5.0
+- [ ] Token reduction >= 20%
+
+### Validation Checklist
+
+- [ ] Phase 1 tests pass
+- [ ] Phase 2 tests pass
+- [ ] Philosophy compliance verified
+- [ ] Manual fallback documented
+
+---
+
 ## Implementation Status
 
 > Quick reference for next session. See each Phase section for details.
