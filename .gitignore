@@ -35,3 +35,8 @@ tests/*.log
 
 # Test reports (local only)
 tests/reports/
+
+# Secrets (keep examples only)
+.secrets/*
+!.secrets/*.example
+!.secrets/README.md

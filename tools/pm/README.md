@@ -1,5 +1,7 @@
 # Project Management CLI
 
+> **User manual**: [docs/cli/pm.md](../../docs/cli/pm.md)
+
 Jira/Confluence/GitLab integration CLI for development workflow automation.
 
 ## Requirements
