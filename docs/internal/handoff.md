@@ -3,7 +3,49 @@
 **Date**: 2026-01-26  
 **Previous Agent**: Claude Sonnet 4.5  
 **Branch**: `feat/structure-alignment-and-efficiency`  
-**Current Commit**: `400e216`
+**Current Commit**: `342fda1`
+
+---
+
+## 🔒 CRITICAL: Branch Merge Policy
+
+**DO NOT MERGE TO MAIN UNTIL ALL CHECKPOINTS COMPLETE**
+
+**Policy:**
+- ✅ Work on `feat/structure-alignment-and-efficiency` branch
+- ✅ Commit after each checkpoint
+- ✅ Push to remote for backup
+- ❌ **DO NOT merge to main** until Checkpoint 4 complete
+- ❌ **DO NOT create MR/PR** until all work finished
+
+**Rationale:**
+1. Work is part of single logical unit (RFC-010 implementation)
+2. Partial merge would leave incomplete feature
+3. All checkpoints tested together ensure coherence
+4. Single MR easier to review than multiple small ones
+
+**Merge criteria** (all must be true):
+- [ ] Checkpoint 1 complete ✅
+- [ ] Checkpoint 2 complete
+- [ ] Checkpoint 3 complete
+- [ ] Checkpoint 4 complete
+- [ ] All tests passing (unit + integration + efficiency)
+- [ ] Documentation complete and cross-linked
+- [ ] Handoff deleted (work taken over)
+
+**After all checkpoints complete:**
+```bash
+# Final validation
+bash tests/unit/run-all-unit-tests.sh
+bash tests/integration/test_skills_tools.sh
+bash tests/efficiency/validate-all.sh  # New in Checkpoint 2
+
+# Create MR
+git push -u origin feat/structure-alignment-and-efficiency
+# Then create MR via GitLab/GitHub UI
+
+# DO NOT use: git merge main (direct merge forbidden)
+```
 
 ---
 
@@ -510,9 +552,13 @@ bash tests/unit/run-all-unit-tests.sh
 
 **Before finishing:**
 
-- All checkpoints complete
-- All tests passing
+- All checkpoints complete (2, 3, 4)
+- All tests passing (unit, integration, efficiency)
+- Delete this handoff
 - Create MR (don't merge to main directly)
+
+**IMPORTANT**: Do NOT merge to main until ALL checkpoints complete.
+Work stays in feature branch until final MR approval.
 
 ---
 

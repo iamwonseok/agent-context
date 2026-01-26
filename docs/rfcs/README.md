@@ -14,6 +14,7 @@ Design proposals and implementation plans for agent-context framework.
 | 008 | Domain Extension & Installation | [008-domain-extension.md](008-domain-extension.md) | Draft |
 | 009 | CLI Documentation Policy | [009-cli-documentation-policy.md](009-cli-documentation-policy.md) | Draft |
 | 010 | Agent Efficiency & Best Practices | [010-agent-efficiency-best-practices.md](010-agent-efficiency-best-practices.md) | Draft |
+| 011 | Language Policy & Internationalization | [011-language-policy.md](011-language-policy.md) | Draft |
 
 ## Future Work
 

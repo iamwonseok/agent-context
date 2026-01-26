@@ -203,10 +203,26 @@ Before making a change, ask:
 
 ## Agent Behavior
 
+### Branch & Merge Policy
+
+**CRITICAL: Check handoff for merge restrictions**
+
+Before any git operation:
+1. Read `docs/internal/handoff.md` if it exists
+2. Check for "DO NOT MERGE" or checkpoint requirements
+3. If handoff has incomplete checkpoints → Stay on feature branch
+4. Only merge to main when handoff says "all checkpoints complete"
+
+**Default behavior** (when no handoff):
+- Work on feature branch
+- Commit incrementally
+- Create MR when task complete
+
 ### Session Start
 1. Check `git status` and `git branch`
-2. Ensure on feature branch (NOT main)
-3. If on main, create/checkout feature branch before work
+2. **Read `docs/internal/handoff.md`** if exists (check merge policy)
+3. Ensure on feature branch (NOT main)
+4. If on main, create/checkout feature branch before work
 
 ### Before Starting Work
 | Task Type | Read First |
