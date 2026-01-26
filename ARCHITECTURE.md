@@ -371,5 +371,47 @@ agent-context/              # This repo = what gets deployed
 
 ---
 
-*Last updated: 2026-01-23*
+## Language Policy
+
+Agent-context enforces English for AI-readable files and allows Korean for internal documentation.
+
+### Policy Matrix
+
+| File Type | English | Korean | Rationale |
+|-----------|:-------:|:------:|-----------|
+| Executable code (`*.sh`, `*.py`) | Required | Forbidden | Code must be universally readable |
+| Code comments | Required | Forbidden | Comments are part of code |
+| Workflows (`workflows/**/*.md`) | Required | Forbidden | AI agents read these as instructions |
+| Skills (`skills/**/*.md`) | Required | Forbidden | AI agents read these as instructions |
+| Internal docs (`docs/**/*.md`) | Recommended | Allowed | Team communication in native language |
+| Test scenarios (`tests/scenario/*.md`) | Recommended | Allowed | Internal test documentation |
+| RFCs (`docs/rfcs/*.md`) | Recommended | Allowed | Strategic documents for team |
+
+### Rationale
+
+**Why English for Skills/Workflows?**
+- Skills and workflows are **AI agent instructions**, not human documentation
+- AI models perform better with consistent English input
+- Enables international collaboration and reuse
+
+**Why Korean allowed for docs?**
+- Internal documentation can be in team's native language
+- Faster communication and knowledge sharing
+- Quality Requirements in RFC-004 explicitly allow this exception
+
+### Enforcement
+
+Automated via `tests/unit/skills/test_skills.sh`:
+- **Fail:** Korean in skills/ or workflows/
+- **Pass:** Korean in docs/ or tests/scenario/
+
+Override if needed:
+```bash
+# For exceptional cases, document rationale in commit message
+git commit -m "docs: add Korean explanation (internal team guide)"
+```
+
+---
+
+*Last updated: 2026-01-26*
 *Maintainer: Agent Context Team*

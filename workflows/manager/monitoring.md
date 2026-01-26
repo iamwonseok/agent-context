@@ -13,10 +13,10 @@ skills:
 ## Implementation Status
 
 - **Status**: Partial
-- **CLI Coverage**: 30% (MR 조회만 가능, Epic/Initiative 상태는 Jira UI)
-- **Manual Alternative**: Jira UI에서 필터/보드/리포트 사용 + `glab mr list`로 MR 현황 조회
+- **CLI Coverage**: 30% (MR query only, Epic/Initiative status via Jira UI)
+- **Manual Alternative**: Use Jira filters/boards/reports + `glab mr list` for MR status
 - **Last Updated**: 2026-01-24
-- **Gaps**: `agent mgr status`, `agent mgr detect-delays` 명령어 미구현
+- **Gaps**: `agent mgr status`, `agent mgr detect-delays` commands not implemented
 
 ## When to Use
 
@@ -82,15 +82,15 @@ agent mgr assign TASK-456 --to=@jane
 ```
 
 #### Monthly Retrospective Tips:
-- **Root Cause Analysis**: `Causes` 링크가 많이 걸린 작업들을 전수 조사하여 프로세스 개선 (예: "기획 변경으로 인한 버그 발생 빈도 측정")
-- **Dependency Map**: `Blocks` 관계가 복잡하게 얽힌 구간을 파악하여 다음 계획 시 자원 우선 배정
+- **Root Cause Analysis**: Investigate tasks with many `Causes` links to improve processes (e.g., "Measure bug frequency due to requirement changes")
+- **Dependency Map**: Identify areas with complex `Blocks` relationships to prioritize resource allocation in next planning
 
 #### Visualization Tip:
 > [!TIP]
-> **Jira 보드에서 Blocked 강조하기**:
+> **Highlight Blocked Items in Jira Board**:
 > 1. Board Settings -> Card Colours -> Choose 'Queries'
-> 2. JQL에 `issueLinkType = "is blocked by"` 입력 후 색상을 **빨간색**으로 설정
-> 3. 이제 차단된 업무가 보드에서 즉시 시각적으로 드러납니다!
+> 2. Enter `issueLinkType = "is blocked by"` in JQL and set color to **red**
+> 3. Blocked tasks are now immediately visible on the board!
 
 ## Outputs
 

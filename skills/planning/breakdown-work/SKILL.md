@@ -110,10 +110,10 @@ Task B (New) ──Is caused by──→ Task C (Technical Debt)
 ```
 
 **Linking Patterns:**
-- **Split to / Split from**: 하나의 티켓이 너무 커서 쪼개야 할 때 사용합니다. (Sub-task와는 다름)
-    - 예: 스프린트 도중 작업이 너무 커서 절반만 수행하고 나머지를 다음으로 미룰 때, 새 티켓을 만들고 `Split from`으로 연결합니다.
-- **Blocks / Is blocked by**: 작업의 순서를 강제하고 리스크를 식별하는 데 사용합니다.
-    - 예: API 개발이 완료되어야 프론트엔드 연동 작업을 시작할 수 있는 경우.
+- **Split to / Split from**: Used when a ticket is too large and needs to be split (different from sub-tasks)
+    - Example: During a sprint, if a task is too large and only half can be completed, create a new ticket and link with `Split from`
+- **Blocks / Is blocked by**: Used to enforce task order and identify risks
+    - Example: Frontend integration work can only start after API development is complete.
 
 ### 6. Create Task List
 

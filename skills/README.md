@@ -60,7 +60,7 @@ outputs:
 
 ## Add New Skill
 
-1. Choose appropriate category (`analyze/`, `plan/`, `execute/`, `validate/`, `integrate/`)
+1. Choose appropriate category (`analyze/`, `planning/`, `execute/`, `validate/`, `integrate/`)
 2. Create directory: `category/skill-name/`
 3. Copy `_template/SKILL.md`
 4. Fill in details with proper frontmatter

@@ -58,7 +58,7 @@ build:image:
 # are automatically included via ci-templates/lint.yml
 # They use the pre-built image from Nexus Registry
 
-# Workflow tests (Stage 1-2 only, no tokens required)
+# Workflow tests (Stage 0-2: unit, smoke, local-git)
 # E2E tests (Stage 3) require API tokens and are run locally only
 test:workflow:
   stage: test
@@ -69,6 +69,7 @@ test:workflow:
     DOCKER_TLS_CERTDIR: ""
   script:
     - docker compose -f tests/docker-compose.test.yml build
+    - docker compose -f tests/docker-compose.test.yml run unit
     - docker compose -f tests/docker-compose.test.yml run smoke
     - docker compose -f tests/docker-compose.test.yml run local-git
   rules:

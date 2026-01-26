@@ -13,6 +13,17 @@ services:
       dockerfile: tests/Dockerfile.test
     image: agent-context-test:latest
 
+  # Stage 0: Unit tests (structure validation)
+  unit:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - unit-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/unit/run-all-unit-tests.sh"]
+
   # Stage 1: Smoke tests (no remote, no tokens)
   smoke:
     image: agent-context-test:latest
@@ -63,6 +74,7 @@ services:
     command: ["bash", "/agent-context/tests/run-tests.sh", "--stages=1,2"]
 
 volumes:
+  unit-workspace:
   smoke-workspace:
   local-git-workspace:
   e2e-workspace:
