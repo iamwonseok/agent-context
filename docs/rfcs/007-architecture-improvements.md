@@ -1,6 +1,6 @@
 # RFC-007: Architecture Pattern Improvements
 
-## Status: Draft
+## Status: Active
 ## Author: wonseok
 ## Created: 2026-01-25
 
@@ -266,27 +266,37 @@ template_milestone_create() {
 - [x] skills/PIPELINE.md - Document data flow
 - [x] RFC-007 - This document
 
-### Phase 2: Horizontal Enhancement
+### Phase 2: Horizontal Enhancement (Completed)
 
 **Files:**
-| File | Action |
-|------|--------|
-| `tools/agent/lib/pipeline.sh` | New - Pipeline functions |
-| `skills/_template/SKILL.md` | Update - Add inputs/outputs |
+| File | Action | Status |
+|------|--------|--------|
+| `tools/agent/lib/pipeline.sh` | New - Pipeline functions | Done |
+| `skills/_template/SKILL.md` | Update - Add inputs/outputs | Deferred |
 
-**Estimated effort:** 2-3 days
+**Implemented functions:**
+- `pipeline_init()` - Create intermediate.yaml
+- `pipeline_get_stage()` / `pipeline_set_stage()` - Stage management
+- `pipeline_set_output()` / `pipeline_get_input()` - Data flow
+- `pipeline_complete_stage()` - Mark stage complete
+- `pipeline_status()` - Show pipeline status
+- `pipeline_cleanup()` - Remove context directory
 
-### Phase 3: Vertical Enhancement
+### Phase 3: Vertical Enhancement (Completed)
 
 **Files:**
-| File | Action |
-|------|--------|
-| `tools/pm/lib/interface.sh` | New - Interface definition |
-| `tools/pm/lib/jira.sh` | Update - Add compliance check |
-| `tools/pm/lib/gitlab.sh` | Update - Add compliance check |
-| `tools/pm/lib/github.sh` | Update - Add compliance check |
+| File | Action | Status |
+|------|--------|--------|
+| `tools/pm/lib/interface.sh` | New - Interface definition | Done |
+| `tools/pm/lib/jira.sh` | Update - Add compliance check | N/A (uses interface.sh) |
+| `tools/pm/lib/gitlab.sh` | Update - Add compliance check | N/A (uses interface.sh) |
+| `tools/pm/lib/github.sh` | Update - Add compliance check | N/A (uses interface.sh) |
 
-**Estimated effort:** 2-3 days
+**Implemented functions:**
+- `check_issue_interface()` - Verify issue provider compliance
+- `check_vcs_interface()` - Verify VCS provider compliance
+- `check_interface_compliance()` - Full compliance check
+- `not_implemented()` / `not_supported()` - Default handlers
 
 ---
 
