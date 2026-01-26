@@ -46,6 +46,7 @@ analyze/inspect-logs
 analyze/evaluate-priority
 analyze/assess-status
 planning/design-solution
+planning/design-test-plan
 planning/breakdown-work
 planning/estimate-effort
 planning/schedule-timeline

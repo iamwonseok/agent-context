@@ -922,6 +922,73 @@ summary,type,assignee_email,description
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Phase 0: Documentation (Manual Fallback Guide, Scenario templates)
+- Phase 1: CLI enhancements (--only, --skip, hooks, aliases)
+- Phase 2: Validation testing
+
+**Levels:**
+| Level | Description | Tools |
+|-------|-------------|-------|
+| Unit | CLI option parsing | bash tests |
+| Integration | Full workflow | Docker + manual |
+| Manual | Documentation validation | Human walkthrough |
+
+### Test Cases
+
+#### Documentation Tests
+
+| ID | Test Case | Expected |
+|----|-----------|----------|
+| DT-1 | Manual Fallback Guide completeness | 4 workflows documented |
+| DT-2 | Scenario 001-006 Manual Flow | All have Manual Flow section |
+| DT-3 | Workflow Implementation Status | All have status section |
+
+#### CLI Tests
+
+| ID | Component | Test Case | Expected |
+|----|-----------|-----------|----------|
+| UT-1 | dev.sh | --only=sync | Only runs sync |
+| UT-2 | dev.sh | --only=push,pr | Runs push then pr |
+| UT-3 | dev.sh | --skip=jira | Skips jira step |
+| UT-4 | dev.sh | --only=pr without remote | Error with guidance |
+| UT-5 | check.sh | --install-hook | Creates pre-commit hook |
+| UT-6 | check.sh | --uninstall-hook | Removes agent hook only |
+| UT-7 | aliases.sh | agent sync | Equivalent to agent dev sync |
+
+#### Integration Tests
+
+| ID | Scenario | Expected |
+|----|----------|----------|
+| IT-1 | Submit with --only=sync,push | Sync and push only |
+| IT-2 | Manual-only workflow completion | All 6 scenarios pass |
+| IT-3 | Backward compatibility | Default submit unchanged |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] All scenarios completable without agent
+- [ ] --only/--skip options work correctly
+- [ ] 100% backward compatibility
+- [ ] Philosophy score >= 4.5/5
+
+**Should Have:**
+- [ ] Pre-commit hook blocks on lint/test failure
+- [ ] Aliases documented in help
+
+### Validation Checklist
+
+- [ ] Documentation complete
+- [ ] CLI tests pass
+- [ ] Manual walkthrough successful
+- [ ] No regressions
+
+---
+
 ## Conclusion
 
 ### 핵심 결정 사항

@@ -255,6 +255,69 @@ pm issue create "New Feature" --labels "priority:high,type:feature"
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Phase 1: Milestone and Label commands
+- Phase 2: Wiki commands
+- Phase 3: Board/Project commands
+
+**Levels:**
+| Level | Platform | Tools |
+|-------|----------|-------|
+| Unit | All | bash mocking |
+| Integration | GitLab, GitHub, JIRA | Real API calls |
+| E2E | Multi-platform | Demo projects |
+
+### Test Cases
+
+#### Milestone Tests
+
+| ID | Platform | Test Case | Expected |
+|----|----------|-----------|----------|
+| MS-1 | GitLab | pm milestone list | Returns milestone list |
+| MS-2 | GitLab | pm milestone create "Sprint 1" | Creates milestone |
+| MS-3 | GitHub | pm milestone list | Returns milestone list |
+| MS-4 | JIRA | pm milestone list | Returns sprint list |
+| MS-5 | Cross | Provider switching | Correct provider selected |
+
+#### Label Tests
+
+| ID | Platform | Test Case | Expected |
+|----|----------|-----------|----------|
+| LB-1 | GitLab | pm label create "bug" --color ff0000 | Creates label |
+| LB-2 | GitHub | pm label list | Returns label list |
+| LB-3 | JIRA | pm label create "priority:high" | Creates label |
+
+#### Wiki Tests
+
+| ID | Platform | Test Case | Expected |
+|----|----------|-----------|----------|
+| WK-1 | GitLab | pm wiki list | Returns wiki pages |
+| WK-2 | GitLab | pm wiki create "Setup" | Creates wiki page |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] All milestone commands work on GitLab/GitHub
+- [ ] All label commands work on GitLab/GitHub/JIRA
+- [ ] Provider selection based on project.yaml
+
+**Should Have:**
+- [ ] Wiki commands work on GitLab
+- [ ] Graceful fallback for unsupported features
+
+### Validation Checklist
+
+- [ ] Unit tests pass (mocked)
+- [ ] Integration tests pass (real API)
+- [ ] E2E scenarios documented
+- [ ] Error handling verified
+
+---
+
 ## 8. 참고
 
 - [GitLab Milestones API](https://docs.gitlab.com/ee/api/milestones.html)

@@ -7,6 +7,7 @@
 | Skill | Description | Role |
 |-------|-------------|------|
 | `design-solution` | Design solution and create plans | Developer |
+| `design-test-plan` | Design test plan for implementation | Developer |
 | `breakdown-work` | Break down tasks into subtasks | Developer |
 | `estimate-effort` | Estimate effort for tasks | Developer |
 | `schedule-timeline` | Schedule timeline | Manager |
@@ -23,6 +24,7 @@
 
 ```
 Requirements → design-solution → Solution Design
+Solution → design-test-plan → Test Plan
 Solution → breakdown-work → Task List
 Tasks → estimate-effort → Estimates
 ```

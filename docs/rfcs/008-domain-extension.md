@@ -240,6 +240,70 @@ $ agent setup --force
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Domain Extension: policies/ directory structure
+- Installation Flow: setup.sh, activate.sh, agent setup
+- Template Fixes: .cursorrules.template path corrections
+
+**Levels:**
+| Level | Description | Tools |
+|-------|-------------|-------|
+| Unit | Script functions | bash assertions |
+| Integration | Installation flow | Docker |
+| Manual | Template validation | Human review |
+
+### Test Cases
+
+#### Domain Extension Tests
+
+| ID | Test Case | Expected |
+|----|-----------|----------|
+| DE-1 | policies/ directory creation | Directory created by agent setup |
+| DE-2 | Path resolution priority | Local > .agent > global |
+| DE-3 | Template copying | _template.md copied correctly |
+
+#### Installation Flow Tests
+
+| ID | Test Case | Expected |
+|----|-----------|----------|
+| IF-1 | setup.sh --global | Installs to ~/.agent |
+| IF-2 | activate.sh | Sets PATH for session |
+| IF-3 | agent setup | Creates project templates |
+| IF-4 | agent setup --force | Overwrites existing files |
+| IF-5 | agent setup (idempotent) | Skips existing files |
+
+#### Template Tests
+
+| ID | Test Case | Expected |
+|----|-----------|----------|
+| TF-1 | .cursorrules.template paths | All paths valid |
+| TF-2 | skills/planning/ reference | Correct path |
+| TF-3 | workflows/developer/ reference | Correct path |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] policies/ directory created on agent setup
+- [ ] Installation flow works for global and local
+- [ ] All template paths are valid
+
+**Should Have:**
+- [ ] Path resolution documented
+- [ ] Idempotent setup behavior
+
+### Validation Checklist
+
+- [ ] Unit tests pass
+- [ ] Installation flow tested
+- [ ] Template paths verified
+- [ ] Documentation updated
+
+---
+
 ## 8. Changelog
 
 | Date | Change | Author |

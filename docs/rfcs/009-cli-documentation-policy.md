@@ -116,6 +116,53 @@ tools/
 - "pm 문서는 어디 있나요?" 질문에 답이 항상 `docs/cli/pm.md`가 됨
  
 ---
+
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Phase 0: Create docs/cli/pm.md stub, update README
+- Phase 1: Content split between user and developer docs
+- Phase 2: Template consistency
+
+**Levels:**
+| Level | Description | Tools |
+|-------|-------------|-------|
+| Structure | File existence | ls, test -f |
+| Content | Link validity | grep, markdown-link-check |
+| Navigation | 1-hop accessibility | Manual review |
+
+### Test Cases
+
+| ID | Phase | Test Case | Expected |
+|----|-------|-----------|----------|
+| ST-1 | 0 | docs/cli/pm.md exists | File present |
+| ST-2 | 0 | docs/cli/README.md links to pm | Link present |
+| ST-3 | 0 | tools/pm/README.md links to docs/cli/pm.md | Link present |
+| ST-4 | 1 | User content in docs/cli/pm.md | Installation, usage, examples |
+| ST-5 | 1 | Developer content in tools/pm/README.md | Structure, testing, contributing |
+| ST-6 | 2 | Section template consistency | All docs have NAME/SYNOPSIS/EXAMPLES |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] docs/cli/README.md lists all CLIs (agent, lint, pm)
+- [ ] Each tools/*/README.md links to user manual
+- [ ] 1-hop navigation from CLI hub to any command
+
+**Should Have:**
+- [ ] Consistent section templates
+- [ ] No duplicate content
+
+### Validation Checklist
+
+- [ ] File structure verified
+- [ ] Links valid
+- [ ] Navigation tested
+- [ ] Content split complete (Phase 1)
+
+---
  
 ## 7. Notes / Open Questions
  

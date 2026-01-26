@@ -23,7 +23,10 @@ docs/
 │   ├── agent-mgr.md         # Manager 명령어
 │   └── agent-init.md        # 프로젝트 초기화
 ├── guides/                  # 가이드 문서
-│   └── manual-fallback-guide.md
+│   ├── manual-fallback-guide.md
+│   └── efficiency-quick-reference.md  # Agent efficiency patterns
+├── examples/                # 예제 문서
+│   └── efficiency/          # Efficiency pattern examples
 ├── style/                   # 코딩 컨벤션 (coding-convention)
 │   ├── bash.md
 │   ├── c.md
@@ -32,6 +35,7 @@ docs/
 │   ├── python.md
 │   └── yaml.md
 ├── rfcs/                    # RFC/계획 문서 (plan)
+│   ├── _template/           # RFC template (NEW)
 │   ├── 002-proposal.md
 │   ├── 004-agent-workflow-system.md
 │   ├── 005-manual-fallback-improvement.md
@@ -50,6 +54,9 @@ docs/
 | [cli/agent.md](cli/agent.md) | CLI 전체 개요 |
 | [cli/agent-dev.md](cli/agent-dev.md) | 개발자 명령어 상세 |
 | [cli/agent-mgr.md](cli/agent-mgr.md) | 매니저 명령어 상세 |
+| [guides/efficiency-quick-reference.md](guides/efficiency-quick-reference.md) | Agent 효율성 패턴 가이드 |
+| [examples/efficiency/](examples/efficiency/) | 효율성 패턴 예제 |
+| [rfcs/_template/](rfcs/_template/) | RFC 템플릿 |
 | [references/README.md](references/README.md) | 외부 참조 문서/프로젝트 모음 |
 | [internal/README.md](internal/README.md) | 내부 문서 정책 (handoff lifecycle) |
 

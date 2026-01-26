@@ -319,6 +319,60 @@ Documented in [future-work.md](future-work.md):
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Horizontal: IR (Intermediate Representation) for pipeline state
+- Vertical: Interface contracts for providers
+
+**Levels:**
+| Level | Description | Tools |
+|-------|-------------|-------|
+| Unit | pipeline.sh functions | bash assertions |
+| Integration | Full pipeline flow | Docker |
+| Contract | Provider compliance | check_interface_compliance() |
+
+### Test Cases
+
+#### IR Tests
+
+| ID | Component | Test Case | Expected |
+|----|-----------|-----------|----------|
+| IR-1 | pipeline.sh | pipeline_init() | Creates intermediate.yaml |
+| IR-2 | pipeline.sh | pipeline_set_output() | Updates stage outputs |
+| IR-3 | pipeline.sh | pipeline_get_input() | Reads previous stage output |
+| IR-4 | pipeline.sh | pipeline_complete_stage() | Marks stage complete |
+
+#### Interface Tests
+
+| ID | Component | Test Case | Expected |
+|----|-----------|-----------|----------|
+| IF-1 | interface.sh | check_interface_compliance(jira) | Returns success |
+| IF-2 | interface.sh | check_interface_compliance(gitlab) | Returns success |
+| IF-3 | interface.sh | check_interface_compliance(github) | Returns success |
+| IF-4 | interface.sh | Missing function | Returns warning |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] IR file created/updated correctly
+- [ ] All providers pass compliance check
+- [ ] Pipeline state persists between skills
+
+**Should Have:**
+- [ ] Clear error messages for missing functions
+- [ ] Documentation updated
+
+### Validation Checklist
+
+- [ ] Unit tests pass
+- [ ] Provider compliance verified
+- [ ] Philosophy compliance verified
+
+---
+
 ## 8. Changelog
 
 | Date | Change | Author |

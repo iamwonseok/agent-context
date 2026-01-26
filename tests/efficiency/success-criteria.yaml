@@ -1,0 +1,97 @@
+# Efficiency Test Success Criteria
+# RFC-010: Agent Efficiency Best Practices
+
+version: "1.0"
+updated: "2026-01-27"
+
+# Global thresholds
+global:
+  max_tool_calls_simple: 20
+  max_tool_calls_complex: 50
+  max_repeated_operations: 2
+  max_test_runs_per_batch: 2
+
+# Per-scenario criteria
+scenarios:
+  scenario-01-path-update:
+    description: "Batch path replacement"
+    metrics:
+      tool_calls:
+        target: 15
+        red_flag: 30
+      grep_operations:
+        target: 2
+        red_flag: 5
+      test_runs:
+        target: 1
+        red_flag: 3
+    
+  scenario-02-language-cleanup:
+    description: "Korean text removal"
+    metrics:
+      find_operations:
+        target: 1
+        red_flag: 3
+      batch_translations:
+        strategy: "per_pattern_type"
+        not: "per_file"
+      verification_runs:
+        target: 1
+        red_flag: 2
+
+  scenario-03-doc-creation:
+    description: "Batch documentation creation"
+    metrics:
+      structure_checks:
+        target: 1
+        red_flag: 3
+      doc_creation:
+        strategy: "parallel"
+        not: "sequential"
+      index_updates:
+        target: 1
+        red_flag: 2
+
+  scenario-04-test-update:
+    description: "Test update after structure change"
+    metrics:
+      test_runs:
+        target: 2
+        red_flag: 4
+      file_updates:
+        strategy: "batch"
+        not: "one_by_one"
+      fix_cycles:
+        target: 1
+        red_flag: 3
+
+  scenario-05-batch-files:
+    description: "Multi-file operations"
+    metrics:
+      read_strategy:
+        target: "parallel"
+        not: "sequential"
+      pattern_grouping:
+        target: "by_type"
+        not: "per_file"
+      verification:
+        target: 1
+        red_flag: 3
+      savings:
+        target_percent: 70
+
+# Efficiency indicators
+indicators:
+  pass:
+    - "All metrics within target"
+    - "No repeated identical operations"
+    - "Batch operations used"
+  
+  warn:
+    - "Some metrics above target but below red flag"
+    - "Minor inefficiencies detected"
+  
+  fail:
+    - "Any metric at red flag level"
+    - "Same operation repeated 3+ times"
+    - "Sequential operations where parallel possible"

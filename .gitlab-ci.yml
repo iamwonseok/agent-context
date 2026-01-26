@@ -76,6 +76,25 @@ test:workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+# Meta-validation tests (framework self-validation)
+test:meta:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - docker compose -f tests/docker-compose.test.yml build
+    - docker compose -f tests/docker-compose.test.yml run meta
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - .cursorrules
+        - skills/**/*
+        - workflows/**/*
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 # Optional: Combined report generation
 report:
   stage: report

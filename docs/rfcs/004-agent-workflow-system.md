@@ -930,6 +930,64 @@ Milestone M4: Full Rollout (조건부)
 
 ---
 
+## Test Plan
+
+### Test Strategy
+
+**Scope:**
+- Phase 1: State Visibility Layer (State Assertion, Self-Correction, Cursor Mode)
+- Phase 2: Feedback Loops Layer (Knowledge Caching, Question Planning, Quick Summary)
+
+**Levels:**
+| Level | Description | Tools |
+|-------|-------------|-------|
+| Unit | Function-level tests | bash assertions |
+| Integration | Workflow tests | Docker + test scripts |
+| E2E | Full scenario | Manual + automated |
+
+### Test Cases
+
+#### Unit Tests
+
+| ID | Component | Test Case | Expected |
+|----|-----------|-----------|----------|
+| UT-1 | executor.sh | State Assertion output | Displays AGENT MODE block |
+| UT-2 | checks.sh | detect_mode_violation() | Catches planning mode violations |
+| UT-3 | context.sh | create_llm_context() | Creates llm_context.md |
+| UT-4 | context.sh | add_technical_decision() | Appends decision to llm_context.md |
+| UT-5 | context.sh | create_questions() | Creates questions.md |
+| UT-6 | markdown.sh | generate_quick_summary() | Creates quick-summary.md |
+
+#### Integration Tests
+
+| ID | Scenario | Steps | Expected |
+|----|----------|-------|----------|
+| IT-1 | Feature workflow | start → analyze → design → code → verify → submit | All files created, MR submitted |
+| IT-2 | Self-Correction | Change code in planning mode | VIOLATION detected |
+| IT-3 | Debrief cycle | questions.md → debrief → design update | Design updated |
+
+### Success Criteria
+
+**Must Have:**
+- [ ] State Assertion works on all skills
+- [ ] Self-Correction detects violations
+- [ ] llm_context.md reduces repeated questions
+- [ ] quick-summary.md included in MR
+
+**Should Have:**
+- [ ] Token reduction >= 20%
+- [ ] Review time reduction >= 30%
+- [ ] Requirement misunderstanding <= 5%
+
+### Validation Checklist
+
+- [ ] Unit tests pass (bash assertions)
+- [ ] Integration tests pass (Docker)
+- [ ] Metrics collected
+- [ ] Philosophy compliance verified
+
+---
+
 ## Related Documents
 
 - [why.md](../why.md): 설계 철학
