@@ -101,69 +101,12 @@ pytest tests/ -x  # Stop on first failure
 
 ### 5. Common Refactoring Patterns
 
-#### Extract Method
-```python
-# Before
-def report():
-    # ... header ...
-    print("=" * 50)
-    print("Report Title")
-    print("=" * 50)
-    # ... content ...
-
-# After
-def report():
-    print_header("Report Title")
-    # ... content ...
-
-def print_header(title):
-    print("=" * 50)
-    print(title)
-    print("=" * 50)
-```
-
-#### Rename for Clarity
-```python
-# Before
-def calc(a, b, c):
-    return a * b * (1 - c)
-
-# After
-def calculate_discounted_price(price, quantity, discount_rate):
-    return price * quantity * (1 - discount_rate)
-```
-
-#### Replace Magic Numbers
-```python
-# Before
-if status == 1:
-    # active
-elif status == 2:
-    # inactive
-
-# After
-STATUS_ACTIVE = 1
-STATUS_INACTIVE = 2
-
-if status == STATUS_ACTIVE:
-    # active
-elif status == STATUS_INACTIVE:
-    # inactive
-```
-
-#### Simplify Conditionals
-```python
-# Before
-if user and user.is_active and user.has_permission('read'):
-    return data
-
-# After
-def can_read(user):
-    return user and user.is_active and user.has_permission('read')
-
-if can_read(user):
-    return data
-```
+| Pattern | Before | After |
+|---------|--------|-------|
+| Extract Method | Inline repeated code | Separate function |
+| Rename | `calc(a,b,c)` | `calculate_price(price, qty, discount)` |
+| Replace Magic Numbers | `if status == 1` | `if status == STATUS_ACTIVE` |
+| Simplify Conditionals | Complex inline condition | `if can_read(user)` |
 
 ### 6. Document Changes
 
@@ -205,71 +148,10 @@ Improve readability and reduce duplication
 
 ## Examples
 
-### Example 1: Extract Class
-
-```python
-# Before: User class doing too much
-class User:
-    def __init__(self, name, email, street, city, zip):
-        self.name = name
-        self.email = email
-        self.street = street
-        self.city = city
-        self.zip = zip
-    
-    def full_address(self):
-        return f"{self.street}, {self.city} {self.zip}"
-
-# After: Separate Address class
-class Address:
-    def __init__(self, street, city, zip):
-        self.street = street
-        self.city = city
-        self.zip = zip
-    
-    def full(self):
-        return f"{self.street}, {self.city} {self.zip}"
-
-class User:
-    def __init__(self, name, email, address):
-        self.name = name
-        self.email = email
-        self.address = address
-```
-
-### Example 2: Remove Duplication
-
-```python
-# Before: Duplicated validation
-def create_user(data):
-    if not data.get('email'):
-        raise ValueError("Email required")
-    if not '@' in data['email']:
-        raise ValueError("Invalid email")
-    # create user...
-
-def update_user(user_id, data):
-    if not data.get('email'):
-        raise ValueError("Email required")
-    if not '@' in data['email']:
-        raise ValueError("Invalid email")
-    # update user...
-
-# After: Shared validation
-def validate_email(email):
-    if not email:
-        raise ValueError("Email required")
-    if '@' not in email:
-        raise ValueError("Invalid email")
-
-def create_user(data):
-    validate_email(data.get('email'))
-    # create user...
-
-def update_user(user_id, data):
-    validate_email(data.get('email'))
-    # update user...
-```
+| Refactoring | Summary |
+|-------------|---------|
+| Extract Class | User with address fields → User + Address classes |
+| Remove Duplication | Repeated validation → Shared `validate_email()` |
 
 ## Notes
 

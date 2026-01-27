@@ -108,44 +108,11 @@ Create a new user.
 
 #### Code Docstrings
 
-```python
-def calculate_price(base_price: float, discount: float = 0) -> float:
-    """Calculate final price after discount.
-    
-    Args:
-        base_price: Original price before discount
-        discount: Discount percentage (0-100). Default is 0.
-    
-    Returns:
-        Final price after discount applied.
-    
-    Raises:
-        ValueError: If discount is negative or > 100.
-    
-    Example:
-        >>> calculate_price(100, 10)
-        90.0
-    """
-```
+Include: Args, Returns, Raises, Example in docstrings.
 
 #### CHANGELOG.md
 
-```markdown
-## [1.2.0] - 2026-01-23
-
-### Added
-- User role field in POST /api/users endpoint
-- Role-based access control
-
-### Changed
-- Default timeout increased from 30s to 60s
-
-### Fixed
-- BUG-123: Division by zero in price calculation
-
-### Deprecated
-- `legacy_auth()` function, use `authenticate()` instead
-```
+Use sections: Added, Changed, Fixed, Deprecated for each version.
 
 ### 4. Verify Documentation
 
@@ -185,56 +152,11 @@ python -c "from module import calculate_price; print(calculate_price(100, 10))"
 
 ## Examples
 
-### Example 1: New Feature
-
-```markdown
-# Before (README.md)
-## Features
-- User authentication
-- File upload
-
-# After (README.md)
-## Features
-- User authentication
-- File upload
-- **Role-based access control** (new in v1.2)
-```
-
-### Example 2: Configuration Change
-
-```markdown
-# config.yaml reference
-
-# Before
-timeout: 30  # Request timeout in seconds
-
-# After
-timeout: 60  # Request timeout in seconds (changed from 30 in v1.2)
-max_retries: 3  # NEW: Number of retry attempts
-```
-
-### Example 3: Breaking Change
-
-```markdown
-## Migration Guide: v1.x to v2.0
-
-### Breaking Changes
-
-#### Authentication
-The `legacy_auth()` function has been removed.
-
-**Before (v1.x):**
-```python
-from auth import legacy_auth
-token = legacy_auth(username, password)
-```
-
-**After (v2.0):**
-```python
-from auth import authenticate
-token = authenticate(username, password)
-```
-```
+| Scenario | Update |
+|----------|--------|
+| New Feature | Add to Features list with version note |
+| Config Change | Update value + add comment with version |
+| Breaking Change | Migration guide with before/after code |
 
 ## Documentation Checklist
 
