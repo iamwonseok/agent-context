@@ -416,6 +416,15 @@ RFC-004 (Agent Workflow System v2.0) is the most critical RFC with 0% implementa
 
 ## Dependencies & Prerequisites
 
+### External Service URLs
+
+| Service | URL |
+|---------|-----|
+| JIRA | https://fadutec.atlassian.net/jira |
+| Confluence | https://fadutec.atlassian.net/wiki |
+
+> Configuration saved to `.project.yaml` (gitignored)
+
 ### P1 Dependencies
 - Docker installed
 - GitLab/JIRA test accounts
