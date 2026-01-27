@@ -4,6 +4,8 @@ category: plan
 description: Design comprehensive test plan for implementation
 version: 1.0.0
 role: developer
+mode: planning
+cursor_mode: plan
 inputs:
   - design/{feature}.md
   - plan/{feature}-plan.md
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Design Test Plan
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Create comprehensive test plan before implementation
+**Boundaries**:
+- Will: Identify test levels, list test cases, define coverage targets, document plan
+- Will NOT: Write test code, execute tests, or modify production code
 
 ## When to Use
 

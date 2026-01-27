@@ -4,6 +4,8 @@ category: plan
 description: Break down large tasks into manageable subtasks
 version: 1.0.0
 role: developer
+mode: planning
+cursor_mode: plan
 inputs:
   - Task or feature description
   - Design document (optional)
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Breakdown Work
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Decompose tasks into subtasks with estimates
+**Boundaries**:
+- Will: Analyze scope, identify subtasks, estimate effort, document dependencies
+- Will NOT: Create issues in tracker, write code, or start implementation
 
 ## When to Use
 

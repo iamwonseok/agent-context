@@ -15,7 +15,8 @@ This document provides a comprehensive handoff for implementing RFCs and improvi
 - ✅ Checkpoint 1: **Complete** (Documentation, RFC updates, tests passing)
 - ✅ P0 Tasks: **Completed** (3 SKILL.md files verified)
 - ✅ P1 Tasks: **Complete** (Testing infrastructure implemented)
-- 📋 P2 Tasks: **Roadmap** (Core RFC implementation)
+- ✅ P2-1 Tasks: **Complete** (RFC-004 Phase 1 - State Visibility Layer)
+- 📋 P2-2 Tasks: **Roadmap** (RFC-004 Phase 2 - Feedback Loops)
 
 **Key Metrics**:
 - Unit Tests: 413/413 passing
@@ -45,7 +46,8 @@ This document provides a comprehensive handoff for implementing RFCs and improvi
 |------|--------|----------|-----|
 | Checkpoint 1 Documentation | ✅ Complete | Current Agent | 2026-01-27 |
 | P1 Testing Infrastructure | ✅ Complete | Current Agent | 2026-01-27 |
-| P2 RFC-004 Implementation | ⏳ Next | Next Agent | TBD |
+| P2-1 RFC-004 Phase 1 | ✅ Complete | Current Agent | 2026-01-27 |
+| P2-2 RFC-004 Phase 2 | ⏳ Next | Next Agent | TBD |
 
 ---
 
@@ -137,39 +139,44 @@ This document provides a comprehensive handoff for implementing RFCs and improvi
 #### P2-1: RFC-004 Phase 1 - State Visibility Layer
 **Priority**: Critical  
 **Estimated Time**: 1-2 weeks  
-**Status**: Not Started
+**Status**: ✅ Complete (2026-01-27)
 
 **Background**:
 RFC-004 (Agent Workflow System v2.0) is the most critical RFC with 0% implementation.
 
-**Components**:
+**Components Implemented**:
 
-1. **State Assertion Pattern**
-   - Update `skills/_template/SKILL.md` with:
+1. **State Assertion Pattern** ✅
+   - Updated `skills/_template/SKILL.md` with:
      - `mode:` field (planning|implementation|verification|research)
      - `cursor_mode:` field (plan|ask|agent|debug)
-     - `agent_role:` field
-   - Update `tools/agent/lib/executor.sh`
-   - Add State Assertion output
+     - State Assertion section template
+   - Updated `tools/agent/lib/executor.sh`:
+     - show_state_assertion()
+     - show_state_assertion_full()
+     - get_mode_for_category()
+     - get_cursor_mode_for_category()
 
-2. **Self-Correction Protocol**
-   - Create `tools/agent/lib/checks.sh` functions:
+2. **Self-Correction Protocol** ✅
+   - Updated `tools/agent/lib/checks.sh`:
      - detect_mode_violation()
-     - self_correct()
-   - Update `.cursorrules` with protocol
+     - suggest_mode()
+     - run_self_correction()
+   - Updated `skills/validate/check-intent/SKILL.md` with Self-Correction docs
 
-3. **Cursor Mode Integration**
-   - Add cursor_mode to all 27 skills
-   - Add cursor_mode to all 9 workflows
-   - Create `docs/cursor-modes-guide.md`
+3. **Cursor Mode Integration** ✅
+   - Added cursor_mode to all 27 skills
+   - Added cursor_mode + mode_transitions to all 9 workflows
+   - Created `docs/guides/cursor-modes-guide.md`
 
 **Success Criteria**:
-- [ ] State Assertion outputs on all skill executions
-- [ ] Self-Correction detects mode violations
-- [ ] All skills/workflows have cursor_mode
-- [ ] Documentation complete
+- [x] State Assertion outputs on all skill executions
+- [x] Self-Correction detects mode violations
+- [x] All skills/workflows have cursor_mode
+- [x] Documentation complete
+- [x] All tests pass (413/413)
 
-**Files to Modify**:
+**Files Modified**:
 - `skills/_template/SKILL.md`
 - `tools/agent/lib/executor.sh`
 - `tools/agent/lib/checks.sh`
@@ -601,10 +608,51 @@ If blocked:
 | 2026-01-27 | P0 tasks completed | Current Agent |
 | 2026-01-27 | Checkpoint 1 marked complete | Current Agent |
 | 2026-01-27 | P1 Testing Infrastructure complete | Current Agent |
+| 2026-01-27 | P2-1 RFC-004 Phase 1 complete | Current Agent |
 
 ---
 
-**Next Agent**: Start with Checkpoint 3 (RFC-004 Phase 1: State Visibility Layer)
+## Next Agent Instructions
+
+### Immediate Task: P2-2 RFC-004 Phase 2 - Feedback Loops Layer
+
+**Prerequisites Completed**:
+- ✅ P2-1 Phase 1 State Visibility Layer (commit `6eaf12f`)
+- ✅ All 27 skills have `mode`, `cursor_mode`, State Assertion
+- ✅ All 9 workflows have `cursor_mode`, `mode_transitions`
+- ✅ `executor.sh` has `show_state_assertion()`
+- ✅ `checks.sh` has `detect_mode_violation()`
+- ✅ `docs/guides/cursor-modes-guide.md` created
+
+**Start Here**:
+
+1. **Read RFC-004** for Phase 2 details:
+   ```bash
+   # Section: "Phase 2: Feedback Loops Layer"
+   docs/rfcs/004-agent-workflow-system.md
+   ```
+
+2. **First Task - Knowledge Caching (llm_context.md)**:
+   - Create template: `tools/agent/resources/llm_context.md`
+   - Update `tools/agent/lib/context.sh`
+   - Integrate with `agent dev start/design/check`
+
+3. **Second Task - Question-Driven Planning**:
+   - Create template: `tools/agent/resources/questions.md`
+   - Add `agent dev debrief` command
+
+4. **Third Task - AI-Optimized Summary**:
+   - Create `tools/agent/lib/markdown.sh`
+   - Integrate with `agent dev verify/submit`
+
+**Git Status**:
+- Branch: `main`
+- Local commits: 5 ahead of `origin/main` (not pushed)
+- Working tree: clean
+
+**Tests**: 413/413 passing
+
+---
 
 **Last Updated**: 2026-01-27  
-**Document Version**: 1.1
+**Document Version**: 1.3

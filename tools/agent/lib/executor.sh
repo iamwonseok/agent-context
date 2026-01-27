@@ -199,3 +199,140 @@ show_execution_info() {
 
     echo "=================================================="
 }
+
+# ============================================
+# State Visibility Layer (RFC-004 v2.0)
+# ============================================
+
+# Mode constants
+MODE_PLANNING="planning"
+MODE_IMPLEMENTATION="implementation"
+MODE_VERIFICATION="verification"
+MODE_RESEARCH="research"
+
+# Cursor mode constants
+CURSOR_MODE_PLAN="plan"
+CURSOR_MODE_ASK="ask"
+CURSOR_MODE_AGENT="agent"
+CURSOR_MODE_DEBUG="debug"
+
+# Show state assertion for a skill
+# Usage: show_state_assertion <skill_name> <mode> <cursor_mode> <purpose>
+show_state_assertion() {
+    local skill_name="$1"
+    local mode="$2"
+    local cursor_mode="$3"
+    local purpose="${4:-}"
+
+    echo ""
+    echo "=================================================="
+    echo "AGENT MODE: ${skill_name}"
+    echo "=================================================="
+    echo ""
+    echo "  Mode:        ${mode}"
+    echo "  Cursor Mode: ${cursor_mode}"
+    if [[ -n "$purpose" ]]; then
+        echo "  Purpose:     ${purpose}"
+    fi
+    echo ""
+}
+
+# Show state assertion with boundaries
+# Usage: show_state_assertion_full <skill_name> <mode> <cursor_mode> <purpose> <will_do> <will_not>
+show_state_assertion_full() {
+    local skill_name="$1"
+    local mode="$2"
+    local cursor_mode="$3"
+    local purpose="${4:-}"
+    local will_do="${5:-}"
+    local will_not="${6:-}"
+
+    show_state_assertion "$skill_name" "$mode" "$cursor_mode" "$purpose"
+
+    if [[ -n "$will_do" ]] || [[ -n "$will_not" ]]; then
+        echo "  Boundaries:"
+        if [[ -n "$will_do" ]]; then
+            echo "    Will:     ${will_do}"
+        fi
+        if [[ -n "$will_not" ]]; then
+            echo "    Will NOT: ${will_not}"
+        fi
+        echo ""
+    fi
+}
+
+# Get mode for a skill category
+# Usage: get_mode_for_category <category>
+get_mode_for_category() {
+    local category="$1"
+
+    case "$category" in
+        analyze)
+            echo "$MODE_RESEARCH"
+            ;;
+        plan|planning)
+            echo "$MODE_PLANNING"
+            ;;
+        execute)
+            echo "$MODE_IMPLEMENTATION"
+            ;;
+        validate)
+            echo "$MODE_VERIFICATION"
+            ;;
+        integrate)
+            echo "$MODE_IMPLEMENTATION"
+            ;;
+        *)
+            echo "$MODE_IMPLEMENTATION"
+            ;;
+    esac
+}
+
+# Get cursor mode for a skill category
+# Usage: get_cursor_mode_for_category <category>
+get_cursor_mode_for_category() {
+    local category="$1"
+
+    case "$category" in
+        analyze)
+            echo "$CURSOR_MODE_ASK"
+            ;;
+        plan|planning)
+            echo "$CURSOR_MODE_PLAN"
+            ;;
+        execute)
+            echo "$CURSOR_MODE_AGENT"
+            ;;
+        validate)
+            echo "$CURSOR_MODE_DEBUG"
+            ;;
+        integrate)
+            echo "$CURSOR_MODE_AGENT"
+            ;;
+        *)
+            echo "$CURSOR_MODE_AGENT"
+            ;;
+    esac
+}
+
+# Save current mode to context
+# Usage: save_current_mode <context_path> <mode>
+save_current_mode() {
+    local context_path="$1"
+    local mode="$2"
+
+    echo "$mode" > "$context_path/mode.txt"
+}
+
+# Load current mode from context
+# Usage: load_current_mode <context_path>
+load_current_mode() {
+    local context_path="$1"
+    local mode_file="$context_path/mode.txt"
+
+    if [[ -f "$mode_file" ]]; then
+        cat "$mode_file"
+    else
+        echo "$MODE_PLANNING"  # Default to planning
+    fi
+}

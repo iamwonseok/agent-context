@@ -4,6 +4,8 @@ category: execute
 description: Write code using test-driven development
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Task to implement
 outputs:
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Write Code
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Implement features using test-driven development
+**Boundaries**:
+- Will: Write tests first, implement code, refactor, ensure tests pass
+- Will NOT: Skip tests, implement without design, or ignore code style
 
 ## When to Use
 

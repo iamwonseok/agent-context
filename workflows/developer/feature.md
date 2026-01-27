@@ -2,6 +2,13 @@
 name: feature
 description: Full feature development workflow
 role: developer
+cursor_mode: agent
+mode_transitions:
+  - ask     # analyze/parse-requirement
+  - plan    # planning/design-solution, design-test-plan
+  - agent   # execute/write-code
+  - debug   # validate/*
+  - agent   # integrate/*
 skills:
   - analyze/parse-requirement
   - planning/design-solution

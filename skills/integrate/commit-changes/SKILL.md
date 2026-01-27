@@ -4,6 +4,8 @@ category: integrate
 description: Write commit message and commit changes
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Staged changes (git diff)
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Commit Changes
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Create meaningful commits with proper messages
+**Boundaries**:
+- Will: Stage files, write commit message, create commit
+- Will NOT: Push to remote, merge branches, or skip validation
 
 ## When to Use
 

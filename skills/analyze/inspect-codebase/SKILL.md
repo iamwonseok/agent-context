@@ -4,6 +4,8 @@ category: analyze
 description: Analyze codebase structure and architecture
 version: 1.0.0
 role: developer
+mode: research
+cursor_mode: ask
 inputs:
   - Repository root path
   - Specific area of interest (optional)
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Inspect Codebase
+
+## State Assertion
+
+**Mode**: research
+**Cursor Mode**: ask
+**Purpose**: Explore and understand codebase structure without making changes
+**Boundaries**:
+- Will: Read files, analyze structure, identify patterns, document findings
+- Will NOT: Modify any files, create new files, or execute code
 
 ## When to Use
 

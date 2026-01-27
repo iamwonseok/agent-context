@@ -2,6 +2,12 @@
 name: refactor
 description: Code refactoring workflow
 role: developer
+cursor_mode: agent
+mode_transitions:
+  - plan    # planning/design-solution
+  - agent   # execute/write-code
+  - debug   # validate/* (regression tests)
+  - agent   # integrate/*
 skills:
   - planning/design-solution
   - execute/write-code

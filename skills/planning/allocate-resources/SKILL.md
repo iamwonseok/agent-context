@@ -4,6 +4,8 @@ category: plan
 description: Allocate team resources to tasks and projects
 version: 1.0.0
 role: manager
+mode: planning
+cursor_mode: plan
 inputs:
   - Task list with estimates
   - Team member availability
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Allocate Resources
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Plan resource allocation without executing assignments
+**Boundaries**:
+- Will: Analyze capacity, match skills to tasks, create allocation plan
+- Will NOT: Assign tasks in issue tracker, modify team settings, or send notifications
 
 ## When to Use
 
