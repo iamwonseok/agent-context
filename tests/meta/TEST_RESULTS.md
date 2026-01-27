@@ -8,6 +8,11 @@ This document summarizes the results of automated policy validation tests.
 **Branch**: feat/meta-validation  
 **Total Tests**: 7
 
+**After Refactoring**:
+- 10 skills reduced to under 200 lines
+- test_c_ai_review.sh reduced to 300 lines
+- CLI library exceptions documented in `docs/architecture/complexity-exceptions.md`
+
 ---
 
 ## Test Summary

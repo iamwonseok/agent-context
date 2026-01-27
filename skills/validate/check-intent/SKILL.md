@@ -131,48 +131,13 @@ For comprehensive verification, use `validate/verify-requirements`.
 
 ## Examples
 
-### Example 1: Aligned Changes
+## Examples
 
-```
-Plan (plan/feature.md):
-  - [ ] Implement login in src/auth.ts
-  - [ ] Add tests in tests/auth.test.ts
-
-Changes:
-  - src/auth.ts
-  - tests/auth.test.ts
-
-Result: [PASS] Changes align with plan
-```
-
-### Example 2: Deviation Warning
-
-```
-Plan (plan/feature.md):
-  - [ ] Implement login in src/auth.ts
-
-Changes:
-  - src/auth.ts
-  - src/utils.ts  <- Not in plan
-
-Result:
-  [WARN] Some changes may not be in plan
-    - src/utils.ts
-  [RECOMMEND] Review plan or document deviation
-```
-
-### Example 3: No Plan
-
-```
-Plan: (none found)
-
-Changes:
-  - src/feature.ts
-
-Result:
-  [INFO] No plan files found in plan/
-  [PASS] (no plan to check against)
-```
+| Scenario | Result | Meaning |
+|----------|--------|---------|
+| Changes match plan | [PASS] | Aligned |
+| Extra file changed | [WARN] | Review if intentional |
+| No plan files | [INFO] + [PASS] | No plan to check |
 
 ## Outputs
 
@@ -182,9 +147,7 @@ Result:
 
 ## Self-Correction Protocol
 
-This skill is part of the Self-Correction Protocol (RFC-004 v2.0). Beyond intent alignment, it also checks for mode violations.
-
-### Mode Violation Detection
+Part of RFC-004 v2.0. Checks for mode violations beyond intent alignment.
 
 | Current Mode | Violation Triggers |
 |--------------|-------------------|
@@ -193,61 +156,7 @@ This skill is part of the Self-Correction Protocol (RFC-004 v2.0). Beyond intent
 | verification | New feature code added |
 | implementation | (Generally permissive) |
 
-### Self-Correction Triggers
-
-When a mode violation is detected:
-
-1. **Warning displayed** - Clear message about the violation
-2. **Recommendation shown** - Suggested corrective action
-3. **User decides** - Continue with `--force` or address the issue
-
-### Integration with `detect_mode_violation()`
-
-```bash
-source .agent/tools/agent/lib/checks.sh
-
-# Load current mode (default: planning)
-current_mode=$(load_current_mode "$context_path")
-
-# Check for mode violations
-if detect_mode_violation "$current_mode" "$context_path"; then
-    echo "No violations"
-else
-    echo "Mode violation detected - review changes"
-fi
-```
-
-### Self-Correction Workflow
-
-```
-1. Agent declares intent (mode, purpose)
-2. Agent performs actions
-3. check-intent detects deviation:
-   - Plan alignment check
-   - Mode violation check
-4. If deviation:
-   - Display warning
-   - Suggest correction
-   - User decides next action
-```
-
-### Example: Self-Correction in Action
-
-```
-Current Mode: planning
-Staged Changes: src/feature.ts (code file)
-
-[SELF-CORRECTION] Mode Violation Detected
-  Current Mode: planning
-  Violation: Code changes detected in planning mode
-
-  Recommended Actions:
-    1. Review the changes - are they intentional?
-    2. If yes, switch to implementation mode
-    3. If no, unstage the code changes
-
-  Note: This is a WARNING only. Use --force to proceed.
-```
+When violation detected: Warning → Recommendation → User decides (`--force` to proceed)
 
 ## Notes
 

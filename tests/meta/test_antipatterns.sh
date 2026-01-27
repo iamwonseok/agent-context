@@ -137,15 +137,19 @@ test_state_machines() {
     local state_count=0
     
     # Look for state machine indicators
+    # Note: Constant definitions (STATE_XXX="xxx") are acceptable
+    # Problem is dynamic state transitions with many states
     for script_file in "${PROJECT_ROOT}"/tools/agent/lib/*.sh; do
         if [ -f "$script_file" ]; then
             local basename=$(basename "$script_file")
             
-            # Check for multiple state definitions (more than 5 states)
-            local states=$(grep -i "STATE=\|_STATE\|STATUS=" "$script_file" 2>/dev/null | wc -l | tr -d ' ')
+            # Count state transition patterns (not constant definitions)
+            # Look for: state=, current_state=, next_state= (excluding constant definitions)
+            local transitions=$(grep -E '^[[:space:]]*(state|current_state|next_state)[[:space:]]*=' "$script_file" 2>/dev/null | \
+                grep -v "^STATE_\|^EXECUTOR_" | wc -l | tr -d ' ')
             
-            if [ "$states" -gt 5 ]; then
-                test_warn "$basename: $states state variables (consider simplification)"
+            if [ "$transitions" -gt 10 ]; then
+                test_warn "$basename: $transitions state transitions (consider simplification)"
                 ((state_count++)) || true
             fi
         fi

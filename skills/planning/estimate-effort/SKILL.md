@@ -158,49 +158,12 @@ but image processing is new.
 | Single number | Always give range |
 | No assumptions | Document everything |
 
-## Reference Data
-
-### By Task Type
-
-| Task Type | Typical Range |
-|-----------|---------------|
-| Bug fix (simple) | 1-4 hours |
-| Bug fix (complex) | 4-16 hours |
-| New feature (small) | 4-8 hours |
-| New feature (medium) | 1-3 days |
-| Refactoring | 2-8 hours |
-| API endpoint | 2-6 hours |
-| Database migration | 2-8 hours |
-
 ## Examples
 
-### Example 1: Simple Bug Fix
-
-```
-Task: "Fix null pointer in user lookup"
-
-Estimate: S (2-4 hours)
-Confidence: High
-- 1h: Reproduce and investigate
-- 1h: Fix and test
-- 1h: Code review, deploy
-```
-
-### Example 2: New Feature
-
-```
-Task: "Add two-factor authentication"
-
-Estimate: L (8-16 hours)
-Confidence: Medium
-- Research 2FA libraries: 2h
-- Backend implementation: 4h
-- Frontend UI: 4h
-- Testing: 4h
-- Documentation: 2h
-
-Risks: Security review may add 1 day
-```
+| Task | Size | Confidence | Notes |
+|------|------|------------|-------|
+| Simple bug fix | S (2-4h) | High | Reproduce, fix, test |
+| New 2FA feature | L (8-16h) | Medium | Research, implement, test |
 
 ## Notes
 

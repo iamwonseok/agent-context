@@ -132,44 +132,7 @@ Strategies:
 
 ### 7. Document Final Plan
 
-```markdown
-## Resource Allocation: Sprint 5
-
-### Summary
-- Team: 4 members
-- Capacity: 224 effective hours
-- Allocated: 180 hours (80%)
-- Buffer: 44 hours (20%)
-
-### Allocation Table
-
-| Member | Tasks | Hours | Util% |
-|--------|-------|-------|-------|
-| Alice | Auth Service, Review | 64h | 80% |
-| Bob | Login UI, Docs | 56h | 70% |
-| Carol | CI Pipeline, Review | 32h | 80% |
-| Dave | E2E Tests | 64h | 80% |
-
-### Visual Timeline
-
-```
-Alice:  |████Auth████|░░Review░░|
-Bob:    |████Login████|░░Docs░░░|
-Carol:  |░░░░|██CI██|░░Review░░░|
-Dave:   |████████E2E Tests█████|
-        Jan27               Feb7
-```
-
-### Risk Mitigation
-- **Alice unavailable**: Carol can cover backend
-- **CI blocked**: Skip to testing, return later
-- **Scope increase**: Use buffer hours first
-
-### Agreements
-- Daily standup at 9:30 AM
-- Review sessions Wed/Fri
-- Escalate blockers within 4 hours
-```
+Final plan should include: Summary, Allocation Table, Risk Mitigation, Agreements.
 
 ## Outputs
 
@@ -192,35 +155,10 @@ Dave:   |████████E2E Tests█████|
 
 ## Examples
 
-### Example 1: Balanced Team
-
-```
-Project: E-commerce Cart Feature
-
-Allocation:
-- Senior Dev (Alice): Core logic, review (60%)
-- Mid Dev (Bob): API endpoints (70%)
-- Junior Dev (Eve): Frontend components (70%)
-- QA (Dave): Test planning, execution (80%)
-
-Pairing: Eve shadows Alice on complex logic
-```
-
-### Example 2: Specialized Needs
-
-```
-Project: Database Migration
-
-Challenge: Only Carol knows legacy DB
-
-Allocation:
-- Carol: Migration scripts (100% - critical path)
-- Alice: New schema design (50%)
-- Bob: Documentation (50%)
-
-Risk: Carol is single point of failure
-Mitigation: Alice shadows Carol, learns legacy system
-```
+| Scenario | Strategy |
+|----------|----------|
+| Balanced Team | Distribute by skill level (60-80% utilization) |
+| Specialized Needs | Cover single points of failure with shadowing |
 
 ## Notes
 
