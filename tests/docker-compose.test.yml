@@ -58,9 +58,61 @@ services:
     environment:
       - GITLAB_API_TOKEN=${GITLAB_API_TOKEN:-}
       - GITLAB_URL=${GITLAB_URL:-}
+      - GITLAB_TEST_PROJECT=${GITLAB_TEST_PROJECT:-}
       - JIRA_API_TOKEN=${JIRA_API_TOKEN:-}
       - JIRA_URL=${JIRA_URL:-}
+      - JIRA_EMAIL=${JIRA_EMAIL:-}
+      - JIRA_TEST_PROJECT=${JIRA_TEST_PROJECT:-}
     command: ["bash", "/agent-context/tests/e2e/test_e2e.sh"]
+
+  # Scenario tests (runs 15 documented scenarios)
+  scenario:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - scenario-workspace:/workspace
+    working_dir: /agent-context
+    environment:
+      - GITLAB_API_TOKEN=${GITLAB_API_TOKEN:-}
+      - GITLAB_URL=${GITLAB_URL:-}
+      - GITLAB_TEST_PROJECT=${GITLAB_TEST_PROJECT:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN:-}
+      - JIRA_URL=${JIRA_URL:-}
+      - JIRA_EMAIL=${JIRA_EMAIL:-}
+    command: ["bash", "/agent-context/tests/scenario/runner.sh", "--quick"]
+
+  # Scenario tests (all 15 scenarios)
+  scenario-full:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - scenario-full-workspace:/workspace
+    working_dir: /agent-context
+    environment:
+      - GITLAB_API_TOKEN=${GITLAB_API_TOKEN:-}
+      - GITLAB_URL=${GITLAB_URL:-}
+      - GITLAB_TEST_PROJECT=${GITLAB_TEST_PROJECT:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN:-}
+      - JIRA_URL=${JIRA_URL:-}
+      - JIRA_EMAIL=${JIRA_EMAIL:-}
+    command: ["bash", "/agent-context/tests/scenario/runner.sh", "--all"]
+
+  # Error handling tests
+  error-handling:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - error-handling-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/integration/test_error_handling.sh"]
 
   # Run all tests (1-2 stages only, no tokens required)
   all:
@@ -89,5 +141,8 @@ volumes:
   smoke-workspace:
   local-git-workspace:
   e2e-workspace:
+  scenario-workspace:
+  scenario-full-workspace:
+  error-handling-workspace:
   all-workspace:
   meta-workspace:
