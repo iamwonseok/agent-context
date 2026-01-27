@@ -988,6 +988,132 @@ Milestone M4: Full Rollout (조건부)
 
 ---
 
+## Implementation Status
+
+**Last Updated**: 2026-01-27
+
+### Overall Progress: 0% (Not Started)
+
+| Phase | Status | Progress | Target Date |
+|-------|--------|----------|-------------|
+| Phase 1: State Visibility | ❌ Not Started | 0% | TBD |
+| Phase 2: Feedback Loops | ❌ Not Started | 0% | TBD |
+| Phase 3: Advanced Features | 🔄 Deferred | N/A | Future |
+
+### Phase 1: State Visibility Layer (0%)
+
+**Components**:
+
+| Component | Status | Files to Modify | Notes |
+|-----------|--------|-----------------|-------|
+| State Assertion Pattern | ❌ Not Started | `skills/_template/SKILL.md`, `tools/agent/lib/executor.sh`, `.cursorrules` | Core feature |
+| Self-Correction Protocol | ❌ Not Started | `tools/agent/lib/checks.sh`, `skills/validate/check-intent/SKILL.md` | Critical for reliability |
+| Cursor Mode Integration | ❌ Not Started | All 27 skills, all 9 workflows, `docs/cursor-modes-guide.md` | IDE optimization |
+
+**Prerequisites**:
+- [ ] Understanding of ARCHITECTURE.md philosophy
+- [ ] Familiarity with skill/workflow structure
+- [ ] Access to all skill files for batch updates
+- [ ] Test environment ready
+
+**Success Criteria**:
+- [ ] State Assertion outputs visible on all skill executions
+- [ ] Self-Correction detects and reports mode violations
+- [ ] All skills/workflows have `cursor_mode` field
+- [ ] Documentation complete (cursor-modes-guide.md)
+- [ ] All tests passing (413/413 + new tests)
+
+**Estimated Effort**: 1-2 weeks
+
+### Phase 2: Feedback Loops Layer (0%)
+
+**Components**:
+
+| Component | Status | Files to Create/Modify | Notes |
+|-----------|--------|------------------------|-------|
+| Knowledge Caching | ❌ Not Started | `tools/agent/resources/llm_context.md`, `tools/agent/lib/context.sh` | LLM efficiency |
+| Question-Driven Planning | ❌ Not Started | `tools/agent/resources/questions.md`, `tools/agent/bin/agent` (debrief cmd) | Requirement clarity |
+| AI-Optimized Summary | ❌ Not Started | `tools/agent/lib/markdown.sh` | MR review efficiency |
+
+**Prerequisites**:
+- [ ] Phase 1 complete
+- [ ] Testing infrastructure ready (P1)
+- [ ] Template files prepared
+
+**Success Criteria**:
+- [ ] llm_context.md reduces repeated questions by ~20%
+- [ ] questions.md + debrief workflow functional
+- [ ] quick-summary.md generated for all MRs
+- [ ] Token usage reduced by target percentage
+- [ ] MR review time reduced by ~30%
+
+**Estimated Effort**: 1-2 weeks
+
+### Phase 3: Advanced Features (Deferred)
+
+**Status**: Moved to [future-work.md](future-work.md)
+
+**Rationale**: 
+- Focus on Phase 1-2 first
+- Evaluate effectiveness before adding complexity
+- Align with ARCHITECTURE.md simplicity principle
+
+### Blockers & Dependencies
+
+**Current Blockers**: None
+
+**Dependencies**:
+1. P1 (Testing Infrastructure) should be complete before Phase 2
+2. RFC-012 (Test Planning) provides validation framework
+3. All 413 unit tests must continue passing
+
+### Next Steps
+
+1. **Immediate** (Before Phase 1):
+   - Review ARCHITECTURE.md thoroughly
+   - Read all existing skills to understand patterns
+   - Prepare development environment
+
+2. **Phase 1 Start**:
+   - Create feature branch: `feat/rfc-004-phase-1`
+   - Implement State Assertion in template
+   - Test with 1-2 skills before batch update
+
+3. **Phase 1 Validation**:
+   - Run all unit tests
+   - Manual testing of state output
+   - Documentation review
+
+4. **Phase 2 Planning**:
+   - Design llm_context.md schema
+   - Create questions.md template
+   - Plan debrief workflow
+
+### Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Complexity creep | High | High | Strict adherence to simplicity principle |
+| Breaking existing functionality | Medium | High | Comprehensive testing, incremental rollout |
+| Token budget exhaustion | Medium | Medium | Frequent commits, fresh context windows |
+| User Autonomy conflicts | Low | High | Follow warning-over-enforcement pattern |
+
+### Monitoring & Metrics
+
+**Success Metrics** (Post-Implementation):
+- [ ] Agent intention clarity: 3.0 → 4.7/5.0 (target)
+- [ ] Context window token reduction: -20%
+- [ ] MR review time: -30%
+- [ ] Requirement misunderstanding: 15% → 5%
+
+**Quality Gates**:
+- All tests must pass (no regressions)
+- Complexity budget maintained (Skill ≤200 lines)
+- Philosophy compliance verified
+- Documentation complete
+
+---
+
 ## Related Documents
 
 - [why.md](../why.md): 설계 철학
@@ -995,6 +1121,7 @@ Milestone M4: Full Rollout (조건부)
 - [docs/manual-fallback-guide.md](../docs/manual-fallback-guide.md): Manual Fallback
 - [skills/](../skills/): Atomic Skills
 - [workflows/](../workflows/): Workflows
+- [docs/internal/handoff.md](../internal/handoff.md): Implementation Roadmap
 
 ---
 
