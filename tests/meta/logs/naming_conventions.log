@@ -1,0 +1,84 @@
+==========================================
+File Naming Conventions Validation
+==========================================
+Project: /Users/wonseok/project-iamwonseok/agent-context/.worktrees/feat-meta-validation
+
+Standards (from policies/README.md):
+  - Skills: skills/{category}/{skill-name}/SKILL.md
+  - Workflows: workflows/{role}/{workflow-name}.md
+  - RFCs: docs/rfcs/NNN-descriptive-title.md
+
+[0;34m=== Skills Naming: skills/{category}/{skill-name}/SKILL.md ===[0m
+  [0;32m[OK][0m Valid structure: skills/analyze/assess-status/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/analyze/evaluate-priority/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/analyze/inspect-codebase/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/analyze/inspect-logs/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/analyze/parse-requirement/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/execute/fix-defect/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/execute/manage-issues/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/execute/refactor-code/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/execute/update-documentation/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/execute/write-code/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/integrate/commit-changes/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/integrate/create-merge-request/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/integrate/merge-changes/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/integrate/notify-stakeholders/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/integrate/publish-report/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/allocate-resources/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/breakdown-work/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/design-solution/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/design-test-plan/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/estimate-effort/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/planning/schedule-timeline/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/analyze-impact/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/check-intent/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/check-style/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/review-code/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/run-tests/SKILL.md
+  [0;32m[OK][0m Valid structure: skills/validate/verify-requirements/SKILL.md
+  [0;32m[OK][0m All skill files follow naming convention
+
+[0;34m=== Workflows Naming: workflows/{role}/{workflow-name}.md ===[0m
+  [0;32m[OK][0m Valid structure: workflows/developer/bug-fix.md
+  [0;32m[OK][0m Valid structure: workflows/developer/feature.md
+  [0;32m[OK][0m Valid structure: workflows/developer/hotfix.md
+  [0;32m[OK][0m Valid structure: workflows/developer/refactor.md
+  [0;32m[OK][0m Valid structure: workflows/manager/approval.md
+  [0;32m[OK][0m Valid structure: workflows/manager/epic.md
+  [0;32m[OK][0m Valid structure: workflows/manager/initiative.md
+  [0;32m[OK][0m Valid structure: workflows/manager/monitoring.md
+  [0;32m[OK][0m Valid structure: workflows/manager/task-assignment.md
+  [0;32m[OK][0m All workflow files follow naming convention
+
+[0;34m=== RFCs Naming: docs/rfcs/NNN-title.md ===[0m
+  [0;32m[OK][0m Valid RFC name: 002-proposal.md
+  [0;32m[OK][0m Valid RFC name: 004-agent-workflow-system.md
+  [0;32m[OK][0m Valid RFC name: 005-manual-fallback-improvement.md
+  [0;32m[OK][0m Valid RFC name: 006-unified-platform-abstraction.md
+  [0;32m[OK][0m Valid RFC name: 007-architecture-improvements.md
+  [0;32m[OK][0m Valid RFC name: 008-domain-extension.md
+  [0;32m[OK][0m Valid RFC name: 009-cli-documentation-policy.md
+  [0;32m[OK][0m Valid RFC name: 010-agent-efficiency-best-practices.md
+  [0;32m[OK][0m Valid RFC name: 011-language-policy.md
+  [0;32m[OK][0m Valid RFC name: 012-test-planning-framework.md
+  [0;32m[OK][0m Valid archived RFC: 001-proposal-v1.md
+  [0;32m[OK][0m Valid archived RFC: 003-agent-workflow-system-v1.md
+  [0;32m[OK][0m All RFC files follow naming convention
+
+[0;34m=== Template Naming ===[0m
+  [0;32m[OK][0m Skill template exists: skills/_template/SKILL.md
+  [0;32m[OK][0m RFC template exists: docs/rfcs/_template/RFC-TEMPLATE.md
+
+[0;34m=== Test Fixtures (for testing this script) ===[0m
+  [0;32m[OK][0m Test fixtures exist for naming validation
+  [0;32m[OK][0m Found 1 valid naming examples
+  [0;32m[OK][0m Found 1 invalid naming examples
+
+==========================================
+Results
+==========================================
+Total:  56
+Passed: [0;32m56[0m
+Failed: [0;31m0[0m
+
+[0;32m[PASS] All naming conventions followed![0m

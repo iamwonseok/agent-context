@@ -181,43 +181,10 @@ Release |░░░░░░░░░░░░░░██░░░░|
 
 ## Examples
 
-### Example 1: 2-Week Sprint
-
-```
-Sprint Goal: User authentication feature
-
-Week 1:
-- Mon-Tue: Backend auth service
-- Wed-Thu: Frontend login UI
-- Fri: Integration
-
-Week 2:
-- Mon-Tue: Testing & bug fixes
-- Wed: Code review
-- Thu: Documentation
-- Fri: Release
-
-Milestone: Feature released by Friday Week 2
-```
-
-### Example 2: Quarterly Roadmap
-
-```
-Q1 2026 Roadmap
-
-Month 1 (January):
-- Week 1-2: Phase 1 - Core features
-- Week 3-4: Phase 1 - Testing & release
-
-Month 2 (February):
-- Week 1-2: Phase 2 - Advanced features
-- Week 3-4: Phase 2 - Testing & release
-
-Month 3 (March):
-- Week 1-2: Phase 3 - Integrations
-- Week 3: Final testing
-- Week 4: Production release + buffer
-```
+| Timeline Type | Pattern |
+|--------------|---------|
+| 2-Week Sprint | Week 1: Dev, Week 2: Test/Release |
+| Quarterly Roadmap | Monthly phases with buffer |
 
 ## Notes
 

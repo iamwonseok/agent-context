@@ -1,0 +1,47 @@
+==========================================
+Anti-pattern Detection
+==========================================
+Project: /Users/wonseok/project-iamwonseok/agent-context/.worktrees/feat-meta-validation
+
+Checking for (from ARCHITECTURE.md):
+  - Deep Nesting (max 2 levels)
+  - Custom DSL (use YAML/Markdown)
+  - Hard Blocking (need --force escape)
+  - Complex State Machines (use simple flags)
+  - Implicit Dependencies (be explicit)
+  - Forbidden Unicode (use ASCII)
+
+[0;34m=== Anti-pattern: Deep Nesting (max 2 levels) ===[0m
+  [0;32m[OK][0m No deep nesting in skills/ (max 2 levels: category/skill-name)
+  [0;32m[OK][0m No deep nesting in workflows/ (max 1 level: role)
+
+[0;34m=== Anti-pattern: Custom DSL (use standard YAML/Markdown) ===[0m
+  [1;33m[!!][0m Potential custom DSL: tests/meta/fixtures/antipatterns/fail/custom.dsl
+
+[0;34m=== Anti-pattern: Hard Blocking without --force override ===[0m
+  [0;32m[OK][0m No excessive hard blocking patterns found
+
+[0;34m=== Anti-pattern: Complex State Machines (use simple flags) ===[0m
+  [0;32m[OK][0m No complex state machines detected
+
+[0;34m=== Anti-pattern: Implicit Dependencies (be explicit) ===[0m
+  [0;32m[OK][0m All workflows explicitly declare skill dependencies
+
+[0;34m=== Anti-pattern: Forbidden Unicode Icons (use ASCII) ===[0m
+  [0;32m[OK][0m No forbidden Unicode icons in code files
+
+[0;34m=== Test Fixtures (for testing this script) ===[0m
+  [0;32m[OK][0m Fixture[FAIL]: deep-nesting detected (depth: 5)
+  [0;32m[OK][0m Fixture[FAIL]: custom DSL file detected
+  [0;32m[OK][0m Found 2 anti-pattern examples
+  [0;32m[OK][0m Pass fixtures exist for validation
+
+==========================================
+Results
+==========================================
+Total:  10
+Passed: [0;32m10[0m
+Failed: [0;31m0[0m
+Warned: [1;33m0[0m
+
+[0;32m[PASS] No anti-patterns detected![0m

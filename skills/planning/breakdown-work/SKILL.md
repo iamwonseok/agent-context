@@ -165,38 +165,10 @@ Task B (New) ──Is caused by──→ Task C (Technical Debt)
 
 ## Examples
 
-### Example 1: API Feature
-
-```
-Feature: "Add product search API"
-
-Breakdown:
-1. [S] Define search request/response schema
-2. [M] Implement search service with filters
-3. [M] Create GET /products/search endpoint
-4. [S] Add pagination support
-5. [M] Write tests
-6. [S] Update API documentation
-
-Total: ~2 days
-Critical path: 1 → 2 → 3 → 5
-```
-
-### Example 2: Bug Fix
-
-```
-Bug: "Intermittent timeout on large uploads"
-
-Breakdown:
-1. [S] Reproduce issue locally
-2. [M] Profile upload handler
-3. [S] Identify bottleneck
-4. [M] Implement chunked upload
-5. [M] Test with various file sizes
-6. [S] Monitor production after deploy
-
-Total: ~1.5 days
-```
+| Scenario | Breakdown Approach | Estimate |
+|----------|-------------------|----------|
+| API Feature | Schema → Service → Endpoint → Tests → Docs | ~2 days |
+| Bug Fix | Reproduce → Profile → Identify → Fix → Test → Monitor | ~1.5 days |
 
 ## Notes
 
