@@ -2,6 +2,11 @@
 name: epic
 description: Epic management workflow
 role: manager
+cursor_mode: plan
+mode_transitions:
+  - ask     # analyze/parse-requirement
+  - plan    # planning/breakdown-work, estimate-effort
+  - ask     # analyze/assess-status
 skills:
   - analyze/parse-requirement
   - planning/breakdown-work

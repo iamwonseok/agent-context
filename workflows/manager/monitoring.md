@@ -2,6 +2,11 @@
 name: monitoring
 description: Progress monitoring workflow
 role: manager
+cursor_mode: ask
+mode_transitions:
+  - ask     # analyze/assess-status
+  - debug   # validate/analyze-impact
+  - agent   # integrate/publish-report
 skills:
   - analyze/assess-status
   - validate/analyze-impact

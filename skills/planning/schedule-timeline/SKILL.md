@@ -4,6 +4,8 @@ category: plan
 description: Create project timeline and schedule
 version: 1.0.0
 role: manager
+mode: planning
+cursor_mode: plan
 inputs:
   - Task list with estimates
   - Resource availability
@@ -15,6 +17,15 @@ outputs:
 ---
 
 # Schedule Timeline
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Create project timeline and milestone schedule
+**Boundaries**:
+- Will: Sequence tasks, identify dependencies, calculate dates, document timeline
+- Will NOT: Create calendar events, assign issues, or notify stakeholders
 
 ## When to Use
 

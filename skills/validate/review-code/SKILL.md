@@ -4,6 +4,8 @@ category: validate
 description: Review code quality
 version: 1.0.0
 role: developer
+mode: verification
+cursor_mode: debug
 inputs:
   - Git diff (changes)
   - Test results
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Review
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Review code quality and identify issues
+**Boundaries**:
+- Will: Analyze changes, identify issues, document findings
+- Will NOT: Modify code, approve/reject PRs, or apply fixes
 
 ## When to Use
 

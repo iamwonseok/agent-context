@@ -4,6 +4,8 @@ category: analyze
 description: Evaluate and prioritize tasks based on impact and urgency
 version: 1.0.0
 role: manager
+mode: research
+cursor_mode: ask
 inputs:
   - Task list or backlog
   - Business context
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Evaluate Priority
+
+## State Assertion
+
+**Mode**: research
+**Cursor Mode**: ask
+**Purpose**: Analyze tasks and determine priority based on impact and urgency
+**Boundaries**:
+- Will: Evaluate tasks, calculate priority scores, document rationale
+- Will NOT: Modify task status, assign resources, or change deadlines
 
 ## When to Use
 

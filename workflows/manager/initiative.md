@@ -2,6 +2,10 @@
 name: initiative
 description: Initiative planning workflow
 role: manager
+cursor_mode: plan
+mode_transitions:
+  - ask     # analyze/parse-requirement
+  - plan    # planning/*
 skills:
   - analyze/parse-requirement
   - planning/design-solution

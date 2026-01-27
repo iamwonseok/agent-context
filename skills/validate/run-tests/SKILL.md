@@ -4,6 +4,8 @@ category: validate
 description: Run tests and check coverage
 version: 1.0.0
 role: developer
+mode: verification
+cursor_mode: debug
 inputs:
   - Code with tests
 outputs:
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Run Tests
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Execute tests and validate code behavior
+**Boundaries**:
+- Will: Run test suites, collect results, report coverage
+- Will NOT: Modify tests, skip failing tests, or change code
 
 ## When to Use
 

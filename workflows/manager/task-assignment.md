@@ -2,6 +2,11 @@
 name: task-assignment
 description: Task assignment workflow
 role: manager
+cursor_mode: plan
+mode_transitions:
+  - ask     # analyze/evaluate-priority
+  - plan    # planning/allocate-resources
+  - agent   # integrate/notify-stakeholders
 skills:
   - analyze/evaluate-priority
   - planning/allocate-resources

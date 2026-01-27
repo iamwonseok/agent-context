@@ -4,6 +4,8 @@ category: validate
 description: Verify implementation matches original intent
 version: 1.0.0
 role: developer
+mode: verification
+cursor_mode: debug
 inputs:
   - Original requirements (design/*.md)
   - Implementation plan (plan/*.md)
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Verify
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Verify implementation matches requirements
+**Boundaries**:
+- Will: Compare implementation to design, identify gaps, document findings
+- Will NOT: Modify code, change requirements, or approve completion
 
 ## When to Use
 

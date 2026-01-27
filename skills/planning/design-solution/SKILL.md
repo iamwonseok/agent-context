@@ -4,6 +4,8 @@ category: plan
 description: Design solution and plan implementation
 version: 1.0.0
 role: developer
+mode: planning
+cursor_mode: plan
 inputs:
   - design/{feature}.md
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Design Solution
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Create implementation plan from design document
+**Boundaries**:
+- Will: Analyze design, identify files to change, create task breakdown, document plan
+- Will NOT: Write implementation code, modify existing files, or create tests
 
 ## When to Use
 

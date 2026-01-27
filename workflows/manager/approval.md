@@ -2,6 +2,11 @@
 name: approval
 description: MR review and approval workflow
 role: manager
+cursor_mode: ask
+mode_transitions:
+  - ask     # analyze/parse-requirement
+  - debug   # validate/review-code, analyze-impact
+  - agent   # integrate/notify-stakeholders
 skills:
   - analyze/parse-requirement
   - validate/review-code
