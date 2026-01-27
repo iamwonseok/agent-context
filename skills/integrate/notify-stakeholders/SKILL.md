@@ -4,6 +4,8 @@ category: integrate
 description: Notify relevant stakeholders about changes
 version: 1.0.0
 role: both
+mode: implementation
+cursor_mode: agent
 inputs:
   - Change details
   - Stakeholder list
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Notify Stakeholders
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Send notifications about changes to stakeholders
+**Boundaries**:
+- Will: Draft messages, send notifications, update channels
+- Will NOT: Make decisions on behalf of stakeholders, or escalate without permission
 
 ## When to Use
 

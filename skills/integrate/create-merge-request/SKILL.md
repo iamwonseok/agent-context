@@ -4,6 +4,8 @@ category: integrate
 description: Create merge request for completed work
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Completed branch
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Create Merge Request
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Create merge request with proper description
+**Boundaries**:
+- Will: Push branch, create MR, link issues, add reviewers
+- Will NOT: Merge MR, approve MR, or bypass CI checks
 
 ## When to Use
 

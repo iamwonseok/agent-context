@@ -4,6 +4,8 @@ category: validate
 description: Lightweight intent alignment check during development
 version: 1.0.0
 role: developer
+mode: verification
+cursor_mode: debug
 inputs:
   - Current changes (git diff)
   - Plan files (plan/*.md)
@@ -15,6 +17,15 @@ related:
 ---
 
 # Check Intent
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Verify changes align with planned intent
+**Boundaries**:
+- Will: Compare changes to plan, detect drift, report warnings
+- Will NOT: Modify code, revert changes, or block commits (warnings only)
 
 Lightweight intent alignment check for use during development.
 Unlike full verification (`verify-requirements`), this is designed to run frequently with minimal overhead.
@@ -169,9 +180,79 @@ Result:
 - List of unplanned changes (if any)
 - Recommendations for next steps
 
+## Self-Correction Protocol
+
+This skill is part of the Self-Correction Protocol (RFC-004 v2.0). Beyond intent alignment, it also checks for mode violations.
+
+### Mode Violation Detection
+
+| Current Mode | Violation Triggers |
+|--------------|-------------------|
+| planning | Code changes staged |
+| research | Any file modifications |
+| verification | New feature code added |
+| implementation | (Generally permissive) |
+
+### Self-Correction Triggers
+
+When a mode violation is detected:
+
+1. **Warning displayed** - Clear message about the violation
+2. **Recommendation shown** - Suggested corrective action
+3. **User decides** - Continue with `--force` or address the issue
+
+### Integration with `detect_mode_violation()`
+
+```bash
+source .agent/tools/agent/lib/checks.sh
+
+# Load current mode (default: planning)
+current_mode=$(load_current_mode "$context_path")
+
+# Check for mode violations
+if detect_mode_violation "$current_mode" "$context_path"; then
+    echo "No violations"
+else
+    echo "Mode violation detected - review changes"
+fi
+```
+
+### Self-Correction Workflow
+
+```
+1. Agent declares intent (mode, purpose)
+2. Agent performs actions
+3. check-intent detects deviation:
+   - Plan alignment check
+   - Mode violation check
+4. If deviation:
+   - Display warning
+   - Suggest correction
+   - User decides next action
+```
+
+### Example: Self-Correction in Action
+
+```
+Current Mode: planning
+Staged Changes: src/feature.ts (code file)
+
+[SELF-CORRECTION] Mode Violation Detected
+  Current Mode: planning
+  Violation: Code changes detected in planning mode
+
+  Recommended Actions:
+    1. Review the changes - are they intentional?
+    2. If yes, switch to implementation mode
+    3. If no, unstage the code changes
+
+  Note: This is a WARNING only. Use --force to proceed.
+```
+
 ## Notes
 
 - Intent check is **advisory**, not mandatory
 - Warnings don't prevent commits or submissions
 - Use full `verify-requirements` before final submission
 - See `.agent/why.md` for design rationale
+- Self-Correction follows the same advisory philosophy

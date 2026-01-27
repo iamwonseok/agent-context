@@ -2,6 +2,11 @@
 name: hotfix
 description: Emergency production fix
 role: developer
+cursor_mode: agent
+mode_transitions:
+  - agent   # fast fix
+  - debug   # critical tests only
+  - agent   # integrate
 skills:
   - execute/write-code
   - validate/check-style

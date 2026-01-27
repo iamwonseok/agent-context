@@ -4,6 +4,8 @@ category: analyze
 description: Analyze logs to identify issues and root causes
 version: 1.0.0
 role: developer
+mode: research
+cursor_mode: ask
 inputs:
   - Log files or log output
   - Error description (optional)
@@ -15,6 +17,15 @@ outputs:
 ---
 
 # Inspect Logs
+
+## State Assertion
+
+**Mode**: research
+**Cursor Mode**: ask
+**Purpose**: Analyze log files to identify errors and root causes
+**Boundaries**:
+- Will: Read logs, search patterns, trace errors, document findings
+- Will NOT: Modify log files, change log configuration, or fix code
 
 ## When to Use
 

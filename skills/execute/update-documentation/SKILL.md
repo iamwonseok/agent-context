@@ -4,6 +4,8 @@ category: execute
 description: Update documentation to match code changes
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Code changes
   - Existing documentation
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Update Documentation
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Update documentation to reflect code changes
+**Boundaries**:
+- Will: Update README, API docs, comments, examples
+- Will NOT: Change code functionality, create new features, or delete documentation without reason
 
 ## When to Use
 

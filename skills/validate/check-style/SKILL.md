@@ -4,6 +4,8 @@ category: validate
 description: Check code style and lint
 version: 1.0.0
 role: developer
+mode: verification
+cursor_mode: debug
 inputs:
   - Changed code files
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Check Style
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Validate code style and lint compliance
+**Boundaries**:
+- Will: Run linters, report violations, suggest fixes
+- Will NOT: Auto-fix code, modify files, or skip checks
 
 ## When to Use
 

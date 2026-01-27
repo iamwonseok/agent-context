@@ -4,6 +4,8 @@ category: plan
 description: Estimate effort for tasks and features
 version: 1.0.0
 role: developer
+mode: planning
+cursor_mode: plan
 inputs:
   - Task description
   - Historical data (optional)
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Estimate Effort
+
+## State Assertion
+
+**Mode**: planning
+**Cursor Mode**: plan
+**Purpose**: Provide effort estimates with confidence levels
+**Boundaries**:
+- Will: Analyze complexity, compare to historical data, document assumptions
+- Will NOT: Commit to deadlines, update issue trackers, or schedule resources
 
 ## When to Use
 
