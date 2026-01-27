@@ -217,6 +217,49 @@ dev_check() {
     return $result
 }
 
+# RFC-004 Phase 2: Process answered questions
+dev_debrief() {
+    local project_root
+    project_root=$(find_project_root) || return 1
+
+    local context_path
+    context_path=$(get_current_context 2>/dev/null) || {
+        echo "[ERROR] No active context found"
+        echo "[INFO] Run 'agent dev start <task-id>' first"
+        return 1
+    }
+
+    local task_id
+    task_id=$(extract_task_from_branch "$(get_current_branch)") || task_id="unknown"
+
+    echo "=================================================="
+    echo "Processing Questions (Debrief)"
+    echo "=================================================="
+    echo ""
+    echo "Task: $task_id"
+    echo "Context: $context_path"
+    echo ""
+
+    # Check if questions.md exists
+    if [[ ! -f "$context_path/questions.md" ]]; then
+        echo "[ERROR] questions.md not found in context"
+        echo "[INFO] Questions should be generated during 'agent dev analyze' phase"
+        return 1
+    fi
+
+    # Process questions
+    echo "Processing answered questions from questions.md..."
+    process_questions "$context_path"
+
+    echo ""
+    echo "[OK] Debrief complete"
+    echo ""
+    echo "[NEXT] Update design documents based on answers"
+    echo "       - Check llm_context.md for recorded decisions"
+    echo "       - Update design-solution.md if needed"
+    echo "       - Continue with 'agent dev code'"
+}
+
 # Generate verification report
 dev_verify() {
     local project_root
@@ -290,6 +333,16 @@ EOF
 
     echo "[OK] Verification report created: $verification_file"
     echo ""
+    
+    # RFC-004 Phase 2: Generate quick-summary.md
+    echo "Generating quick summary..."
+    if command -v generate_quick_summary &>/dev/null; then
+        generate_quick_summary "$context_path" 2>/dev/null && \
+            echo "[OK] Quick summary generated: $context_path/quick-summary.md" || \
+            echo "[WARN] Quick summary generation failed (non-critical)"
+    fi
+    echo ""
+    
     echo "[NEXT] Edit the file to check off completed requirements"
     echo "       Then run 'agent dev retro' to create retrospective"
 
