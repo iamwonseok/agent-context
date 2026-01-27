@@ -154,3 +154,195 @@ $(git log origin/main..HEAD --oneline 2>/dev/null || echo "(no commits)")
 *Posted by agent CLI*
 EOF
 }
+
+# ============================================================================
+# RFC-004 Phase 2: AI-Optimized Summary
+# ============================================================================
+
+# Generate quick-summary.md for MR description
+# Usage: generate_quick_summary <context_path>
+generate_quick_summary() {
+    local context_path="$1"
+    
+    if [[ ! -d "$context_path" ]]; then
+        echo "[ERROR] Context directory not found: $context_path" >&2
+        return 1
+    fi
+    
+    local summary_file="$context_path/quick-summary.md"
+    local timestamp
+    timestamp=$(date -u +"%Y-%m-%d")
+    
+    # Extract key information from context
+    local task_id=""
+    local branch=""
+    local try_file="$context_path/try.yaml"
+    
+    if [[ -f "$try_file" ]]; then
+        task_id=$(grep "^task_id:" "$try_file" | sed 's/task_id: *//' | tr -d '"')
+        branch=$(grep "^branch:" "$try_file" | sed 's/branch: *//' | tr -d '"')
+    fi
+    
+    # Get commit statistics
+    local commit_count
+    local files_changed
+    local insertions
+    local deletions
+    
+    commit_count=$(git log origin/main..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
+    
+    if [[ "$commit_count" -gt 0 ]]; then
+        local diffstat
+        diffstat=$(git diff origin/main..HEAD --shortstat 2>/dev/null)
+        files_changed=$(echo "$diffstat" | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
+        insertions=$(echo "$diffstat" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+        deletions=$(echo "$diffstat" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
+    else
+        files_changed="0"
+        insertions="0"
+        deletions="0"
+    fi
+    
+    # Generate summary
+    cat > "$summary_file" << EOF
+# Quick Summary
+*Generated: $timestamp*
+
+## Task: $task_id
+
+**Branch**: \`$branch\`
+
+---
+
+## Changes at a Glance
+
+- **Commits**: $commit_count
+- **Files**: $files_changed changed
+- **Lines**: +$insertions / -$deletions
+
+---
+
+## What Changed
+
+<!-- AI-optimized summary: 3-5 bullet points highlighting key changes -->
+
+EOF
+    
+    # Add commit messages as bullet points (max 10)
+    echo "### Key Commits" >> "$summary_file"
+    echo "" >> "$summary_file"
+    git log origin/main..HEAD --oneline --max-count=10 2>/dev/null | sed 's/^/- /' >> "$summary_file" || echo "- (no commits)" >> "$summary_file"
+    echo "" >> "$summary_file"
+    
+    # Add changed files summary (max 15)
+    echo "### Files Changed" >> "$summary_file"
+    echo "" >> "$summary_file"
+    git diff origin/main..HEAD --name-status 2>/dev/null | head -15 | while IFS=$'\t' read -r status file; do
+        case "$status" in
+            A) echo "- ➕ \`$file\`" ;;
+            M) echo "- ✏️  \`$file\`" ;;
+            D) echo "- ➖ \`$file\`" ;;
+            *) echo "- $status \`$file\`" ;;
+        esac
+    done >> "$summary_file" || echo "- (no files)" >> "$summary_file"
+    echo "" >> "$summary_file"
+    
+    # Add technical decisions if available
+    if [[ -f "$context_path/llm_context.md" ]]; then
+        echo "---" >> "$summary_file"
+        echo "" >> "$summary_file"
+        echo "## Technical Decisions" >> "$summary_file"
+        echo "" >> "$summary_file"
+        
+        # Extract technical decisions (simplified)
+        grep -A 5 "^### Decision:" "$context_path/llm_context.md" | grep -E "^\*\*Decision\*\*:|^\*\*Rationale\*\*:" | head -10 >> "$summary_file" || echo "(none recorded)" >> "$summary_file"
+        echo "" >> "$summary_file"
+    fi
+    
+    # Add questions answered if available
+    if [[ -f "$context_path/questions.md" ]]; then
+        local answered_count
+        answered_count=$(grep -c "^\*\*Answer\*\*:" "$context_path/questions.md" | grep -v "Human fills this in" || echo "0")
+        
+        if [[ "$answered_count" -gt 0 ]]; then
+            echo "---" >> "$summary_file"
+            echo "" >> "$summary_file"
+            echo "## Questions Resolved: $answered_count" >> "$summary_file"
+            echo "" >> "$summary_file"
+            echo "<details>" >> "$summary_file"
+            echo "<summary>Click to expand Q&A</summary>" >> "$summary_file"
+            echo "" >> "$summary_file"
+            echo "\`\`\`" >> "$summary_file"
+            grep -B 2 "^\*\*Answer\*\*:" "$context_path/questions.md" | head -30 >> "$summary_file"
+            echo "\`\`\`" >> "$summary_file"
+            echo "</details>" >> "$summary_file"
+            echo "" >> "$summary_file"
+        fi
+    fi
+    
+    # Add testing status if verification exists
+    if [[ -f "$context_path/verification.md" ]]; then
+        echo "---" >> "$summary_file"
+        echo "" >> "$summary_file"
+        echo "## Testing" >> "$summary_file"
+        echo "" >> "$summary_file"
+        
+        # Extract test results (simplified)
+        if grep -q "PASS" "$context_path/verification.md"; then
+            echo "- ✅ Tests passing" >> "$summary_file"
+        fi
+        if grep -q "FAIL" "$context_path/verification.md"; then
+            echo "- ❌ Some tests failing (see verification.md)" >> "$summary_file"
+        fi
+        echo "" >> "$summary_file"
+    fi
+    
+    # Footer
+    cat >> "$summary_file" << EOF
+---
+
+## Full Context
+
+<details>
+<summary>Click to expand full context</summary>
+
+$(context_to_markdown "$context_path" 2>/dev/null || echo "(no context available)")
+
+</details>
+
+---
+*Generated by agent CLI (RFC-004 Phase 2)*
+EOF
+    
+    echo "  Generated quick-summary.md: $summary_file"
+    echo "$summary_file"
+}
+
+# Update MR description with quick summary
+# Usage: update_mr_with_summary <context_path> <mr_description_file>
+update_mr_with_summary() {
+    local context_path="$1"
+    local mr_desc_file="${2:-mr-description.md}"
+    
+    local summary_file
+    summary_file=$(generate_quick_summary "$context_path") || return 1
+    
+    if [[ ! -f "$summary_file" ]]; then
+        echo "[ERROR] quick-summary.md generation failed" >&2
+        return 1
+    fi
+    
+    # Prepend quick summary to MR description
+    cat "$summary_file" > "$mr_desc_file.tmp"
+    echo "" >> "$mr_desc_file.tmp"
+    echo "---" >> "$mr_desc_file.tmp"
+    echo "" >> "$mr_desc_file.tmp"
+    
+    if [[ -f "$mr_desc_file" ]]; then
+        cat "$mr_desc_file" >> "$mr_desc_file.tmp"
+    fi
+    
+    mv "$mr_desc_file.tmp" "$mr_desc_file"
+    
+    echo "  Updated MR description: $mr_desc_file"
+}

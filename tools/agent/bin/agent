@@ -48,6 +48,7 @@ DEVELOPER COMMANDS (agent dev):
     switch <branch>         Switch to another branch/worktree
     handoff <save|show>     Save/show handoff note for a branch
     status                  Show current work status
+    debrief                 Process answered questions (RFC-004 Phase 2)
     check                   Run quality checks (lint, test, intent)
     verify                  Verify requirements and generate report
     retro                   Create/edit retrospective document
@@ -107,6 +108,9 @@ cmd_dev() {
             ;;
         status|"")
             dev_status "$@"
+            ;;
+        debrief)
+            dev_debrief "$@"
             ;;
         check)
             dev_check "$@"
