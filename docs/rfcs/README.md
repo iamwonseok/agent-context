@@ -12,7 +12,7 @@ Design proposals and implementation plans for agent-context framework.
 | 006 | Unified Platform Abstraction | [006-unified-platform-abstraction.md](006-unified-platform-abstraction.md) | Active |
 | 007 | Architecture Pattern Improvements | [007-architecture-improvements.md](007-architecture-improvements.md) | Active |
 | 008 | Domain Extension & Installation | [008-domain-extension.md](008-domain-extension.md) | Active |
-| 009 | CLI Documentation Policy | [009-cli-documentation-policy.md](009-cli-documentation-policy.md) | Draft |
+| 009 | CLI Documentation Policy | [009-cli-documentation-policy.md](009-cli-documentation-policy.md) | Active |
 | 010 | Agent Efficiency & Best Practices | [010-agent-efficiency-best-practices.md](010-agent-efficiency-best-practices.md) | Active |
 | 011 | Language Policy & Internationalization | [011-language-policy.md](011-language-policy.md) | Active |
 | 012 | Test Planning Framework | [012-test-planning-framework.md](012-test-planning-framework.md) | Active |

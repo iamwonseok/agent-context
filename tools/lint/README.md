@@ -1,6 +1,8 @@
 # Lint Tools
 
-코딩 컨벤션 검사를 위한 통합 린트 도구입니다.
+> **User manual**: [docs/cli/lint.md](../../docs/cli/lint.md)
+
+Coding convention checker for multiple languages.
 
 ## 지원 언어
 

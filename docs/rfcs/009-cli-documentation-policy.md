@@ -1,6 +1,6 @@
 # RFC-009: CLI Documentation Policy
 
-**Status**: Draft  
+**Status**: Active  
 **Author**: wonseok  
 **Created**: 2026-01-26  
 **Related**: `ARCHITECTURE.md`, `docs/cli/README.md`, `tools/*/README.md`
