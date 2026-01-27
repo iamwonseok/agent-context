@@ -171,55 +171,11 @@ Added zero-quantity check, return 0 when quantity is 0
 
 ## Examples
 
-### Example 1: Null Pointer
-
-```python
-# Bug: AttributeError when user has no profile
-
-# Before
-def get_user_avatar(user):
-    return user.profile.avatar_url  # Fails if profile is None
-
-# After
-def get_user_avatar(user):
-    if user.profile is None:
-        return DEFAULT_AVATAR_URL
-    return user.profile.avatar_url
-```
-
-### Example 2: Off-by-One
-
-```python
-# Bug: Last item not processed
-
-# Before
-for i in range(len(items) - 1):  # Wrong: skips last
-    process(items[i])
-
-# After
-for i in range(len(items)):  # Correct: processes all
-    process(items[i])
-
-# Or better
-for item in items:
-    process(item)
-```
-
-### Example 3: Race Condition
-
-```python
-# Bug: Duplicate orders created
-
-# Before
-if not order_exists(order_id):
-    create_order(order_id)  # Race: another request may create between check and create
-
-# After
-try:
-    create_order(order_id)  # Use database unique constraint
-except DuplicateKeyError:
-    pass  # Order already exists
-```
+| Bug Type | Fix Strategy |
+|----------|-------------|
+| Null Pointer | Add null check, return default |
+| Off-by-One | Fix range boundary |
+| Race Condition | Use database constraints |
 
 ## Notes
 

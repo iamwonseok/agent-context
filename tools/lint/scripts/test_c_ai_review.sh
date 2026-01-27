@@ -24,29 +24,15 @@ TEST_CASES=""
 REVIEW_RESULTS=""
 DETAILED_RESULTS=""
 
-# Detectable=No rules that AI will check
-# Format: "RULE_ID|RULE_DESCRIPTION"
-UNDETECTABLE_RULES=(
-	"C-01-04|포인터가 아닌 기본 자료형의 연관된 변수는 한 줄에 선언 가능하나, 포인터는 한 줄 선언 금지"
-	"C-01-25|주석을 포함한 모든 코드 내 텍스트는 영어를 사용"
-	"C-01-26|코드는 그 자체로 설명되도록 작성하며, 불필요한 동작 설명 주석은 지양"
-	"C-02-01|구조체와 포인터 정의에 typedef를 사용하여 타입을 숨기지 않음"
-	"C-02-02|함수 종료 시 공통된 자원 해제가 필요한 경우에만 goto문 사용"
-	"C-02-03|goto 레이블 이름은 해당 위치의 역할이나 이유를 명확히 기술"
-	"C-02-04|자원 해제가 필요 없는 단순 종료 시에는 goto 대신 직접 return"
-	"C-02-06|호출부의 제어 흐름에 영향을 주는 매크로 사용 금지"
-	"C-02-07|매크로 내부에서 인자로 전달되지 않은 외부 변수 참조 금지"
-	"C-02-09|매크로를 좌변 값(L-value)으로 사용하여 대입 금지"
-	"C-03-01|전역 변수와 함수 이름은 용도를 명확히 알 수 있도록 설명적으로 작성"
-	"C-03-02|지역 변수는 간결하게 짓되, 용도에 따라 관습적인 이름 사용"
-	"C-03-03|개발자 개인만 아는 모호한 약어 사용 금지"
-	"C-03-06|헝가리안 표기법 사용 금지"
-	"C-04-01|함수는 한 가지 기능만 명확하게 수행하도록 작게 작성"
-	"C-04-06|Public 함수는 명확한 반환 값 규칙을 따름"
-	"C-04-07|동작/명령 수행 함수는 int형 에러 코드 반환 (0: 성공, <0: 실패)"
-	"C-04-08|상태 확인 함수는 bool형 반환"
-	"C-04-09|표준 매크로나 라이브러리 함수를 재구현하지 않음"
-)
+# Load rules from external file (Detectable=No rules for AI review)
+UNDETECTABLE_RULES=()
+RULES_FILE="${SCRIPT_DIR}/rules/c_ai_rules.txt"
+if [[ -f "${RULES_FILE}" ]]; then
+	while IFS= read -r line; do
+		[[ -z "$line" || "$line" == \#* ]] && continue
+		UNDETECTABLE_RULES+=("$line")
+	done < "${RULES_FILE}"
+fi
 
 # Check if Ollama is running
 check_ollama() {
@@ -179,6 +165,22 @@ parse_ai_response() {
 	fi
 }
 
+# Generate markdown report
+generate_markdown_report() {
+	echo "# AI Code Review Report"
+	echo ""
+	echo "| Metric | Value |"
+	echo "|--------|-------|"
+	echo "| Model | ${OLLAMA_MODEL} |"
+	echo "| Total | $((PASS_COUNT + FAIL_COUNT)) |"
+	echo "| Passed | ${PASS_COUNT} |"
+	echo "| Failed | ${FAIL_COUNT} |"
+	echo ""
+	echo "## Results"
+	echo ""
+	echo "${DETAILED_RESULTS}"
+}
+
 # Review a single file
 review_file() {
 	local file="$1"
@@ -214,43 +216,23 @@ review_file() {
 		fi
 	done < <(echo "${results}" | jq -c '.[]' 2>/dev/null)
 
-	# Generate test case output and detailed results for report
+	# Generate test case output
 	if [[ ${#fail_rules[@]} -eq 0 ]]; then
-		local output="AI Review Passed"$'\n'
-		DETAILED_RESULTS+="### [OK] ${filename}"$'\n\n'
-		DETAILED_RESULTS+="**Result:** PASS (${#pass_rules[@]} rules checked)"$'\n\n'
-		DETAILED_RESULTS+="<details>"$'\n'
-		DETAILED_RESULTS+="<summary>Show details</summary>"$'\n\n'
-		for r in "${pass_rules[@]}"; do
-			output+="[OK] ${r}"$'\n'
-			DETAILED_RESULTS+="- [OK] ${r}"$'\n'
-		done
-		DETAILED_RESULTS+=$'\n'"</details>"$'\n\n'
+		local output="AI Review: PASS (${#pass_rules[@]} rules)"
+		DETAILED_RESULTS+="- [OK] ${filename}: ${#pass_rules[@]} rules passed"$'\n'
 		TEST_CASES+="$(junit_pass "c.ai" "${filename}" "1.00" "${output}")"$'\n'
 		PASS_COUNT=$((PASS_COUNT + 1))
-		REVIEW_RESULTS+="${filename}: PASS (${#pass_rules[@]} rules checked)"$'\n'
+		REVIEW_RESULTS+="${filename}: PASS"$'\n'
 	else
-		local output="AI Review Found Issues"$'\n'
-		DETAILED_RESULTS+="### [NG] ${filename}"$'\n\n'
-		DETAILED_RESULTS+="**Result:** FAIL"$'\n\n'
-		DETAILED_RESULTS+="| Rule | Line | Issue |"$'\n'
-		DETAILED_RESULTS+="|------|------|-------|"$'\n'
+		local output="AI Review: FAIL"$'\n'
+		DETAILED_RESULTS+="- [NG] ${filename}:"$'\n'
 		for r in "${fail_rules[@]}"; do
-			output+="[NG] ${r}"$'\n'
-			# Parse rule info: "C-XX-XX: Line N - reason"
-			local rule_id line_info reason_text
-			rule_id=$(echo "${r}" | cut -d: -f1)
-			line_info=$(echo "${r}" | sed 's/.*Line \([^ ]*\).*/\1/')
-			reason_text=$(echo "${r}" | sed 's/.*Line [^ ]* - //')
-			DETAILED_RESULTS+="| ${rule_id} | ${line_info} | ${reason_text} |"$'\n'
+			output+="  [NG] ${r}"$'\n'
+			DETAILED_RESULTS+="  - ${r}"$'\n'
 		done
-		DETAILED_RESULTS+=$'\n'
-		TEST_CASES+="$(junit_fail "c.ai" "${filename}" "Coding convention violations found" "1.00" "${output}")"$'\n'
+		TEST_CASES+="$(junit_fail "c.ai" "${filename}" "Violations found" "1.00" "${output}")"$'\n'
 		FAIL_COUNT=$((FAIL_COUNT + 1))
-		REVIEW_RESULTS+="${filename}: FAIL"$'\n'
-		for r in "${fail_rules[@]}"; do
-			REVIEW_RESULTS+="  - ${r}"$'\n'
-		done
+		REVIEW_RESULTS+="${filename}: FAIL (${#fail_rules[@]} issues)"$'\n'
 	fi
 }
 
@@ -288,18 +270,11 @@ main() {
 	fi
 
 	if [[ ${#files[@]} -eq 0 ]]; then
-		echo "No C files found to review" >&2
-		echo "Create test cases in: coding-convention/tests/c/ai-pass/ and ai-fail/" >&2
-		junit_testsuite "CodingConvention.C.AI" "0" "0" "" "0"
-		exit 0
+		echo "No C files found" >&2
+		junit_testsuite "CodingConvention.C.AI" "0" "0" "" "0" && exit 0
 	fi
 
-	echo "" >&2
-	echo "========================================" >&2
-	echo "AI Code Review (${OLLAMA_MODEL})" >&2
-	echo "Files to review: ${#files[@]}" >&2
-	echo "Checking ${#UNDETECTABLE_RULES[@]} Detectable=No rules" >&2
-	echo "========================================" >&2
+	echo "AI Review: ${#files[@]} files, ${#UNDETECTABLE_RULES[@]} rules" >&2
 
 	for file in "${files[@]}"; do
 		if [[ -f "${file}" ]]; then
@@ -308,61 +283,13 @@ main() {
 	done
 
 	# Print summary to stderr
-	{
-		echo ""
-		echo "=========================================="
-		echo "AI Review Summary"
-		echo "=========================================="
-		echo "Model: ${OLLAMA_MODEL}"
-		echo "Total: $((PASS_COUNT + FAIL_COUNT)) | Passed: ${PASS_COUNT} | Failed: ${FAIL_COUNT}"
-		echo ""
-		echo "[REVIEW RESULTS]"
-		echo "${REVIEW_RESULTS}"
-		if [[ ${FAIL_COUNT} -eq 0 ]]; then
-			echo "All AI reviews passed!"
-		else
-			echo "Some files have coding convention issues."
-		fi
-		echo "=========================================="
-	} >&2
+	echo "" >&2
+	echo "AI Review: Total=$((PASS_COUNT + FAIL_COUNT)) Passed=${PASS_COUNT} Failed=${FAIL_COUNT}" >&2
+	echo "${REVIEW_RESULTS}" >&2
 
 	# Generate Markdown report if REPORT_FILE is set
 	if [[ -n "${REPORT_FILE:-}" ]]; then
-		{
-			echo "# AI Code Review Report"
-			echo ""
-			echo "## Summary"
-			echo ""
-			echo "| Metric | Value |"
-			echo "|--------|-------|"
-			echo "| Model | ${OLLAMA_MODEL} |"
-			echo "| Total Files | $((PASS_COUNT + FAIL_COUNT)) |"
-			echo "| Passed | ${PASS_COUNT} |"
-			echo "| Failed | ${FAIL_COUNT} |"
-			echo "| Timestamp | $(date -Iseconds) |"
-			echo ""
-			if [[ ${FAIL_COUNT} -eq 0 ]]; then
-				echo "> **[OK] All AI reviews passed!**"
-			else
-				echo "> **[NG] ${FAIL_COUNT} file(s) have coding convention issues.**"
-			fi
-			echo ""
-			echo "## Detailed Results"
-			echo ""
-			echo "${DETAILED_RESULTS}"
-			echo ""
-			echo "---"
-			echo ""
-			echo "## Rules Checked (Detectable=No)"
-			echo ""
-			echo "These rules cannot be detected by static analysis and require AI review:"
-			echo ""
-			for rule in "${UNDETECTABLE_RULES[@]}"; do
-				local rule_id="${rule%%|*}"
-				local rule_desc="${rule#*|}"
-				echo "- **${rule_id}**: ${rule_desc}"
-			done
-		} > "${REPORT_FILE}"
+		generate_markdown_report > "${REPORT_FILE}"
 		echo "Report saved to: ${REPORT_FILE}" >&2
 	fi
 

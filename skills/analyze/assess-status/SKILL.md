@@ -165,32 +165,10 @@ Risk Score: Probability × Impact (1-25)
 
 ## Examples
 
-### Example 1: Sprint Status
-
-```
-Sprint 5 Status: [WARN] At Risk
-
-Progress: 18/25 points (72%)
-Days remaining: 3
-Required velocity: 2.3 points/day
-Current velocity: 1.5 points/day
-
-Risk: May not complete all planned items
-Recommendation: Descope TASK-999 to next sprint
-```
-
-### Example 2: Epic Health Check
-
-```
-EPIC-100 Status: [OK] On Track
-
-Features: 4/5 complete
-Timeline: 2 weeks ahead
-Quality: All tests passing
-
-No blockers identified
-Recommendation: Consider adding stretch goal
-```
+| Scenario | Status | Key Insight | Action |
+|----------|--------|-------------|--------|
+| Sprint behind | [WARN] | Velocity < required | Descope or extend |
+| Epic on track | [OK] | Ahead of schedule | Consider stretch goals |
 
 ## Notes
 

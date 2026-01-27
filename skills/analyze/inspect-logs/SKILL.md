@@ -156,54 +156,10 @@ Add validation for divisor != 0 in calculate()
 
 ## Examples
 
-### Example 1: Application Crash
-
-```
-Input: "Application crashed at 14:23"
-
-Analysis:
-1. grep "14:23" app.log
-2. Found: OutOfMemoryError
-3. Traced to: Large file upload without streaming
-4. Fix: Implement chunked upload
-```
-
-### Example 2: Intermittent Failure
-
-```
-Input: "Random 500 errors in production"
-
-Analysis:
-1. grep -c "500" by hour → spike at 09:00
-2. Correlated with: Database connection timeout
-3. Root cause: Connection pool exhaustion
-4. Fix: Increase pool size, add connection timeout
-```
-
-## Log Format Reference
-
-### Common Formats
-
-```
-# Standard
-[TIMESTAMP] [LEVEL] [MODULE] Message
-
-# JSON (structured)
-{"time": "...", "level": "ERROR", "msg": "...", "error": "..."}
-
-# Apache/Nginx
-IP - - [TIMESTAMP] "METHOD /path" STATUS SIZE
-```
-
-### Log Levels
-
-| Level | Use |
-|-------|-----|
-| DEBUG | Detailed debugging info |
-| INFO | Normal operation |
-| WARN | Potential issues |
-| ERROR | Failures (recoverable) |
-| FATAL | Critical failures |
+| Issue | Analysis Approach | Root Cause |
+|-------|------------------|------------|
+| App Crash | grep timestamp | OutOfMemory, connection issue |
+| Intermittent 500s | Count by hour → find spike | Pool exhaustion, timeout |
 
 ## Notes
 
