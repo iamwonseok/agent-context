@@ -4,6 +4,8 @@ category: analyze|plan|execute|validate|integrate
 description: One line description
 version: 1.0.0
 role: developer|manager|both
+mode: planning|implementation|verification|research
+cursor_mode: plan|ask|agent|debug
 inputs:
   - Input 1
   - Input 2
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Skill Name
+
+## State Assertion
+
+**Mode**: planning|implementation|verification|research
+**Cursor Mode**: plan|ask|agent|debug
+**Purpose**: [Specific purpose of this skill]
+**Boundaries**:
+- Will: [Actions this skill performs]
+- Will NOT: [Actions outside this skill's scope]
 
 ## When to Use
 

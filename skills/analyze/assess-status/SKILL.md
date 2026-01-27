@@ -4,6 +4,8 @@ category: analyze
 description: Assess project or task status and health
 version: 1.0.0
 role: manager
+mode: research
+cursor_mode: ask
 inputs:
   - Project/Epic/Task ID
   - Status tracking system access
@@ -14,6 +16,15 @@ outputs:
 ---
 
 # Assess Status
+
+## State Assertion
+
+**Mode**: research
+**Cursor Mode**: ask
+**Purpose**: Gather and analyze project status data to provide health assessment
+**Boundaries**:
+- Will: Query issue trackers, calculate metrics, identify blockers, generate reports
+- Will NOT: Make changes to issues, assign tasks, or modify project configuration
 
 ## When to Use
 

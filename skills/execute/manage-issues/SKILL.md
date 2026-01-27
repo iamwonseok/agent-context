@@ -4,6 +4,8 @@ category: execute
 description: Create, update, and manage issues in tracking systems
 version: 1.0.0
 role: both
+mode: implementation
+cursor_mode: agent
 inputs:
   - Issue details or updates
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Manage Issues
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Create and manage issues in tracking systems
+**Boundaries**:
+- Will: Create issues, update status, link related issues, add comments
+- Will NOT: Delete issues without confirmation, bulk operations without review
 
 ## When to Use
 

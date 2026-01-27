@@ -4,6 +4,8 @@ category: integrate
 description: Merge approved changes into target branch
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Approved MR/PR
   - Target branch
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Merge Changes
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Merge approved changes into target branch
+**Boundaries**:
+- Will: Perform merge, close MR, update branches
+- Will NOT: Merge without approval, force push, or skip CI
 
 ## When to Use
 

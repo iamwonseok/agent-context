@@ -4,6 +4,8 @@ category: validate
 description: Analyze impact of proposed changes
 version: 1.0.0
 role: manager
+mode: verification
+cursor_mode: debug
 inputs:
   - Proposed changes
   - Affected systems
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Analyze Impact
+
+## State Assertion
+
+**Mode**: verification
+**Cursor Mode**: debug
+**Purpose**: Assess impact and risks of proposed changes
+**Boundaries**:
+- Will: Analyze dependencies, identify affected systems, assess risks
+- Will NOT: Make changes, approve releases, or execute deployments
 
 ## When to Use
 

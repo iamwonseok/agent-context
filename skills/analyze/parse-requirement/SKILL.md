@@ -4,6 +4,8 @@ category: analyze
 description: Parse and clarify requirements before coding
 version: 1.0.0
 role: developer
+mode: research
+cursor_mode: ask
 inputs:
   - User request (vague or clear)
 outputs:
@@ -11,6 +13,15 @@ outputs:
 ---
 
 # Parse Requirement
+
+## State Assertion
+
+**Mode**: research
+**Cursor Mode**: ask
+**Purpose**: Clarify requirements and create design documentation
+**Boundaries**:
+- Will: Ask questions, compare options, write design docs
+- Will NOT: Write implementation code, create tests, or make commits
 
 ## Design Philosophy
 

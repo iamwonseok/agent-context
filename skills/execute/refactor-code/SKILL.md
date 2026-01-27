@@ -4,6 +4,8 @@ category: execute
 description: Refactor existing code without changing behavior
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Code to refactor
   - Refactoring goals
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Refactor Code
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Improve code structure while preserving behavior
+**Boundaries**:
+- Will: Restructure code, rename, extract functions, improve readability
+- Will NOT: Change functionality, skip tests, or refactor without test coverage
 
 ## When to Use
 

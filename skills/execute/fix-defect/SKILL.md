@@ -4,6 +4,8 @@ category: execute
 description: Fix bugs and defects in code
 version: 1.0.0
 role: developer
+mode: implementation
+cursor_mode: agent
 inputs:
   - Bug report or error description
   - Steps to reproduce
@@ -13,6 +15,15 @@ outputs:
 ---
 
 # Fix Defect
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Identify and fix bugs in code
+**Boundaries**:
+- Will: Investigate root cause, modify code, add regression tests
+- Will NOT: Introduce new features, refactor unrelated code, or skip testing
 
 ## When to Use
 

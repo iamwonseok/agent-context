@@ -2,6 +2,12 @@
 name: bug-fix
 description: Standard bug fix workflow
 role: developer
+cursor_mode: debug
+mode_transitions:
+  - debug   # investigate
+  - agent   # execute/write-code
+  - debug   # validate/*
+  - agent   # integrate/*
 skills:
   - execute/write-code
   - validate/check-style

@@ -4,6 +4,8 @@ category: integrate
 description: Publish project reports and metrics
 version: 1.0.0
 role: manager
+mode: implementation
+cursor_mode: agent
 inputs:
   - Report data
   - Report type
@@ -12,6 +14,15 @@ outputs:
 ---
 
 # Publish Report
+
+## State Assertion
+
+**Mode**: implementation
+**Cursor Mode**: agent
+**Purpose**: Generate and publish project reports
+**Boundaries**:
+- Will: Generate reports, format data, publish to channels
+- Will NOT: Fabricate data, change metrics, or bypass approvals
 
 ## When to Use
 
