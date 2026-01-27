@@ -1,6 +1,6 @@
 # RFC-008: Domain Extension & Installation Improvements
 
-**Status**: Draft
+**Status**: Active
 **Author**: wonseok
 **Created**: 2026-01-25
 **Related**: NotebookLM Domain-Specific RFC Analysis (4 documents consolidated)
