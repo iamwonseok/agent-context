@@ -294,6 +294,158 @@ EOF
 }
 
 # ============================================
+# Pre-commit Hook Management (RFC-005)
+# ============================================
+
+# Agent hook signature (to identify agent-installed hooks)
+AGENT_HOOK_SIGNATURE="# Pre-commit hook installed by 'agent dev check --install-hook'"
+
+# Install pre-commit hook
+hook_install() {
+    local project_root
+    project_root=$(find_project_root 2>/dev/null) || {
+        echo "[ERROR] Not in a git repository" >&2
+        return 1
+    }
+
+    local hook_dir="$project_root/.git/hooks"
+    local hook_file="$hook_dir/pre-commit"
+
+    # Check if .git/hooks exists
+    if [[ ! -d "$hook_dir" ]]; then
+        mkdir -p "$hook_dir"
+    fi
+
+    # Check if hook already exists
+    if [[ -f "$hook_file" ]]; then
+        if grep -q "$AGENT_HOOK_SIGNATURE" "$hook_file"; then
+            echo "[INFO] Agent pre-commit hook already installed"
+            return 0
+        else
+            echo "[WARN] Existing pre-commit hook found (not installed by agent)"
+            echo "[INFO] Backing up existing hook to $hook_file.backup"
+            cp "$hook_file" "$hook_file.backup"
+        fi
+    fi
+
+    # Create hook
+    cat > "$hook_file" << 'HOOKEOF'
+#!/bin/bash
+# Pre-commit hook installed by 'agent dev check --install-hook'
+# To skip: git commit --no-verify
+
+echo "[PRE-COMMIT] Running quality checks..."
+
+# Find project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+# Lint (if make lint exists)
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q "^lint:" "$PROJECT_ROOT/Makefile"; then
+    echo "[PRE-COMMIT] Running lint..."
+    make -C "$PROJECT_ROOT" lint || {
+        echo "[FAIL] Lint failed"
+        echo "[INFO] Fix errors or use 'git commit --no-verify' to skip"
+        exit 1
+    }
+fi
+
+# Test (if make test exists)
+if [ -f "$PROJECT_ROOT/Makefile" ] && grep -q "^test:" "$PROJECT_ROOT/Makefile"; then
+    echo "[PRE-COMMIT] Running tests..."
+    make -C "$PROJECT_ROOT" test || {
+        echo "[FAIL] Tests failed"
+        echo "[INFO] Fix tests or use 'git commit --no-verify' to skip"
+        exit 1
+    }
+fi
+
+echo "[PRE-COMMIT] All checks passed"
+exit 0
+HOOKEOF
+
+    chmod +x "$hook_file"
+
+    echo "[OK] Pre-commit hook installed"
+    echo ""
+    echo "Location: $hook_file"
+    echo ""
+    echo "The hook will run:"
+    echo "  - make lint (if available)"
+    echo "  - make test (if available)"
+    echo ""
+    echo "To skip: git commit --no-verify"
+    echo "To remove: agent dev check --uninstall-hook"
+}
+
+# Uninstall pre-commit hook
+hook_uninstall() {
+    local project_root
+    project_root=$(find_project_root 2>/dev/null) || {
+        echo "[ERROR] Not in a git repository" >&2
+        return 1
+    }
+
+    local hook_file="$project_root/.git/hooks/pre-commit"
+
+    if [[ ! -f "$hook_file" ]]; then
+        echo "[INFO] No pre-commit hook found"
+        return 0
+    fi
+
+    # Check if it's an agent-installed hook
+    if grep -q "$AGENT_HOOK_SIGNATURE" "$hook_file"; then
+        rm "$hook_file"
+        echo "[OK] Agent pre-commit hook removed"
+        
+        # Restore backup if exists
+        if [[ -f "$hook_file.backup" ]]; then
+            echo "[INFO] Restoring backup hook..."
+            mv "$hook_file.backup" "$hook_file"
+            echo "[OK] Original hook restored"
+        fi
+    else
+        echo "[WARN] Pre-commit hook was not installed by agent"
+        echo "[INFO] Not removing to preserve user's custom hook"
+        echo ""
+        echo "To manually remove: rm $hook_file"
+    fi
+}
+
+# Show hook status
+hook_status() {
+    local project_root
+    project_root=$(find_project_root 2>/dev/null) || {
+        echo "[ERROR] Not in a git repository" >&2
+        return 1
+    }
+
+    local hook_file="$project_root/.git/hooks/pre-commit"
+
+    echo "=================================================="
+    echo "Pre-commit Hook Status"
+    echo "=================================================="
+    echo ""
+
+    if [[ ! -f "$hook_file" ]]; then
+        echo "Hook installed: No"
+        echo ""
+        echo "To install: agent dev check --install-hook"
+    elif grep -q "$AGENT_HOOK_SIGNATURE" "$hook_file"; then
+        echo "Hook installed: Yes (by agent)"
+        echo "Hook path: $hook_file"
+        echo ""
+        echo "To remove: agent dev check --uninstall-hook"
+    else
+        echo "Hook installed: Yes (custom/unknown)"
+        echo "Hook path: $hook_file"
+        echo ""
+        echo "[INFO] This hook was not installed by agent"
+    fi
+
+    echo "=================================================="
+}
+
+# ============================================
 # Self-Correction Protocol (RFC-004 v2.0)
 # ============================================
 

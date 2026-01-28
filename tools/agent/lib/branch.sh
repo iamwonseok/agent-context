@@ -195,8 +195,36 @@ dev_status() {
 }
 
 # Run quality checks (lint, test, intent alignment)
+# Options:
+#   --install-hook    Install pre-commit hook
+#   --uninstall-hook  Remove agent-installed pre-commit hook
+#   --status          Show hook status
 # Warnings only - does not block commit
 dev_check() {
+    # Parse options
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --install-hook)
+                hook_install
+                return $?
+                ;;
+            --uninstall-hook)
+                hook_uninstall
+                return $?
+                ;;
+            --status)
+                hook_status
+                return $?
+                ;;
+            --help|-h)
+                show_check_help
+                return 0
+                ;;
+        esac
+        shift
+    done
+
+    # Default: run quality checks
     local project_root
     project_root=$(find_project_root) || return 1
 
@@ -215,6 +243,45 @@ dev_check() {
     fi
 
     return $result
+}
+
+# Show check help
+show_check_help() {
+    cat << 'EOF'
+agent dev check - Run quality checks and manage pre-commit hooks
+
+USAGE:
+    agent dev check [options]
+
+OPTIONS:
+    --install-hook    Install pre-commit hook (runs lint + test)
+    --uninstall-hook  Remove agent-installed pre-commit hook
+    --status          Show pre-commit hook status
+    -h, --help        Show this help
+
+Without options, runs quality checks:
+    - Lint (if configured)
+    - Tests (if configured)
+    - Intent alignment (plan vs changes)
+
+EXAMPLES:
+    # Run quality checks
+    agent dev check
+
+    # Install pre-commit hook
+    agent dev check --install-hook
+
+    # Check hook status
+    agent dev check --status
+
+    # Remove hook
+    agent dev check --uninstall-hook
+
+NOTES:
+    - Pre-commit hook runs: make lint && make test
+    - To skip hook during commit: git commit --no-verify
+    - Only removes hooks installed by agent (preserves custom hooks)
+EOF
 }
 
 # RFC-004 Phase 2: Process answered questions
@@ -487,15 +554,35 @@ dev_sync() {
 }
 
 # Submit work (create MR)
+# Options:
+#   --only=<step>[,<step>,...]  Run only specified steps
+#   --skip=<step>[,<step>,...]  Skip specified steps
+#   Steps: sync, push, pr, jira
+#   --sync     Shortcut for including sync step (deprecated, use --only)
+#   --draft    Create MR/PR as draft
+#   --force    Skip pre-submit checks
 dev_submit() {
-    local sync_first=false
     local draft=false
     local force=false
+    local only_steps=""
+    local skip_steps=""
+    # Default: run all steps (sync is opt-in for backward compatibility)
+    local run_sync=false
+    local run_push=true
+    local run_pr=true
+    local run_jira=true
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --only=*)
+                only_steps="${1#*=}"
+                ;;
+            --skip=*)
+                skip_steps="${1#*=}"
+                ;;
             --sync)
-                sync_first=true
+                # Backward compatibility: --sync enables sync step
+                run_sync=true
                 ;;
             --draft)
                 draft=true
@@ -503,9 +590,66 @@ dev_submit() {
             --force)
                 force=true
                 ;;
+            --help|-h)
+                show_submit_help
+                return 0
+                ;;
         esac
         shift
     done
+
+    # Process --only option
+    if [[ -n "$only_steps" ]]; then
+        run_sync=false
+        run_push=false
+        run_pr=false
+        run_jira=false
+        IFS=',' read -ra steps <<< "$only_steps"
+        for step in "${steps[@]}"; do
+            case "$step" in
+                sync)  run_sync=true ;;
+                push)  run_push=true ;;
+                pr)    run_pr=true ;;
+                jira)  run_jira=true ;;
+                *)
+                    echo "[ERROR] Unknown step: $step" >&2
+                    echo "Valid steps: sync, push, pr, jira" >&2
+                    return 1
+                    ;;
+            esac
+        done
+    fi
+
+    # Process --skip option
+    if [[ -n "$skip_steps" ]]; then
+        IFS=',' read -ra steps <<< "$skip_steps"
+        for step in "${steps[@]}"; do
+            case "$step" in
+                sync)  run_sync=false ;;
+                push)  run_push=false ;;
+                pr)    run_pr=false ;;
+                jira)  run_jira=false ;;
+                *)
+                    echo "[ERROR] Unknown step: $step" >&2
+                    echo "Valid steps: sync, push, pr, jira" >&2
+                    return 1
+                    ;;
+            esac
+        done
+    fi
+
+    # Validate step dependencies
+    if [[ "$run_pr" == "true" ]] && [[ "$run_push" == "false" ]]; then
+        # Check if remote branch exists
+        local current_branch
+        current_branch=$(get_current_branch)
+        if ! remote_branch_exists "$current_branch"; then
+            echo "[ERROR] Cannot create PR: remote branch does not exist" >&2
+            echo "[INFO] Run 'agent dev submit --only=push' first" >&2
+            echo "       or use '--only=push,pr' to push and create PR together" >&2
+            return 1
+        fi
+    fi
 
     local project_root
     project_root=$(find_project_root) || return 1
@@ -519,9 +663,18 @@ dev_submit() {
         task_id="N/A"
     }
 
+    # Calculate total steps
+    local total_steps=0
+    local step_names=()
+    [[ "$run_sync" == "true" ]] && { ((total_steps++)); step_names+=("sync"); }
+    [[ "$run_push" == "true" ]] && { ((total_steps++)); step_names+=("push"); }
+    [[ "$run_pr" == "true" ]] && { ((total_steps++)); step_names+=("pr"); }
+    [[ "$run_jira" == "true" ]] && { ((total_steps++)); step_names+=("jira"); }
+
     echo "=================================================="
     echo "Submitting: $current_branch"
     echo "=================================================="
+    echo "Steps: ${step_names[*]:-none}"
     echo ""
 
     # Pre-submit checks (verification + retrospective)
@@ -529,7 +682,7 @@ dev_submit() {
     context_path=$(get_current_context 2>/dev/null) || context_path=""
 
     if [[ -n "$context_path" ]] && [[ -d "$context_path" ]]; then
-        echo "[Step 0/5] Pre-submit checks..."
+        echo "[Pre-check] Running pre-submit checks..."
         if ! run_submit_checks "$context_path" "$force"; then
             echo ""
             echo "[BLOCKED] Fix issues or use --force to skip"
@@ -538,124 +691,225 @@ dev_submit() {
         echo ""
     fi
 
-    # Sync first if requested
-    if [[ "$sync_first" == "true" ]]; then
-        echo "[Step 1/5] Syncing with base branch..."
-        sync_with_base || return 1
-        echo ""
-    else
-        echo "[Step 1/5] Sync skipped (use --sync to sync before submit)"
-        echo ""
-    fi
+    local current_step=0
+    local completed_steps=()
+    local failed_step=""
 
-    # Push branch
-    echo "[Step 2/5] Pushing branch..."
-    git push -u origin "$current_branch" || {
-        echo "[ERROR] Failed to push branch" >&2
-        return 1
-    }
-    echo ""
-
-    # Create MR using pm CLI
-    echo "[Step 3/5] Creating Merge Request..."
-    local pm_cmd="$SCRIPT_DIR/../../pm/bin/pm"
-    if [[ ! -x "$pm_cmd" ]]; then
-        pm_cmd=$(command -v pm 2>/dev/null) || {
-            echo "[WARN] pm CLI not found, skipping MR creation"
-            echo "Create MR manually on GitLab/GitHub"
-            pm_cmd=""
-        }
-    fi
-
-    if [[ -n "$pm_cmd" ]]; then
-        local commit_msg
-        commit_msg=$(git log -1 --format=%s)
-        local mr_title="$task_id: $commit_msg"
-
-        # Get context summary for MR description
-        local context_path
-        local mode
-        mode=$(detect_git_mode)
-        if [[ "$mode" == "detached" ]]; then
-            context_path="$(pwd)/.context"
+    # Step: Sync
+    if [[ "$run_sync" == "true" ]]; then
+        ((current_step++))
+        echo "[Step $current_step/$total_steps] Syncing with base branch..."
+        if sync_with_base; then
+            completed_steps+=("sync")
         else
-            context_path="$project_root/.context/$task_id"
+            failed_step="sync"
+            echo ""
+            _submit_status "$completed_steps" "$failed_step"
+            return 1
         fi
+        echo ""
+    fi
 
-        if [[ -f "$context_path/summary.yaml" ]]; then
-            echo "  Including context summary in MR description..."
-        fi
-
-        # Detect platform and create MR/PR
-        local platform=""
-        local config_output
-        config_output=$("$pm_cmd" config show 2>/dev/null)
-        if echo "$config_output" | grep -A2 "\[GitHub\]" | grep -q "Repo:.*[a-zA-Z0-9]"; then
-            platform="github"
-        elif echo "$config_output" | grep -A3 "\[GitLab\]" | grep -q "Project:.*[a-zA-Z0-9]"; then
-            platform="gitlab"
-        fi
-
-        if [[ "$platform" == "github" ]]; then
-            echo "  Creating GitHub Pull Request..."
-            local pr_result
-            if [[ "$draft" == "true" ]]; then
-                pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" --draft 2>&1)
-            else
-                pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" 2>&1)
-            fi
-            if echo "$pr_result" | grep -q "Created:"; then
-                echo "$pr_result"
-                echo "  [OK] PR created"
-            else
-                echo "$pr_result"
-                echo "  [WARN] PR creation failed, create manually"
-            fi
-        elif [[ "$platform" == "gitlab" ]]; then
-            echo "  Creating GitLab Merge Request..."
-            local mr_result
-            if [[ "$draft" == "true" ]]; then
-                mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" --draft 2>&1)
-            else
-                mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" 2>&1)
-            fi
-            if echo "$mr_result" | grep -q "Created:"; then
-                echo "$mr_result"
-                echo "  [OK] MR created"
-            else
-                echo "$mr_result"
-                echo "  [WARN] MR creation failed, create manually"
-            fi
+    # Step: Push
+    if [[ "$run_push" == "true" ]]; then
+        ((current_step++))
+        echo "[Step $current_step/$total_steps] Pushing branch..."
+        if git push -u origin "$current_branch"; then
+            completed_steps+=("push")
         else
-            echo "[WARN] No GitHub/GitLab configured, skipping MR/PR creation"
-            echo "      Configure with: pm config init"
+            failed_step="push"
+            echo "[ERROR] Failed to push branch" >&2
+            _submit_status "${completed_steps[*]}" "$failed_step"
+            return 1
         fi
+        echo ""
     fi
-    echo ""
 
-    # Include verification and retrospective in MR
-    echo "[Step 4/5] Including artifacts in MR..."
-    if [[ -n "$context_path" ]]; then
-        if [[ -f "$context_path/verification.md" ]]; then
-            echo "  [OK] verification.md will be included"
+    # Step: Create MR/PR
+    if [[ "$run_pr" == "true" ]]; then
+        ((current_step++))
+        echo "[Step $current_step/$total_steps] Creating Merge Request..."
+        local pm_cmd="$SCRIPT_DIR/../../pm/bin/pm"
+        if [[ ! -x "$pm_cmd" ]]; then
+            pm_cmd=$(command -v pm 2>/dev/null) || {
+                echo "[WARN] pm CLI not found, skipping MR creation"
+                echo "Create MR manually on GitLab/GitHub"
+                pm_cmd=""
+            }
         fi
-        if [[ -f "$context_path/retrospective.md" ]]; then
-            echo "  [OK] retrospective.md will be included"
+
+        if [[ -n "$pm_cmd" ]]; then
+            local commit_msg
+            commit_msg=$(git log -1 --format=%s)
+            local mr_title="$task_id: $commit_msg"
+
+            # Get context summary for MR description
+            local mode
+            mode=$(detect_git_mode)
+            if [[ "$mode" == "detached" ]]; then
+                context_path="$(pwd)/.context"
+            else
+                context_path="$project_root/.context/$task_id"
+            fi
+
+            if [[ -f "$context_path/summary.yaml" ]]; then
+                echo "  Including context summary in MR description..."
+            fi
+
+            # Detect platform and create MR/PR
+            local platform=""
+            local config_output
+            config_output=$("$pm_cmd" config show 2>/dev/null)
+            if echo "$config_output" | grep -A2 "\[GitHub\]" | grep -q "Repo:.*[a-zA-Z0-9]"; then
+                platform="github"
+            elif echo "$config_output" | grep -A3 "\[GitLab\]" | grep -q "Project:.*[a-zA-Z0-9]"; then
+                platform="gitlab"
+            fi
+
+            if [[ "$platform" == "github" ]]; then
+                echo "  Creating GitHub Pull Request..."
+                local pr_result
+                if [[ "$draft" == "true" ]]; then
+                    pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" --draft 2>&1)
+                else
+                    pr_result=$("$pm_cmd" github pr create --head "$current_branch" --title "$mr_title" 2>&1)
+                fi
+                if echo "$pr_result" | grep -q "Created:"; then
+                    echo "$pr_result"
+                    completed_steps+=("pr")
+                else
+                    echo "$pr_result"
+                    echo "  [WARN] PR creation failed, create manually"
+                fi
+            elif [[ "$platform" == "gitlab" ]]; then
+                echo "  Creating GitLab Merge Request..."
+                local mr_result
+                if [[ "$draft" == "true" ]]; then
+                    mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" --draft 2>&1)
+                else
+                    mr_result=$("$pm_cmd" gitlab mr create --source "$current_branch" --title "$mr_title" 2>&1)
+                fi
+                if echo "$mr_result" | grep -q "Created:"; then
+                    echo "$mr_result"
+                    completed_steps+=("pr")
+                else
+                    echo "$mr_result"
+                    echo "  [WARN] MR creation failed, create manually"
+                fi
+            else
+                echo "[WARN] No GitHub/GitLab configured, skipping MR/PR creation"
+                echo "      Configure with: pm config init"
+            fi
         fi
+        echo ""
     fi
-    echo ""
 
-    # Archive context
-    echo "[Step 5/5] Archiving context..."
-    archive_context "$project_root" "$task_id"
+    # Step: Jira transition
+    if [[ "$run_jira" == "true" ]]; then
+        ((current_step++))
+        echo "[Step $current_step/$total_steps] Updating Jira status..."
+        if [[ "$task_id" == "N/A" ]] || [[ -z "$task_id" ]]; then
+            echo "  [SKIP] No task ID found, skipping Jira update"
+        else
+            local pm_cmd="$SCRIPT_DIR/../../pm/bin/pm"
+            if [[ ! -x "$pm_cmd" ]]; then
+                pm_cmd=$(command -v pm 2>/dev/null) || pm_cmd=""
+            fi
+            if [[ -n "$pm_cmd" ]]; then
+                # Try to transition to "In Review" status
+                local jira_result
+                jira_result=$("$pm_cmd" jira issue transition "$task_id" "In Review" 2>&1) && {
+                    echo "  [OK] Jira status updated to 'In Review'"
+                    completed_steps+=("jira")
+                } || {
+                    echo "  [WARN] Jira transition failed: $jira_result"
+                    echo "  [INFO] Update Jira status manually"
+                }
+            else
+                echo "  [SKIP] pm CLI not found"
+            fi
+        fi
+        echo ""
+    fi
 
-    echo ""
+    # Archive context (always run if we did any submit steps)
+    if [[ ${#completed_steps[@]} -gt 0 ]]; then
+        echo "[Cleanup] Archiving context..."
+        archive_context "$project_root" "$task_id" 2>/dev/null || true
+        echo ""
+    fi
+
+    # Final status
     echo "=================================================="
     echo "[OK] Submit complete"
     echo "=================================================="
-    echo "Branch pushed: $current_branch"
+    _submit_status "${completed_steps[*]}" ""
     echo "Next: Wait for MR review and approval"
     echo "=================================================="
+}
+
+# Helper: Show submit status
+_submit_status() {
+    local completed="$1"
+    local failed="$2"
+    
+    if [[ -n "$completed" ]]; then
+        echo "Completed: $completed"
+    fi
+    if [[ -n "$failed" ]]; then
+        echo "Failed: $failed"
+    fi
+}
+
+# Show submit help
+show_submit_help() {
+    cat << 'EOF'
+agent dev submit - Submit work (sync, push, create MR, update Jira)
+
+USAGE:
+    agent dev submit [options]
+
+OPTIONS:
+    --only=<steps>    Run only specified steps (comma-separated)
+    --skip=<steps>    Skip specified steps (comma-separated)
+    --sync            Include sync step (shortcut for --only with sync)
+    --draft           Create MR/PR as draft
+    --force           Skip pre-submit checks
+    -h, --help        Show this help
+
+STEPS:
+    sync    Sync with base branch (git fetch + rebase)
+    push    Push branch to remote
+    pr      Create MR/PR
+    jira    Update Jira status to "In Review"
+
+EXAMPLES:
+    # Default: push + pr + jira (sync is opt-in)
+    agent dev submit
+
+    # Sync first, then push + pr + jira
+    agent dev submit --sync
+
+    # Only sync (rebase on main)
+    agent dev submit --only=sync
+
+    # Only push branch
+    agent dev submit --only=push
+
+    # Push and create PR together
+    agent dev submit --only=push,pr
+
+    # Skip Jira update
+    agent dev submit --skip=jira
+
+    # Create draft PR
+    agent dev submit --draft
+
+NOTES:
+    - 'pr' step requires remote branch to exist
+    - If --only=pr without push, remote branch must exist
+    - Default behavior unchanged for backward compatibility
+EOF
 }
 
 # Cleanup task
