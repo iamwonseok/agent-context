@@ -505,4 +505,60 @@ Future Work (선택적):
 
 ---
 
+### FW-11: RFC-006 Unified Platform Abstraction (Deferred)
+
+**목표**: pm CLI의 플랫폼 추상화 레이어 확장
+
+**배경**: RFC-006에서 제안된 pm milestone/label/wiki 통합 기능
+
+**제안 기능**:
+```bash
+pm milestone list [--state <active|closed|all>]
+pm milestone create <TITLE> [--due <DATE>]
+pm label list
+pm label create <NAME> [--color <HEX>]
+pm wiki list
+pm wiki create <TITLE> --content <TEXT|FILE>
+```
+
+**플랫폼 매핑**:
+| Unified Command | JIRA | GitLab | GitHub |
+|-----------------|------|--------|--------|
+| milestone list | Sprint | Milestone | Milestone |
+| label create | Label | Label | Label |
+| wiki list | - | Wiki | Wiki* |
+
+*GitHub Wiki는 Git repo 기반 (복잡)
+
+**구현 파일**:
+- `tools/pm/lib/milestone.sh` (신규)
+- `tools/pm/lib/label.sh` (신규)
+- `tools/pm/lib/wiki.sh` (신규)
+- `tools/pm/bin/pm` (수정)
+
+**철학 검증**:
+- ✅ Composability 유지 (Unified command 패턴)
+- ⚠️ Simplicity 충돌 (API 구현 복잡도)
+- ✅ User Autonomy 유지 (플랫폼별 선택)
+
+**Go/No-Go 조건**:
+- RFC-005 완료 후
+- 실제 사용 요청 발생 시
+- API 연동 테스트 환경 확보
+
+**참조**: [RFC-006](006-unified-platform-abstraction.md)
+
+---
+
+## 변경 이력
+
+| 날짜 | 변경 내용 | 작성자 |
+|------|----------|--------|
+| 2026-01-25 | 초안 작성 (NotebookLM 분석 기반) | AI Agent |
+| 2026-01-25 | FW-6,7,8 추가 (Architecture Feedback 반영) | AI Agent |
+| 2026-01-25 | FW-9,10 추가 (RFC-008 Domain Extension 관련) | AI Agent |
+| 2026-01-28 | FW-11 추가 (RFC-006 Deferred) | AI Agent |
+
+---
+
 **다음 리뷰 예정**: Phase 2 완료 후 (약 Week 5-6)
