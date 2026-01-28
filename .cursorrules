@@ -275,7 +275,7 @@ If the exact workflow file is unclear, look under:
 
 ## Merge Strategy (Fast Forward + Rebase)
 - **Recommended**: Fast Forward merge for linear history
-- **Before MR submission**: Run `agent dev sync` to rebase on base branch
+- **Before MR submission**: Run `agnt-c dev sync` to rebase on base branch
 - **On conflict**: Human intervention required (notify and wait)
 - **Override**: Project-specific settings in `.agent/config.yaml` (`merge_strategy: ff-only | squash | merge-commit`)
 
@@ -289,7 +289,7 @@ If the exact workflow file is unclear, look under:
   - The agent may prepare, summarize, and suggest actions, but should not execute final decisions unless explicitly authorized
 
 ## Secrets Policy (init/setup)
-- On `agent init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
+- On `agnt-c init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
 - Use `--skip-secrets` to bypass validation (for CI environments)
 - See `templates/secrets-examples/README.md` for token setup
 

@@ -36,7 +36,7 @@ cd ~/.agent
 
 # 3. Add to shell profile (~/.bashrc or ~/.zshrc)
 export AGENT_CONTEXT_PATH="$HOME/.agent"
-export PATH="$PATH:$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin:$HOME/.agent/tools/lint/bin"
+export PATH="$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin:$HOME/.agent/tools/lint/bin:$PATH"
 
 # 4. Reload shell
 source ~/.bashrc  # or ~/.zshrc
@@ -45,8 +45,8 @@ source ~/.bashrc  # or ~/.zshrc
 Then in any project:
 ```bash
 cd your-project
-agent setup        # Install templates (idempotent)
-agent setup --force  # Force overwrite existing files
+agnt-c setup        # Install templates (idempotent)
+agnt-c setup --force  # Force overwrite existing files
 ```
 
 ### Option 2: Project-Local Installation
@@ -62,7 +62,7 @@ git clone https://github.com/your-org/agent-context.git .agent
 source .agent/activate.sh
 
 # 3. Install templates
-agent setup
+agnt-c setup
 ```
 
 ### What Gets Installed
@@ -195,24 +195,24 @@ See [workflows/README.md](workflows/README.md) for details.
 
 ## CLI Tools
 
-### agent (Main CLI)
+### agnt-c (Main CLI)
 
 ```bash
 # Start a task
-agent dev start TASK-123
+agnt-c dev start TASK-123
 
 # Check quality
-agent dev check
+agnt-c dev check
 
 # Commit changes
-agent dev commit "feat: add feature"
+agnt-c dev commit "feat: add feature"
 
 # Submit for review
-agent dev submit
+agnt-c dev submit
 
 # Manager commands
-agent mgr status EPIC-1
-agent mgr approve MR-456
+agnt-c mgr status EPIC-1
+agnt-c mgr approve MR-456
 ```
 
 ### pm (Project Management)

@@ -224,13 +224,13 @@ if [[ "$AUTO_INSTALL" == "true" ]]; then
     echo "Add to your shell profile (~/.bashrc or ~/.zshrc):"
     echo ""
     echo '  export AGENT_CONTEXT_PATH="$HOME/.agent"'
-    echo '  export PATH="$PATH:$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin"'
+    echo '  export PATH="$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin:$PATH"'
     echo ""
     echo "Then restart your shell or run:"
     echo "  source ~/.bashrc  # or source ~/.zshrc"
     echo ""
     echo "Verify installation:"
-    echo "  agent --version"
+    echo "  agnt-c --version"
     echo ""
 else
     echo "========================================="

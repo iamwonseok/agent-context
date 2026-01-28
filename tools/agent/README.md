@@ -1,4 +1,4 @@
-# Agent Workflow CLI
+# Agent Workflow CLI (agnt-c)
 
 > **User manual**: [docs/cli/agent.md](../../docs/cli/agent.md)
 
@@ -9,13 +9,13 @@ Developer and Manager workflow automation for AI-assisted development.
 Add to PATH:
 
 ```bash
-export PATH="$PATH:/path/to/project/.agent/tools/agent/bin"
+export PATH="/path/to/project/.agent/tools/agent/bin:$PATH"
 ```
 
 Or use directly:
 
 ```bash
-.agent/tools/agent/bin/agent --help
+.agent/tools/agent/bin/agnt-c --help
 ```
 
 ## Quick Start
@@ -25,16 +25,16 @@ Or use directly:
 source .agent/activate.sh
 
 # Install templates to project
-agent setup
+agnt-c setup
 
 # Start a task (Interactive Mode - default)
-agent dev start TASK-123
+agnt-c dev start TASK-123
 
 # Check status
-agent status
+agnt-c status
 
 # Submit work
-agent dev submit
+agnt-c dev submit
 ```
 
 ## Modes
@@ -44,7 +44,7 @@ agent dev submit
 Works in the current directory using Git branches.
 
 ```bash
-agent dev start TASK-123
+agnt-c dev start TASK-123
 # Creates: feat/TASK-123 branch
 # Creates: .context/TASK-123/ directory
 ```
@@ -59,7 +59,7 @@ Best for:
 Works in a separate worktree directory.
 
 ```bash
-agent dev start TASK-123 --detached
+agnt-c dev start TASK-123 --detached
 # Creates: .worktrees/TASK-123/ directory
 # Creates: .worktrees/TASK-123/.context/
 ```
@@ -75,32 +75,32 @@ Best for:
 
 | Command | Description |
 |---------|-------------|
-| `agent dev start <task>` | Start a task |
-| `agent dev list` | List active tasks |
-| `agent dev switch <target>` | Switch branch/worktree |
-| `agent dev status` | Show current status |
-| `agent dev sync` | Sync with base branch |
-| `agent dev submit` | Create MR |
-| `agent dev cleanup <task>` | Clean up completed task |
+| `agnt-c dev start <task>` | Start a task |
+| `agnt-c dev list` | List active tasks |
+| `agnt-c dev switch <target>` | Switch branch/worktree |
+| `agnt-c dev status` | Show current status |
+| `agnt-c dev sync` | Sync with base branch |
+| `agnt-c dev submit` | Create MR |
+| `agnt-c dev cleanup <task>` | Clean up completed task |
 
 ### Manager Commands
 
 | Command | Description |
 |---------|-------------|
-| `agent mgr pending` | List pending MRs |
-| `agent mgr review <mr>` | Review MR |
-| `agent mgr approve <mr>` | Approve MR |
+| `agnt-c mgr pending` | List pending MRs |
+| `agnt-c mgr review <mr>` | Review MR |
+| `agnt-c mgr approve <mr>` | Approve MR |
 
 ### Common Commands
 
 | Command | Description |
 |---------|-------------|
-| `agent help` | Show help |
-| `agent status` | Show status |
-| `agent config show` | Show configuration |
-| `agent init` | Initialize project |
-| `agent setup` | Install templates (idempotent) |
-| `agent setup --force` | Force overwrite templates |
+| `agnt-c help` | Show help |
+| `agnt-c status` | Show status |
+| `agnt-c config show` | Show configuration |
+| `agnt-c init` | Initialize project |
+| `agnt-c setup` | Install templates (idempotent) |
+| `agnt-c setup --force` | Force overwrite templates |
 
 ## Context Management
 
@@ -160,11 +160,11 @@ Default: Fast-forward merge with rebase
 
 ```bash
 # Sync before submit
-agent dev sync
-agent dev submit
+agnt-c dev sync
+agnt-c dev submit
 
 # Or combined
-agent dev submit --sync
+agnt-c dev submit --sync
 ```
 
 ## Configuration
@@ -184,7 +184,7 @@ Add these to `.gitignore`:
 .worktrees/
 ```
 
-`agent init` adds these automatically.
+`agnt-c init` adds these automatically.
 
 ## Examples
 
@@ -192,26 +192,26 @@ Add these to `.gitignore`:
 
 ```bash
 # Start feature
-agent dev start TASK-123
+agnt-c dev start TASK-123
 
 # ... make changes ...
 
 # Sync and submit
-agent dev sync
-agent dev submit
+agnt-c dev sync
+agnt-c dev submit
 ```
 
 ### Bug Fix
 
 ```bash
-agent dev start BUG-456
+agnt-c dev start BUG-456
 # Creates: fix/BUG-456 branch
 ```
 
 ### Hotfix
 
 ```bash
-agent dev start HOTFIX-789 --from=main
+agnt-c dev start HOTFIX-789 --from=main
 # Creates: hotfix/HOTFIX-789 branch from main
 ```
 
@@ -219,17 +219,17 @@ agent dev start HOTFIX-789 --from=main
 
 ```bash
 # Try approach A
-agent dev start TASK-123 --detached --try="approach-a"
+agnt-c dev start TASK-123 --detached --try="approach-a"
 
 # Try approach B (in parallel)
-agent dev start TASK-123 --detached --try="approach-b"
+agnt-c dev start TASK-123 --detached --try="approach-b"
 
 # List all
-agent dev list
+agnt-c dev list
 
 # Submit the successful one
 cd .worktrees/TASK-123-approach-a
-agent dev submit
+agnt-c dev submit
 ```
 
 ## File Structure
@@ -237,7 +237,7 @@ agent dev submit
 ```
 .agent/tools/agent/
 ├── bin/
-│   └── agent           # Main entry point
+│   └── agnt-c          # Main entry point
 ├── lib/
 │   ├── parser.sh       # Command parsing
 │   ├── roles.sh        # Role management

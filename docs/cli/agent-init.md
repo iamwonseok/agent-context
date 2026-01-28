@@ -1,26 +1,26 @@
-# agent init
+# agnt-c init
 
 ## NAME
 
-agent init - Initialize project for agent workflow
+agnt-c init - Initialize project for agent workflow
 
 ## SYNOPSIS
 
-    agent init [OPTIONS]
-    agent config show
-    agent config init
+    agnt-c init [OPTIONS]
+    agnt-c config show
+    agnt-c config init
 
 ## DESCRIPTION
 
-The `agent init` command initializes a project for use with the agent workflow system. It creates necessary directories, configuration files, and git hooks.
+The `agnt-c init` command initializes a project for use with the agent workflow system. It creates necessary directories, configuration files, and git hooks.
 
 ## COMMANDS
 
-### agent init
+### agnt-c init
 
 Initialize the current project.
 
-    agent init [OPTIONS]
+    agnt-c init [OPTIONS]
 
 **Options:**
 
@@ -37,11 +37,11 @@ Initialize the current project.
 3. Install git hooks (pre-commit, commit-msg)
 4. Validate secrets configuration
 
-### agent config show
+### agnt-c config show
 
 Display current configuration.
 
-    agent config show
+    agnt-c config show
 
 **Output:**
 
@@ -66,11 +66,11 @@ Display current configuration.
     [Integration]
       pm CLI: /path/to/pm
 
-### agent config init
+### agnt-c config init
 
 Create `.project.yaml` configuration file.
 
-    agent config init [--force]
+    agnt-c config init [--force]
 
 This is a wrapper for `pm config init`.
 
@@ -184,7 +184,7 @@ Warnings don't block initialization but some features will be limited.
 Initialize a new project:
 
     $ cd my-project
-    $ agent init
+    $ agnt-c init
     =========================================
     Agent Project Initialization
     =========================================
@@ -207,15 +207,15 @@ Initialize a new project:
     Next steps:
       1. Configure secrets in .secrets/ or environment variables
       2. Edit .project.yaml for your project settings
-      3. Start working: agent dev start TASK-123
+      3. Start working: agnt-c dev start TASK-123
 
 Reinitialize with force:
 
-    $ agent init --force
+    $ agnt-c init --force
 
 Skip hooks during init:
 
-    $ agent init --no-hooks
+    $ agnt-c init --no-hooks
 
 ## PATH RESOLUTION
 

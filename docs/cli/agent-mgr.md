@@ -1,28 +1,28 @@
-# agent mgr
+# agnt-c mgr
 
 ## NAME
 
-agent mgr - Manager commands for MR review and project oversight
+agnt-c mgr - Manager commands for MR review and project oversight
 
 ## SYNOPSIS
 
-    agent mgr <COMMAND> [OPTIONS]
-    agent mgr pending [--limit=<n>] [--all]
-    agent mgr review <mr-id> [--comment <message>]
-    agent mgr approve <mr-id> [--force]
-    agent mgr status [<id>] [--verbose]
+    agnt-c mgr <COMMAND> [OPTIONS]
+    agnt-c mgr pending [--limit=<n>] [--all]
+    agnt-c mgr review <mr-id> [--comment <message>]
+    agnt-c mgr approve <mr-id> [--force]
+    agnt-c mgr status [<id>] [--verbose]
 
 ## DESCRIPTION
 
-The `agent mgr` commands help managers review merge requests, track progress, and approve changes. These commands integrate with GitLab and JIRA for comprehensive project oversight.
+The `agnt-c mgr` commands help managers review merge requests, track progress, and approve changes. These commands integrate with GitLab and JIRA for comprehensive project oversight.
 
 ## COMMANDS
 
-### agent mgr pending
+### agnt-c mgr pending
 
 List pending merge requests for review.
 
-    agent mgr pending [OPTIONS]
+    agnt-c mgr pending [OPTIONS]
 
 **Options:**
 
@@ -49,11 +49,11 @@ List pending merge requests for review.
     ------------------------------------------------------------------------
     Total: 2 merge requests
 
-### agent mgr review
+### agnt-c mgr review
 
 Review merge request details.
 
-    agent mgr review <mr-id> [OPTIONS]
+    agnt-c mgr review <mr-id> [OPTIONS]
 
 **Arguments:**
 
@@ -91,11 +91,11 @@ Review merge request details.
       [ ] No security vulnerabilities
       [ ] Documentation updated if needed
 
-### agent mgr approve
+### agnt-c mgr approve
 
 Approve a merge request.
 
-    agent mgr approve <mr-id> [OPTIONS]
+    agnt-c mgr approve <mr-id> [OPTIONS]
 
 **Arguments:**
 
@@ -113,7 +113,7 @@ This command is marked as `human_only` by default and cannot be executed by agen
 
 **Example:**
 
-    $ agent mgr approve 123
+    $ agnt-c mgr approve 123
     ==================================================
     Approving Merge Request: !123
     ==================================================
@@ -122,11 +122,11 @@ This command is marked as `human_only` by default and cannot be executed by agen
     Continue? [y/N] y
     [OK] MR !123 approved
 
-### agent mgr status
+### agnt-c mgr status
 
 Show status of initiative, epic, or task.
 
-    agent mgr status [<id>] [OPTIONS]
+    agnt-c mgr status [<id>] [OPTIONS]
 
 **Arguments:**
 
@@ -196,16 +196,16 @@ permissions:
 Typical review workflow:
 
     # 1. Check pending MRs
-    agent mgr pending
+    agnt-c mgr pending
 
     # 2. Review specific MR
-    agent mgr review 123
+    agnt-c mgr review 123
 
     # 3. Add feedback if needed
-    agent mgr review 123 --comment "Please add more tests"
+    agnt-c mgr review 123 --comment "Please add more tests"
 
     # 4. Approve when ready
-    agent mgr approve 123
+    agnt-c mgr approve 123
 
 ## SEE ALSO
 

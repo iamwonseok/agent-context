@@ -6,7 +6,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-(No changes yet)
+### Changed
+- **BREAKING**: Renamed CLI from `agent` to `agnt-c` to avoid conflicts with other tools (e.g., cursor-agent)
+- PATH prepending instead of appending in activate.sh and setup.sh for tool precedence
 
 ## [2.0.0] - 2026-01-28
 
