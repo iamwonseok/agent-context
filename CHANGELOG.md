@@ -6,22 +6,50 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+(No changes yet)
+
+## [2.0.0] - 2026-01-28
+
+### Major Features
+
+**RFC-004: Agent Workflow System v2.0**
+- Phase 1: State Visibility - Mode display, cursor mode hints, self-correction protocol
+- Phase 2: Feedback Loops - Question-driven planning, debrief command
+- All skills updated with mode/cursor_mode frontmatter
+
+**RFC-005: Manual Fallback Improvement**
+- `agent dev submit --only=<steps>` - Run specific steps (sync, push, pr, jira)
+- `agent dev submit --skip=<steps>` - Skip specific steps
+- `agent dev check --install-hook` - Install pre-commit hook
+- `agent dev check --uninstall-hook` - Remove hook
+- `agent dev check --status` - Show hook status
+- Short aliases: `agent sync`, `agent check`, `agent submit` (without 'dev')
+
+**RFC-012: Test Planning Framework**
+- All 10 RFCs now include standardized Test Plan sections
+- Template: Unit/Integration/E2E test requirements
+
+### Added
+- `tools/agent/lib/checks.sh` - Pre-commit hook management
+- `docs/guides/manual-fallback-guide.md` - Manual workflow documentation
+- `docs/guides/troubleshooting.md` - Common issues and solutions
+- `docs/architecture/skills-tools-mapping.md` - Skill-tool relationships
+
 ### Changed
-- **Plan Status Update (2026-01-24)**: Comprehensive codebase analysis and plan file update
-  - Verified all 18 tasks (Task 0-17) implementation status
-  - Updated `plan/agent-workflow-system-plan.md` with completion markers
-  - All phases (0-4) confirmed complete: Structure Migration, Core MVP, Skills & Workflows, Integration, Setup & Docs
-  - Added Implementation Status Summary section with detailed statistics
-  - Documented deviations: Bootstrap structure (single script vs directory), extra skill (check-intent)
-  - Implementation completeness: ~100% (all planned items + additional features)
+- `tools/agent/bin/agent` - Extended aliases, updated help
+- `tools/agent/lib/branch.sh` - `dev_submit` with --only/--skip, `dev_check` with hook options
+- Skills frontmatter now includes `mode` and `cursor_mode` fields
+- All scenario tests include Manual Flow sections
+
+### Documentation
+- `docs/rfcs/future-work.md` - FW-11 (RFC-006 deferred)
+- `docs/internal/handoff.md` - Updated to v1.6
 
 ### Statistics
-- Tasks: 18/18 complete (100%)
-- Skills: 26/25 implemented (104%, including 1 additional skill)
-- Workflows: 9/9 complete (100%)
-- CLI Tools: 3/3 complete (agent, pm, lint)
-- Test Infrastructure: 3-stage testing fully implemented
-- Documentation: Enhanced beyond plan (docs/ directory with 5 detailed files)
+- RFCs Implemented: 4/10 (RFC-004, 005, 011, 012)
+- Unit Tests: 413+ passing
+- Skills: 26 (all with mode metadata)
+- Workflows: 9 (all with manual fallback)
 
 ## [0.2.0] - 2026-01-23
 
