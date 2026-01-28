@@ -40,3 +40,6 @@ tests/reports/
 .secrets/*
 !.secrets/*.example
 !.secrets/README.md
+
+# Demo files (local only)
+agent-live-demo/
