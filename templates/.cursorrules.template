@@ -1,31 +1,92 @@
-# Include agent context rules
-# Agent context is managed in .agent/ directory
-# For detailed rules and workflows, see .agent/skills/ and .agent/workflows/
+# Agent-Context User Project
+#
+# This project uses agent-context framework installed in .agent/
+# - DO NOT modify .agent/ directory (managed by framework)
+# - Your project plans go in plan/
+# - For framework docs, see .agent/docs/
+#
+# Add your project-specific rules below this file
 
-# Project-specific rules below
-# Add your custom rules here
+# Project Rules
 
-# Agent-Context Project Rules
+## Design Philosophy
+
+Read `.agent/ARCHITECTURE.md` for the full rationale. Key principles:
+
+1. **Simplicity Over Completeness** - Simple solutions that work > Complex solutions that might work better
+2. **User Autonomy** - Warnings over blocking, provide `--force` escape hatches
+3. **Feedback Over Enforcement** - Teach through clear feedback, not hard blocks
+4. **Composability** - Small focused skills, workflows as compositions
+5. **State Through Artifacts** - Git + files, not databases or complex state machines
+
+## Avoiding Over-Engineering
+
+### Before Adding Complexity, Ask:
+- Has the simple solution failed multiple times?
+- Are users consistently making the same mistake?
+- Is the pain documented with real examples?
+- Have simpler alternatives been tried?
+
+### Complexity Budget (Max Lines)
+| Component | Limit |
+|-----------|-------|
+| Single skill | 200 lines |
+| Workflow | 100 lines |
+| CLI command | 100 lines |
+| Helper library | 300 lines |
+
+### Patterns to Avoid
+- Complex state machines (use simple flags instead)
+- Hard blocking without `--force` option
+- Custom DSLs (use standard YAML/Markdown)
+- Deep nesting (max 2 levels)
+- Implicit dependencies (be explicit)
 
 ## Language Policy
-- **Code and documentation: English only**
-- Comments, variables, functions, commits: English
-- Korean allowed only in user messages
+
+### Enforcement Matrix
+
+| File Type | English | Korean | Enforcement |
+|-----------|:-------:|:------:|-------------|
+| Code (`*.sh`, `*.py`) | Required | Forbidden | Automated test |
+| Code comments | Required | Forbidden | Automated test |
+| Skills (`skills/**/*.md`) | Required | Forbidden | Automated test |
+| Workflows (`workflows/**/*.md`) | Required | Forbidden | Automated test |
+| Project docs (`docs/**/*.md`) | Recommended | Allowed | No enforcement |
+
+**Critical:** Skills and Workflows are AI-readable instructions, NOT documentation.
 
 ## Output Style
-- **ASCII only, no emojis/unicode icons**
-- Use: `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`
-- Checkmarks: `[x]` or `(v)` not `✓`
-- Crosses: `[ ]` or `(x)` not `✗`
-- Arrows: `->` not `→`
-- Borders: `---` or `===` not `━━━`
+- **No Korean characters in executable code or code comments**
+- Korean is allowed only in `*.md` documents
+- Unicode symbols allowed (arrows, box chars, block elements, math symbols)
+  - Allowed: `→`, `├`, `└`, `│`, `─`, `█`, `░`, `×`, `±`
+- No decorative Unicode (✓✗★⚠️✅🔴)
+  - Output/logs: `[OK]` pass, `[NG]` fail, `[!!]` warn, `[>>]` info
+  - Docs/intent: `[M]` mandatory, `[F]` forbidden, `[R]` recommended, `[I]` info
 
 ## Agent Behavior
 
+### Branch & Merge Policy
+
+**CRITICAL: Check handoff for merge restrictions**
+
+Before any git operation:
+1. Read `docs/internal/handoff.md` if it exists
+2. Check for "DO NOT MERGE" or checkpoint requirements
+3. If handoff has incomplete checkpoints → Stay on feature branch
+4. Only merge to main when handoff says "all checkpoints complete"
+
+**Default behavior** (when no handoff):
+- Work on feature branch
+- Commit incrementally
+- Create MR when task complete
+
 ### Session Start
 1. Check `git status` and `git branch`
-2. Ensure on feature branch (NOT main)
-3. If on main, create/checkout feature branch before work
+2. **Read `docs/internal/handoff.md`** if exists (check merge policy)
+3. Ensure on feature branch (NOT main)
+4. If on main, create/checkout feature branch before work
 
 ### Before Starting Work
 | Task Type | Read First |
@@ -35,6 +96,15 @@
 | Hotfix | `.agent/workflows/developer/hotfix.md` |
 | Refactoring | `.agent/workflows/developer/refactor.md` |
 | Large/complex task | `.agent/skills/planning/design-solution/SKILL.md` |
+
+If the exact workflow file is unclear, look under:
+- `.agent/workflows/developer/` (Developer)
+- `.agent/workflows/manager/` (Manager)
+
+### After Modifying Files
+1. Run related tests if they exist
+2. Check `.agent/tests/unit/skills/` for test scripts
+3. Fix any test failures before committing
 
 ### Before Committing
 1. Read `.agent/skills/integrate/commit-changes/SKILL.md` for message format
@@ -46,27 +116,66 @@
 2. Ensure all tests pass
 3. Create MR/PR, don't merge directly to main
 
+### After Merge
+- Delete merged feature branches from local
+- Keep branches still in use (worktree, unmerged)
+
 ### Concurrent Work
-- Multiple agents on different tasks -> Use git worktree
-- See `.agent/docs/guides/` for worktree guidance
+- For parallel work, prefer Detached Mode worktrees (see Hybrid Mode Guidance)
+
+## Operational Invariants (Artifacts as State)
+- `.context/` and `.worktrees/` are **state/log artifacts**, not permanent storage
+  - After submission (MR/PR created), clean them up (archive/delete) per workflow
+  - Prefer keeping logs in Issue/MR description (see Issue N/A policy)
+- Keep the **main working directory clean** (no long-lived generated artifacts)
+
+## Handoff Policy
+- **Branch-level** (`.context/handoff-*.md`): Local only (gitignore), auto-archive on show
+- **Project-level** (`docs/internal/handoff.md`): Git-tracked, delete after takeover
+- See `.agent/docs/internal/README.md` for detailed lifecycle policy
+
+## Hybrid Mode Guidance (Git Strategy)
+- Default: **Interactive Mode = branch workflow in current directory**
+- For parallel/background work: **Detached Mode = worktree in `.worktrees/`**
+
+## Merge Strategy (Fast Forward + Rebase)
+- **Recommended**: Fast Forward merge for linear history
+- **Before MR submission**: Run `agnt-c dev sync` to rebase on base branch
+- **On conflict**: Human intervention required (notify and wait)
+- **Override**: Project-specific settings in `.agent/config.yaml` (`merge_strategy: ff-only | squash | merge-commit`)
+
+## Issue N/A Policy
+- If there is no Issue (N/A):
+  - Create MR/PR as usual
+  - Include `.context/` summary/logs in the MR/PR description **instead of uploading to an Issue**
+
+## Human-only Decisions (Permissions Boundary)
+- Decisions like **approval/merge** are `human_only` by default
+  - The agent may prepare, summarize, and suggest actions, but should not execute final decisions unless explicitly authorized
+
+## Secrets Policy (init/setup)
+- On `agnt-c init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
+- Use `--skip-secrets` to bypass validation (for CI environments)
+- See `.agent/templates/secrets-examples/README.md` for token setup
 
 ## Project Overview
-Workflow + CI/CD template for agent-driven development.
 
 ### Directory Structure
 ```
-project/
-├── .agent/                    # Agent-context framework (do not modify)
-│   ├── skills/                # Workflow building blocks
-│   ├── workflows/             # Workflow combinations
-│   ├── tools/                 # CLI tools (lint, pm)
-│   ├── docs/style/            # Language coding conventions
-│   └── docs/rfcs/             # Framework plans (internal)
+your-project/
+├── .agent/                     # Agent-context framework (DO NOT MODIFY)
+│   ├── skills/                 # Workflow building blocks
+│   ├── workflows/              # Workflow combinations
+│   ├── tools/                  # CLI tools (lint, pm)
+│   ├── docs/style/             # Language coding conventions
+│   └── docs/rfcs/              # Framework plans (internal)
 │
-├── plan/                      # YOUR project plans
-│   └── *.md                   # Implementation plans
+├── plan/                       # YOUR project plans
+│   └── *.md                    # Implementation plans
 │
-└── configs/                   # Tool configurations
+├── docs/                       # YOUR project documentation
+│
+└── .cursorrules                # This file (project rules)
 ```
 
 ### Plan Directories
@@ -93,14 +202,16 @@ Skill combinations for scenarios:
 - `developer/bug-fix.md` - Standard bug fix
 - `developer/hotfix.md` - Emergency fix
 - `developer/refactor.md` - Code refactoring
-- `manager/` - Manager workflows (approval, monitoring, ...)
+- `manager/*` - Manager workflows (approval, monitoring, ...)
 
-### Quality Gates
-| Gate | Criteria |
-|------|----------|
+### Quality Gates (Recommended Targets)
+| Gate | Target |
+|------|--------|
 | Lint | 0 violations |
 | Test | All pass, ≥80% coverage |
 | Review | 0 critical issues |
+
+> These are **recommended targets**, not hard blocks. If exceptions are needed, document the rationale in MR/commit and proceed.
 
 ## Bash Scripts
 
@@ -141,3 +252,92 @@ Total: {N} | Passed: {N} | Failed: {N}
 - Python: Py-XX-XX
 - YAML: YAML-XX-XX
 - Dockerfile: Docker-XX-XX
+
+---
+
+## Common Task Patterns (Quick Reference)
+
+### Pattern 1: Fix All Path References
+
+**When:** Changing skill/workflow paths across multiple files
+
+**Command:**
+```bash
+# 1. Find all affected files
+grep -r "old-path/" .
+
+# 2. Show context
+grep -n "old-path/" <files>
+
+# 3. Replace in batch (group by file type)
+
+# 4. Verify once
+bash .agent/tests/unit/skills/test_skills.sh
+```
+
+### Pattern 2: Language Policy Cleanup
+
+**When:** Removing Korean from skills/workflows
+
+**Command:**
+```bash
+# 1. Find ALL violations at once
+LC_ALL=C grep -r -l $'[\xEA-\xED]' src/
+
+# 2. Show ALL Korean lines (group by file)
+for file in <files>; do
+  echo "=== $file ==="
+  LC_ALL=C grep -n $'[\xEA-\xED]' "$file"
+done
+
+# 3. Translate in batches (similar content together)
+
+# 4. Verify
+```
+
+### Pattern 3: Batch File Operations
+
+**When:** Need to modify 5+ similar files
+
+**Strategy:**
+```bash
+# DON'T: Read → Modify → Read → Modify (one by one)
+# DO: Batch read → Batch modify → Single verify
+
+# Example: Update 10 files
+# 1. Read all at once (parallel reads)
+# 2. Identify common pattern
+# 3. Replace all at once (grouped by pattern)
+# 4. Test once
+```
+
+---
+
+## Agent Efficiency Metrics
+
+Track and optimize:
+
+| Metric | Target | Red Flag |
+|--------|--------|----------|
+| Tool calls per task | <20 for simple, <50 for complex | >100 calls |
+| Repeated identical operations | 0 | Same operation 3+ times |
+| Test runs per change batch | 1-2 | Testing after each file |
+| Files read individually | Group related | Reading 10+ files one-by-one |
+
+**Optimization Rule:** If you're about to do the same thing for the 3rd time, STOP and batch it.
+
+---
+
+# Project-Specific Rules
+
+## Add your custom rules below
+
+<!-- Example:
+## API Development
+- Use RESTful conventions
+- Document all endpoints in OpenAPI format
+
+## Database
+- Always use migrations
+- No raw SQL in application code
+-->
