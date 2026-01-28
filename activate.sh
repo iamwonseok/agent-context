@@ -30,7 +30,7 @@ export AGENT_CONTEXT_PATH="${_AGENT_ACTIVATE_DIR}"
 _add_to_path() {
     local dir="$1"
     if [[ -d "$dir" ]] && [[ ":$PATH:" != *":$dir:"* ]]; then
-        export PATH="$PATH:$dir"
+        export PATH="$dir:$PATH"  # Prepend to take precedence
     fi
 }
 
