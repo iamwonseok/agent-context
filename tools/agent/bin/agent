@@ -49,11 +49,17 @@ DEVELOPER COMMANDS (agent dev):
     handoff <save|show>     Save/show handoff note for a branch
     status                  Show current work status
     debrief                 Process answered questions (RFC-004 Phase 2)
-    check                   Run quality checks (lint, test, intent)
+    check [options]         Run quality checks (lint, test, intent)
+        --install-hook      Install pre-commit hook
+        --uninstall-hook    Remove pre-commit hook
+        --status            Show hook status
     verify                  Verify requirements and generate report
     retro                   Create/edit retrospective document
     sync                    Sync with base branch (fetch + rebase)
-    submit                  Create MR and cleanup
+    submit [options]        Create MR and cleanup
+        --only=<steps>      Run only: sync,push,pr,jira
+        --skip=<steps>      Skip specified steps
+        --draft             Create draft MR/PR
     cleanup <task-id>       Clean up completed task
 
 MANAGER COMMANDS (agent mgr):
@@ -83,6 +89,13 @@ EXAMPLES:
     agent dev submit
     agent status
     agent mgr pending
+
+SHORTCUTS (without 'dev' prefix):
+    agent sync          # Same as: agent dev sync
+    agent check         # Same as: agent dev check
+    agent submit        # Same as: agent dev submit
+    agent verify        # Same as: agent dev verify
+    agent start TASK    # Same as: agent dev start TASK
 
 For more information, see: .agent/tools/agent/README.md
 EOF
@@ -265,9 +278,9 @@ main() {
         setup)
             agent_setup "$@"
             ;;
-        # Auto-detect role based on command
-        start|list|switch|sync|submit|cleanup)
-            # These are developer commands
+        # Auto-detect role based on command (short aliases)
+        start|list|switch|sync|check|submit|cleanup|verify|retro|handoff|debrief)
+            # These are developer commands - can be called without 'dev' prefix
             cmd_dev "$first_arg" "$@"
             ;;
         pending|review|approve)

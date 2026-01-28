@@ -567,7 +567,7 @@ If blocked:
 ### RFC Implementation Status
 - RFC-002: 0% (Meta RFC - Reference only)
 - RFC-004: 100% ✅ (Phase 1-2 Complete)
-- RFC-005: 20%
+- RFC-005: 80% ✅ (Phase 0-1 Complete, Phase 2 pending)
 - RFC-006: 0%
 - RFC-007: 70%
 - RFC-008: 30%
@@ -619,6 +619,7 @@ If blocked:
 | 2026-01-27 | P2-1 RFC-004 Phase 1 complete | Current Agent |
 | 2026-01-27 | P2-2 RFC-004 Phase 2 complete | Current Agent |
 | 2026-01-28 | P2-3 RFC-012 Test Planning complete | Current Agent |
+| 2026-01-28 | RFC-005 Phase 0-1 complete (CLI enhancement) | Current Agent |
 
 ---
 
@@ -632,28 +633,34 @@ If blocked:
 - ✅ P2-1: RFC-004 Phase 1 - State Visibility Layer
 - ✅ P2-2: RFC-004 Phase 2 - Feedback Loops Layer
 - ✅ P2-3: RFC-012 Test Planning Framework (All 10 RFCs verified)
+- ✅ RFC-005 Phase 0-1: Manual Fallback & CLI Enhancement
 
-**P2-3 Summary** (2026-01-28):
-- All 10 RFCs have Test Plan sections with full template compliance
-- RFC-012 status updated to Completed
-- Validation: Test Strategy, Test Cases, Success Criteria, Validation Checklist present in all RFCs
+**RFC-005 Summary** (2026-01-28):
+- Phase 0 (Documentation): Manual Fallback Guide exists, all scenarios have Manual Flow
+- Phase 1 (CLI Enhancement):
+  - `agent dev submit --only=<steps>` and `--skip=<steps>` options
+  - Pre-commit hook management (`--install-hook`, `--uninstall-hook`, `--status`)
+  - Short aliases: `agent sync`, `agent check`, `agent submit`, etc.
+- Phase 2 (Validation): Pending - needs manual testing
 
 **Git Status**:
 - Branch: `main`
-- Working tree: changes to commit (RFC-012, handoff.md updates)
+- Working tree: changes to commit
 
-**Files Changed** (P2-3):
-- `docs/rfcs/012-test-planning-framework.md` (status: Completed)
+**Files Changed** (RFC-005):
+- `tools/agent/bin/agent` (help, aliases)
+- `tools/agent/lib/branch.sh` (--only/--skip, submit help)
+- `tools/agent/lib/checks.sh` (hook management)
 - `docs/internal/handoff.md` (status update)
 
 **Tests**: 413/413 unit tests passing
 
 **Next Priorities**:
-1. Production validation of Phase 2 features (requires real usage)
-2. Token usage & MR review time measurement (requires production data)
-3. RFC-005, RFC-006 implementation (lower priority)
+1. RFC-005 Phase 2: Manual testing and validation
+2. RFC-006: Unified Platform Abstraction (pm milestone/label/wiki)
+3. Production validation of Phase 2 features (requires real usage)
 
 ---
 
 **Last Updated**: 2026-01-28  
-**Document Version**: 1.4
+**Document Version**: 1.5
