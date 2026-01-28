@@ -288,7 +288,8 @@ agent_setup() {
                 echo "Files installed (default):"
                 echo "  .agent/        Symlink to agent-context (skills, workflows)"
                 echo "  .cursorrules   Agent behavior rules"
-                echo "  configs/       Tool configurations"
+                echo "  .*             Config dotfiles (.clang-format, .editorconfig, ...)"
+                echo "  pyproject.toml Python project configuration"
                 echo "  policies/      Domain policy templates"
                 echo ""
                 echo "With --full:"
@@ -357,12 +358,29 @@ agent_setup() {
         total_skipped=$((total_skipped + $(echo "$result" | cut -d' ' -f2)))
     fi
 
-    # 3. Install configs/
+    # 3. Install config files from templates/configs/
+    # All config files go to project root (dotfiles and regular files)
     if [[ -d "$templates_dir/configs" ]]; then
-        local result
-        result=$(install_template "$templates_dir/configs" "configs" "$force")
-        total_created=$((total_created + $(echo "$result" | cut -d' ' -f1)))
-        total_skipped=$((total_skipped + $(echo "$result" | cut -d' ' -f2)))
+        echo "[INFO] Installing config files..."
+
+        # Use find to get all files including dotfiles
+        while IFS= read -r src_file; do
+            local filename
+            filename=$(basename "$src_file")
+
+            # Skip README
+            if [[ "$filename" == "README.md" ]]; then
+                continue
+            fi
+
+            # All files go to project root
+            local dest_file="$filename"
+
+            local result
+            result=$(install_template "$src_file" "$dest_file" "$force")
+            total_created=$((total_created + $(echo "$result" | cut -d' ' -f1)))
+            total_skipped=$((total_skipped + $(echo "$result" | cut -d' ' -f2)))
+        done < <(find "$templates_dir/configs" -maxdepth 1 -type f)
     fi
 
     # 4. Install policies/
@@ -393,7 +411,7 @@ agent_setup() {
     echo "What was set up:"
     echo "  - .agent/ symlink -> $agent_root"
     echo "  - .cursorrules (agent behavior rules)"
-    echo "  - configs/ (tool configurations)"
+    echo "  - Config files (.clang-format, .editorconfig, pyproject.toml, ...)"
     echo "  - policies/ (domain templates)"
     if [[ "$full" == "true" ]]; then
         echo "  - .project.yaml (JIRA/GitLab settings)"
