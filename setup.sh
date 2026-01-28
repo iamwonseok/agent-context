@@ -207,10 +207,33 @@ else
     echo "[INFO] plan/ already exists, skipping"
 fi
 
-# 6. .project.yaml configuration
+# 6. .agent symlink handling (if not in agent-context repo itself)
+if [[ "$AGENT_DIR" != "$PROJECT_ROOT" ]]; then
+    if [[ ! -e "${PROJECT_ROOT}/.agent" ]] && [[ ! -L "${PROJECT_ROOT}/.agent" ]]; then
+        echo "[INFO] Creating .agent symlink -> $AGENT_DIR"
+        ln -s "$AGENT_DIR" "${PROJECT_ROOT}/.agent"
+        # Add to .gitignore
+        if [[ -f "${PROJECT_ROOT}/.gitignore" ]] && ! grep -q "^\.agent$" "${PROJECT_ROOT}/.gitignore"; then
+            echo "[INFO] Adding .agent to .gitignore"
+            {
+                echo ""
+                echo "# Agent context symlink (points to global installation)"
+                echo ".agent"
+            } >> "${PROJECT_ROOT}/.gitignore"
+        fi
+    else
+        if [[ -L "${PROJECT_ROOT}/.agent" ]]; then
+            echo "[INFO] .agent symlink already exists -> $(readlink "${PROJECT_ROOT}/.agent")"
+        else
+            echo "[INFO] .agent directory already exists, skipping symlink"
+        fi
+    fi
+fi
+
+# 7. .project.yaml configuration
 if [[ "$NON_INTERACTIVE" == "true" ]]; then
     echo "[INFO] Non-interactive mode: skipping .project.yaml configuration"
-    echo "[INFO] You can configure later by editing .project.yaml"
+    echo "[INFO] You can configure later by editing .project.yaml or running 'agnt-c setup --project'"
 else
     echo ""
     echo "========================================="
@@ -220,6 +243,23 @@ else
     echo "Configure your project settings."
     echo "Press Enter to use default values shown in [brackets]."
     echo ""
+
+    # Check for global secrets (Issue #4 enhancement)
+    SECRETS_PATH=""
+    if [[ -d "$HOME/.secrets" ]]; then
+        echo "[INFO] Found global secrets at ~/.secrets/"
+        local_files=$(ls -1 "$HOME/.secrets/" 2>/dev/null | grep -v README | head -3)
+        if [[ -n "$local_files" ]]; then
+            echo "       Contains: $(echo "$local_files" | tr '\n' ', ' | sed 's/,$//')"
+        fi
+        echo ""
+        read -p "Use global secrets (~/.secrets/)? [Y/n]: " USE_GLOBAL
+        if [[ "$USE_GLOBAL" != "n" && "$USE_GLOBAL" != "N" ]]; then
+            SECRETS_PATH="~/.secrets"
+            echo "[OK] Will use global secrets"
+        fi
+        echo ""
+    fi
 
     # Default values
     DEFAULT_JIRA_URL="https://fadutec.atlassian.net"
@@ -288,6 +328,17 @@ branch:
 
 # Agent context path (optional, defaults to .agent/ or ~/.agent)
 # agent_context: ~/.agent
+EOF
+
+    # Add secrets configuration based on user choice
+    if [[ -n "$SECRETS_PATH" ]]; then
+        cat >> "${PROJECT_ROOT}/.project.yaml" << EOF
+
+# Secrets location (using global secrets)
+secrets_path: ${SECRETS_PATH}
+EOF
+    else
+        cat >> "${PROJECT_ROOT}/.project.yaml" << EOF
 
 # Authentication:
 # Option 1: Environment variables (recommended)
@@ -298,7 +349,11 @@ branch:
 # Option 2: Secret files (gitignored)
 #   .secrets/atlassian-api-token
 #   .secrets/gitlab-api-token
+#
+# Option 3: Global secrets (uncomment below)
+#   secrets_path: ~/.secrets
 EOF
+    fi
 
     echo "[INFO] .project.yaml created successfully"
 fi

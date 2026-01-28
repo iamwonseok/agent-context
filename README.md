@@ -45,8 +45,10 @@ source ~/.bashrc  # or ~/.zshrc
 Then in any project:
 ```bash
 cd your-project
-agnt-c setup        # Install templates (idempotent)
-agnt-c setup --force  # Force overwrite existing files
+agnt-c setup              # Quick setup: templates + .agent symlink
+agnt-c setup --full       # Full setup: includes interactive JIRA/GitLab config
+agnt-c setup --project    # Configure JIRA/GitLab only
+agnt-c setup --force      # Force overwrite existing files
 ```
 
 ### Option 2: Project-Local Installation
@@ -67,22 +69,25 @@ agnt-c setup
 
 ### What Gets Installed
 
-`agent setup` creates these files in your project:
+`agnt-c setup` creates these files in your project:
 
 | File | Description |
 |------|-------------|
+| `.agent/` | Symlink to agent-context (skills, workflows) |
 | `.cursorrules` | Agent behavior rules |
 | `configs/` | Tool configurations (clang-format, flake8, etc.) |
 | `policies/` | Domain-specific knowledge templates |
 
-For JIRA/GitLab configuration, run the interactive setup:
+For JIRA/GitLab configuration, use one of:
 ```bash
-./setup.sh  # or .agent/setup.sh for local install
+agnt-c setup --full     # Full interactive setup
+agnt-c setup --project  # Configure JIRA/GitLab only
+./setup.sh              # Alternative: direct script
 ```
 
-This creates:
-- `.secrets/` - API tokens (gitignored)
+This additionally creates:
 - `.project.yaml` - JIRA/GitLab settings
+- `.secrets/` - API tokens (gitignored, or use `~/.secrets/` global)
 
 ## Project Structure
 
