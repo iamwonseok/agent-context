@@ -1,5 +1,5 @@
 #!/bin/bash
-# Agent Workflow CLI
+# agnt-c - Agent Context Workflow CLI
 # Developer and Manager workflow automation for AI-assisted development
 
 set -e
@@ -32,16 +32,16 @@ VERSION="2.0.0"
 # Help message
 show_help() {
     cat << EOF
-agent - Workflow CLI v${VERSION}
+agnt-c - Agent Context Workflow CLI v${VERSION}
 
 USAGE:
-    agent [role] <action> [options]
+    agnt-c [role] <action> [options]
 
     Role can be omitted and will be auto-detected:
     - 'dev' for developer commands
     - 'mgr' for manager commands
 
-DEVELOPER COMMANDS (agent dev):
+DEVELOPER COMMANDS (agnt-c dev):
     start <task-id>         Start working on a task (create branch)
     start <task-id> --detached  Start in detached mode (worktree)
     list                    List active tasks (branches/worktrees)
@@ -62,7 +62,7 @@ DEVELOPER COMMANDS (agent dev):
         --draft             Create draft MR/PR
     cleanup <task-id>       Clean up completed task
 
-MANAGER COMMANDS (agent mgr):
+MANAGER COMMANDS (agnt-c mgr):
     pending                 List pending MRs
     review <mr-id>          Review MR details
     approve <mr-id>         Approve MR
@@ -83,19 +83,19 @@ OPTIONS:
     --from=<branch>         Branch to start from (default: main)
 
 EXAMPLES:
-    agent dev start TASK-123
-    agent dev start TASK-123 --detached --try="approach-a"
-    agent dev list
-    agent dev submit
-    agent status
-    agent mgr pending
+    agnt-c dev start TASK-123
+    agnt-c dev start TASK-123 --detached --try="approach-a"
+    agnt-c dev list
+    agnt-c dev submit
+    agnt-c status
+    agnt-c mgr pending
 
 SHORTCUTS (without 'dev' prefix):
-    agent sync          # Same as: agent dev sync
-    agent check         # Same as: agent dev check
-    agent submit        # Same as: agent dev submit
-    agent verify        # Same as: agent dev verify
-    agent start TASK    # Same as: agent dev start TASK
+    agnt-c sync          # Same as: agnt-c dev sync
+    agnt-c check         # Same as: agnt-c dev check
+    agnt-c submit        # Same as: agnt-c dev submit
+    agnt-c verify        # Same as: agnt-c dev verify
+    agnt-c start TASK    # Same as: agnt-c dev start TASK
 
 For more information, see: .agent/tools/agent/README.md
 EOF
@@ -148,7 +148,7 @@ cmd_dev() {
             ;;
         *)
             echo "[ERROR] Unknown dev command: $action" >&2
-            echo "Run 'agent dev help' for usage." >&2
+            echo "Run 'agnt-c dev help' for usage." >&2
             exit 1
             ;;
     esac
@@ -177,7 +177,7 @@ cmd_mgr() {
             ;;
         *)
             echo "[ERROR] Unknown mgr command: $action" >&2
-            echo "Run 'agent mgr help' for usage." >&2
+            echo "Run 'agnt-c mgr help' for usage." >&2
             exit 1
             ;;
     esac
@@ -235,7 +235,7 @@ cmd_config() {
             ;;
         *)
             echo "[ERROR] Unknown config command: $action" >&2
-            echo "Usage: agent config show" >&2
+            echo "Usage: agnt-c config show" >&2
             exit 1
             ;;
     esac
@@ -258,7 +258,7 @@ main() {
             show_help
             ;;
         -v|--version|version)
-            echo "agent version $VERSION"
+            echo "agnt-c version $VERSION"
             ;;
         dev)
             cmd_dev "$@"
@@ -289,7 +289,7 @@ main() {
             ;;
         *)
             echo "[ERROR] Unknown command: $first_arg" >&2
-            echo "Run 'agent --help' for usage." >&2
+            echo "Run 'agnt-c --help' for usage." >&2
             exit 1
             ;;
     esac

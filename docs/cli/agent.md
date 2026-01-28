@@ -1,24 +1,24 @@
-# agent
+# agnt-c
 
 ## NAME
 
-agent - Workflow CLI for AI-assisted development
+agnt-c - Agent Context Workflow CLI for AI-assisted development
 
 ## SYNOPSIS
 
-    agent [COMMAND] [OPTIONS]
-    agent dev <ACTION> [OPTIONS]
-    agent mgr <ACTION> [OPTIONS]
+    agnt-c [COMMAND] [OPTIONS]
+    agnt-c dev <ACTION> [OPTIONS]
+    agnt-c mgr <ACTION> [OPTIONS]
 
 ## DESCRIPTION
 
-`agent` is a command-line tool for managing development workflows in AI-assisted projects. It provides commands for both developers and managers to streamline the software development lifecycle.
+`agnt-c` is a command-line tool for managing development workflows in AI-assisted projects. It provides commands for both developers and managers to streamline the software development lifecycle.
 
 The tool integrates with Git for version control, JIRA for issue tracking, and GitLab for merge requests and code review.
 
 ## COMMANDS
 
-### Developer Commands (agent dev)
+### Developer Commands (agnt-c dev)
 
 | Command | Description |
 |---------|-------------|
@@ -35,7 +35,7 @@ The tool integrates with Git for version control, JIRA for issue tracking, and G
 
 See [agent-dev](agent-dev.md) for detailed documentation.
 
-### Manager Commands (agent mgr)
+### Manager Commands (agnt-c mgr)
 
 | Command | Description |
 |---------|-------------|
@@ -89,19 +89,19 @@ The agent CLI uses the following configuration files:
 
 Start a new feature:
 
-    $ agent dev start TASK-123
+    $ agnt-c dev start TASK-123
 
 Run quality checks:
 
-    $ agent dev check
+    $ agnt-c dev check
 
 Create merge request:
 
-    $ agent dev submit
+    $ agnt-c dev submit
 
 Review pending MRs (manager):
 
-    $ agent mgr pending
+    $ agnt-c mgr pending
 
 ## FILES
 

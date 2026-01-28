@@ -1,34 +1,34 @@
-# agent dev
+# agnt-c dev
 
 ## NAME
 
-agent dev - Developer commands for task management and code workflow
+agnt-c dev - Developer commands for task management and code workflow
 
 ## SYNOPSIS
 
-    agent dev <COMMAND> [OPTIONS]
-    agent dev start <task-id> [--detached] [--try=<name>] [--from=<branch>]
-    agent dev list
-    agent dev switch <branch|worktree>
-    agent dev status
-    agent dev check
-    agent dev verify
-    agent dev retro
-    agent dev sync [--continue|--abort]
-    agent dev submit [--sync] [--draft] [--force]
-    agent dev cleanup <task-id>
+    agnt-c dev <COMMAND> [OPTIONS]
+    agnt-c dev start <task-id> [--detached] [--try=<name>] [--from=<branch>]
+    agnt-c dev list
+    agnt-c dev switch <branch|worktree>
+    agnt-c dev status
+    agnt-c dev check
+    agnt-c dev verify
+    agnt-c dev retro
+    agnt-c dev sync [--continue|--abort]
+    agnt-c dev submit [--sync] [--draft] [--force]
+    agnt-c dev cleanup <task-id>
 
 ## DESCRIPTION
 
-The `agent dev` commands help developers manage their daily workflow, from starting a new task to creating a merge request.
+The `agnt-c dev` commands help developers manage their daily workflow, from starting a new task to creating a merge request.
 
 ## COMMANDS
 
-### agent dev start
+### agnt-c dev start
 
 Start working on a task by creating a new branch and context.
 
-    agent dev start <task-id> [OPTIONS]
+    agnt-c dev start <task-id> [OPTIONS]
 
 **Options:**
 
@@ -46,53 +46,53 @@ Start working on a task by creating a new branch and context.
 **Examples:**
 
     # Start feature task (interactive mode)
-    agent dev start TASK-123
+    agnt-c dev start TASK-123
 
     # Start in detached mode for background work
-    agent dev start TASK-123 --detached
+    agnt-c dev start TASK-123 --detached
 
     # Try multiple approaches
-    agent dev start TASK-123 --detached --try="approach-a"
-    agent dev start TASK-123 --detached --try="approach-b"
+    agnt-c dev start TASK-123 --detached --try="approach-a"
+    agnt-c dev start TASK-123 --detached --try="approach-b"
 
-### agent dev list
+### agnt-c dev list
 
 List active tasks (branches and worktrees).
 
-    agent dev list
+    agnt-c dev list
 
 Shows:
 - Active task branches (feat/*, fix/*, hotfix/*)
 - Active worktrees in .worktrees/
 - Current branch marker
 
-### agent dev switch
+### agnt-c dev switch
 
 Switch to another branch or worktree.
 
-    agent dev switch <target>
+    agnt-c dev switch <target>
 
 **Arguments:**
 
     <target>
         Branch name or worktree name to switch to.
 
-### agent dev status
+### agnt-c dev status
 
 Show current work status.
 
-    agent dev status
+    agnt-c dev status
 
 Displays:
 - Current branch and mode (interactive/detached)
 - Active contexts
 - Git status summary
 
-### agent dev check
+### agnt-c dev check
 
 Run quality checks (lint, test, intent alignment).
 
-    agent dev check
+    agnt-c dev check
 
 Checks performed:
 1. **Lint** - Code style validation
@@ -101,22 +101,22 @@ Checks performed:
 
 Note: This command produces warnings only and does not block commits.
 
-### agent dev verify
+### agnt-c dev verify
 
 Generate a verification report for requirements tracking.
 
-    agent dev verify
+    agnt-c dev verify
 
 Creates `.context/{task-id}/verification.md` with:
 - Requirements checklist
 - Quality gate status
 - Test coverage summary
 
-### agent dev retro
+### agnt-c dev retro
 
 Create or edit a retrospective document.
 
-    agent dev retro
+    agnt-c dev retro
 
 Creates `.context/{task-id}/retrospective.md` with:
 - Original intent
@@ -124,11 +124,11 @@ Creates `.context/{task-id}/retrospective.md` with:
 - Surprises and learnings
 - Next steps
 
-### agent dev sync
+### agnt-c dev sync
 
 Sync with base branch using rebase.
 
-    agent dev sync [OPTIONS]
+    agnt-c dev sync [OPTIONS]
 
 **Options:**
 
@@ -146,16 +146,16 @@ Sync with base branch using rebase.
     # If conflicts occur:
     1. Fix conflicts in the files
     2. git add <resolved-files>
-    3. agent dev sync --continue
+    3. agnt-c dev sync --continue
 
     # To abort:
-    agent dev sync --abort
+    agnt-c dev sync --abort
 
-### agent dev submit
+### agnt-c dev submit
 
 Create merge request and cleanup context.
 
-    agent dev submit [OPTIONS]
+    agnt-c dev submit [OPTIONS]
 
 **Options:**
 
@@ -175,11 +175,11 @@ Create merge request and cleanup context.
 3. Create merge request via pm CLI
 4. Archive context
 
-### agent dev cleanup
+### agnt-c dev cleanup
 
 Clean up a completed task.
 
-    agent dev cleanup <task-id>
+    agnt-c dev cleanup <task-id>
 
 Removes:
 - Task branch (if not current)
@@ -191,25 +191,25 @@ Removes:
 Typical development workflow:
 
     # 1. Start task
-    agent dev start TASK-123
+    agnt-c dev start TASK-123
 
     # 2. Make changes
     vim src/feature.c
 
     # 3. Check quality
-    agent dev check
+    agnt-c dev check
 
     # 4. Commit changes
     git commit -m "feat: add feature"
 
     # 5. Generate verification
-    agent dev verify
+    agnt-c dev verify
 
     # 6. Write retrospective
-    agent dev retro
+    agnt-c dev retro
 
     # 7. Submit
-    agent dev submit
+    agnt-c dev submit
 
 ## GIT MODES
 

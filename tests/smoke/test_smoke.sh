@@ -6,9 +6,9 @@
 #   - bootstrap.sh execution
 #   - setup.sh project creation
 #   - setup.sh re-run safety (idempotent)
-#   - agent --version
-#   - agent status
-#   - agent dev start (branch + .context/ creation)
+#   - agnt-c --version
+#   - agnt-c status
+#   - agnt-c dev start (branch + .context/ creation)
 
 set -e
 
@@ -136,33 +136,33 @@ section "5. CLI Basic"
 export PATH="${AGENT_CONTEXT_DIR}/tools/agent/bin:${AGENT_CONTEXT_DIR}/tools/pm/bin:$PATH"
 export AGENT_CONTEXT_PATH="${AGENT_CONTEXT_DIR}"
 
-if agent --version 2>&1 | grep -qE "(agent|version)"; then
-    test_pass "agent --version"
+if agnt-c --version 2>&1 | grep -qE "(agnt-c|version)"; then
+    test_pass "agnt-c --version"
 else
-    test_fail "agent --version"
+    test_fail "agnt-c --version"
 fi
 
-if agent --help 2>&1 | grep -qE "(dev|mgr|init)"; then
-    test_pass "agent --help"
+if agnt-c --help 2>&1 | grep -qE "(dev|mgr|init)"; then
+    test_pass "agnt-c --help"
 else
-    test_fail "agent --help"
+    test_fail "agnt-c --help"
 fi
 
-# 6. agent status
+# 6. agnt-c status
 section "6. Agent Status"
 
-if agent status 2>&1; then
-    test_pass "agent status"
+if agnt-c status 2>&1; then
+    test_pass "agnt-c status"
 else
     # May fail if not fully configured, but should not crash
-    if agent status 2>&1 | grep -qE "(error|Error|not found)"; then
-        test_fail "agent status (crashed)"
+    if agnt-c status 2>&1 | grep -qE "(error|Error|not found)"; then
+        test_fail "agnt-c status (crashed)"
     else
-        test_pass "agent status (graceful handling)"
+        test_pass "agnt-c status (graceful handling)"
     fi
 fi
 
-# 7. agent dev start (branch + .context/)
+# 7. agnt-c dev start (branch + .context/)
 section "7. Agent Dev Start"
 
 # Need initial commit for branch operations
@@ -172,8 +172,8 @@ git commit -m "Initial commit" --allow-empty 2>/dev/null || true
 TASK_ID="TEST-001"
 
 # Try to start a task (may have limited functionality without full setup)
-if agent dev start "$TASK_ID" 2>&1; then
-    test_pass "agent dev start $TASK_ID"
+if agnt-c dev start "$TASK_ID" 2>&1; then
+    test_pass "agnt-c dev start $TASK_ID"
 
     # Check branch created
     CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
@@ -191,11 +191,11 @@ if agent dev start "$TASK_ID" 2>&1; then
     fi
 else
     # If dev start fails, check if it's a graceful error
-    OUTPUT=$(agent dev start "$TASK_ID" 2>&1 || true)
+    OUTPUT=$(agnt-c dev start "$TASK_ID" 2>&1 || true)
     if echo "$OUTPUT" | grep -qE "(config|setup|init)"; then
-        test_pass "agent dev start (requires setup - expected)"
+        test_pass "agnt-c dev start (requires setup - expected)"
     else
-        test_fail "agent dev start $TASK_ID"
+        test_fail "agnt-c dev start $TASK_ID"
     fi
 fi
 

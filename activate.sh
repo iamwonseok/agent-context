@@ -45,5 +45,5 @@ unset -f _add_to_path
 echo "[OK] Agent context activated"
 echo "     AGENT_CONTEXT_PATH=${AGENT_CONTEXT_PATH}"
 echo ""
-echo "Available commands: agent, pm, lint"
-echo "Run 'agent setup' to install templates to your project"
+echo "Available commands: agnt-c, pm, lint"
+echo "Run 'agnt-c setup' to install templates to your project"

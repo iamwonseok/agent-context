@@ -110,7 +110,7 @@ Installs to `~/.agent`. Add to your shell profile:
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
 export AGENT_CONTEXT_PATH="$HOME/.agent"
-export PATH="$PATH:$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin"
+export PATH="$HOME/.agent/tools/agent/bin:$HOME/.agent/tools/pm/bin:$PATH"
 ```
 
 **Option B: Project-level installation**
@@ -123,7 +123,7 @@ git clone https://github.com/example/agent-context.git .agent
 source .agent/activate.sh
 
 # Install templates
-agent setup
+agnt-c setup
 ```
 
 Creates `.agent/` directory and installs templates to your project.
@@ -137,8 +137,8 @@ curl -sL https://raw.githubusercontent.com/example/agent-context/main/bootstrap.
 ## Verify Installation
 
 ```bash
-agent --version
-agent status
+agnt-c --version
+agnt-c status
 ```
 
 ## Configuration
@@ -149,10 +149,10 @@ After installation, install templates and configure your project:
 cd your-project
 
 # Install templates (idempotent)
-agent setup
+agnt-c setup
 
 # Or force overwrite existing files
-agent setup --force
+agnt-c setup --force
 ```
 
 This creates:
@@ -212,12 +212,12 @@ rm -rf .agent .cursorrules configs .secrets plan .project.yaml
 
 ## Troubleshooting
 
-### "command not found: agent"
+### "command not found: agnt-c"
 
 PATH not configured. Add to shell profile:
 
 ```bash
-export PATH="$PATH:$HOME/.agent/tools/agent/bin"
+export PATH="$HOME/.agent/tools/agent/bin:$PATH"
 ```
 
 Then restart shell or `source ~/.bashrc`.
@@ -228,7 +228,7 @@ Make scripts executable:
 
 ```bash
 chmod +x bootstrap.sh setup.sh
-chmod +x tools/agent/bin/agent
+chmod +x tools/agent/bin/agnt-c
 chmod +x tools/pm/bin/pm
 ```
 

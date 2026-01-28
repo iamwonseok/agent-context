@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-AGENT_BIN="${TOOLS_DIR}/agent/bin/agent"
+AGENT_BIN="${TOOLS_DIR}/agent/bin/agnt-c"
 AGENT_LIB="${TOOLS_DIR}/agent/lib"
 
 # Colors
@@ -128,18 +128,18 @@ test_help() {
         test_fail "agent (no args shows help)"
     fi
 
-    # agent --version
-    if "$AGENT_BIN" --version 2>&1 | grep -q "agent version"; then
-        test_pass "agent --version"
+    # agnt-c --version
+    if "$AGENT_BIN" --version 2>&1 | grep -q "agnt-c version"; then
+        test_pass "agnt-c --version"
     else
-        test_fail "agent --version"
+        test_fail "agnt-c --version"
     fi
 
-    # agent version
-    if "$AGENT_BIN" version 2>&1 | grep -q "agent version"; then
-        test_pass "agent version"
+    # agnt-c version
+    if "$AGENT_BIN" version 2>&1 | grep -q "agnt-c version"; then
+        test_pass "agnt-c version"
     else
-        test_fail "agent version"
+        test_fail "agnt-c version"
     fi
 }
 
