@@ -13,15 +13,23 @@
 #   # Or from any location
 #   source /path/to/agent-context/activate.sh
 
-# Prevent direct execution
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+# Prevent direct execution (bash only - zsh handles this differently)
+if [[ -n "$BASH_VERSION" ]] && [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "[ERROR] This script must be sourced, not executed"
     echo "Usage: source ${0}"
     exit 1
 fi
 
 # Get the directory where activate.sh is located
-_AGENT_ACTIVATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Support both bash and zsh
+if [[ -n "$BASH_VERSION" ]]; then
+    _AGENT_ACTIVATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+elif [[ -n "$ZSH_VERSION" ]]; then
+    _AGENT_ACTIVATE_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
+else
+    # Fallback: assume script is in current directory or use $0
+    _AGENT_ACTIVATE_DIR="$(cd "$(dirname "$0")" && pwd)"
+fi
 
 # Set AGENT_CONTEXT_PATH
 export AGENT_CONTEXT_PATH="${_AGENT_ACTIVATE_DIR}"
