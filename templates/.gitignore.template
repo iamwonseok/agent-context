@@ -1,3 +1,10 @@
+# Agent context symlink (points to global installation)
+.agent
+
+# Agent workflow context
+.context/
+.worktrees/
+
 # Secrets (keep examples only)
 .secrets/*
 !.secrets/*.example

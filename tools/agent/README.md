@@ -99,8 +99,10 @@ Best for:
 | `agnt-c status` | Show status |
 | `agnt-c config show` | Show configuration |
 | `agnt-c init` | Initialize project |
-| `agnt-c setup` | Install templates (idempotent) |
-| `agnt-c setup --force` | Force overwrite templates |
+| `agnt-c setup` | Quick setup: templates + .agent symlink |
+| `agnt-c setup --full` | Full setup: includes interactive JIRA/GitLab config |
+| `agnt-c setup --project` | Configure JIRA/GitLab settings only |
+| `agnt-c setup --force` | Force overwrite existing files |
 
 ## Context Management
 
