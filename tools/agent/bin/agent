@@ -27,7 +27,7 @@ source "$LIB_DIR/manager.sh"
 source "$LIB_DIR/setup.sh"
 
 # Version
-VERSION="0.1.0"
+VERSION="2.0.0"
 
 # Help message
 show_help() {
