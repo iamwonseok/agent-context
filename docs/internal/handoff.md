@@ -567,7 +567,7 @@ If blocked:
 ### RFC Implementation Status
 - RFC-002: 0% (Meta RFC - Reference only)
 - RFC-004: 100% ✅ (Phase 1-2 Complete)
-- RFC-005: 80% ✅ (Phase 0-1 Complete, Phase 2 pending)
+- RFC-005: 100% ✅ (Phase 0-2 Complete, validation passed)
 - RFC-006: 0%
 - RFC-007: 70%
 - RFC-008: 30%
@@ -636,12 +636,15 @@ If blocked:
 - ✅ RFC-005 Phase 0-1: Manual Fallback & CLI Enhancement
 
 **RFC-005 Summary** (2026-01-28):
-- Phase 0 (Documentation): Manual Fallback Guide exists, all scenarios have Manual Flow
-- Phase 1 (CLI Enhancement):
+- Phase 0 (Documentation): ✅ Manual Fallback Guide exists, all scenarios have Manual Flow
+- Phase 1 (CLI Enhancement): ✅
   - `agent dev submit --only=<steps>` and `--skip=<steps>` options
   - Pre-commit hook management (`--install-hook`, `--uninstall-hook`, `--status`)
   - Short aliases: `agent sync`, `agent check`, `agent submit`, etc.
-- Phase 2 (Validation): Pending - needs manual testing
+- Phase 2 (Validation): ✅ All tests passed
+  - Help messages display correctly
+  - Hook install/uninstall works as expected
+  - Aliases work without 'dev' prefix
 
 **Git Status**:
 - Branch: `main`
@@ -656,11 +659,11 @@ If blocked:
 **Tests**: 413/413 unit tests passing
 
 **Next Priorities**:
-1. RFC-005 Phase 2: Manual testing and validation
-2. RFC-006: Unified Platform Abstraction (pm milestone/label/wiki)
-3. Production validation of Phase 2 features (requires real usage)
+1. Production validation of RFC-004/005 features (requires real usage)
+2. RFC-006: Deferred to future-work.md (FW-11)
+3.배포 준비 및 사용자 피드백 수집
 
 ---
 
 **Last Updated**: 2026-01-28  
-**Document Version**: 1.5
+**Document Version**: 1.6
