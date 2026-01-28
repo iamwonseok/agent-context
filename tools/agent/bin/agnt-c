@@ -25,6 +25,7 @@ source "$LIB_DIR/executor.sh"
 source "$LIB_DIR/init.sh"
 source "$LIB_DIR/manager.sh"
 source "$LIB_DIR/setup.sh"
+source "$LIB_DIR/bootstrap.sh"
 
 # Version
 VERSION="2.0.0"
@@ -74,6 +75,10 @@ COMMON COMMANDS:
     config show             Show configuration
     init                    Initialize project for agent workflow
     setup                   Install templates to project (idempotent)
+    bootstrap [options]     Check/install tool dependencies
+        --check             Check if tools are installed (default)
+        --install           Install missing tools
+        --lang=<langs>      Specify languages (c,cpp,python,shell,yaml,docker)
 
 OPTIONS:
     -h, --help              Show this help
@@ -277,6 +282,9 @@ main() {
             ;;
         setup)
             agent_setup "$@"
+            ;;
+        bootstrap)
+            agent_bootstrap "$@"
             ;;
         # Auto-detect role based on command (short aliases)
         start|list|switch|sync|check|submit|cleanup|verify|retro|handoff|debrief)
