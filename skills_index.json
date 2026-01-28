@@ -1,0 +1,384 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-28T15:41:40Z",
+  "skills": [
+    {
+      "name": "assess-status",
+      "path": "skills/analyze/assess-status",
+      "category": "analyze",
+      "description": "Assess project or task status and health",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "research",
+      "cursor_mode": "ask",
+      "when_to_use": "Daily standups;Sprint reviews;Stakeholder updates;",
+      "inputs": "Project/Epic/Task ID|Status tracking system access",
+      "outputs": "Status report|Risk assessment|Recommendations"
+    }
+,
+    {
+      "name": "evaluate-priority",
+      "path": "skills/analyze/evaluate-priority",
+      "category": "analyze",
+      "description": "Evaluate and prioritize tasks based on impact and urgency",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "research",
+      "cursor_mode": "ask",
+      "when_to_use": "Sprint planning;Backlog grooming;Urgent request triage;",
+      "inputs": "Task list or backlog|Business context|Resource constraints",
+      "outputs": "Prioritized task list|Priority rationale"
+    }
+,
+    {
+      "name": "inspect-codebase",
+      "path": "skills/analyze/inspect-codebase",
+      "category": "analyze",
+      "description": "Analyze codebase structure and architecture",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "research",
+      "cursor_mode": "ask",
+      "when_to_use": "Starting work on unfamiliar codebase;Before making significant changes;Understanding project architecture;",
+      "inputs": "Repository root path|Specific area of interest (optional)",
+      "outputs": "Codebase structure overview|Key components identification|Technology stack summary"
+    }
+,
+    {
+      "name": "inspect-logs",
+      "path": "skills/analyze/inspect-logs",
+      "category": "analyze",
+      "description": "Analyze logs to identify issues and root causes",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "research",
+      "cursor_mode": "ask",
+      "when_to_use": "Debugging production issues;Investigating test failures;Understanding application behavior;",
+      "inputs": "Log files or log output|Error description (optional)|Time range (optional)",
+      "outputs": "Root cause identification|Error pattern analysis|Recommended fixes"
+    }
+,
+    {
+      "name": "parse-requirement",
+      "path": "skills/analyze/parse-requirement",
+      "category": "analyze",
+      "description": "Parse and clarify requirements before coding",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "research",
+      "cursor_mode": "ask",
+      "when_to_use": "User request is vague;Need clear specs;Multiple approaches possible;",
+      "inputs": "User request (vague or clear)",
+      "outputs": "design/{feature}.md"
+    }
+,
+    {
+      "name": "fix-defect",
+      "path": "skills/execute/fix-defect",
+      "category": "execute",
+      "description": "Fix bugs and defects in code",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Bug reported by users/QA;Test failure;Error in logs;",
+      "inputs": "Bug report or error description|Steps to reproduce",
+      "outputs": "Fixed code|Regression test"
+    }
+,
+    {
+      "name": "manage-issues",
+      "path": "skills/execute/manage-issues",
+      "category": "execute",
+      "description": "Create, update, and manage issues in tracking systems",
+      "version": "1.0.0",
+      "role": "both",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Creating bug reports;Creating feature requests;Updating issue status;",
+      "inputs": "Issue details or updates",
+      "outputs": "Created/updated issues"
+    }
+,
+    {
+      "name": "refactor-code",
+      "path": "skills/execute/refactor-code",
+      "category": "execute",
+      "description": "Refactor existing code without changing behavior",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Code smells identified;Technical debt reduction;Before adding new features;",
+      "inputs": "Code to refactor|Refactoring goals",
+      "outputs": "Refactored code|Unchanged behavior (tests pass)"
+    }
+,
+    {
+      "name": "update-documentation",
+      "path": "skills/execute/update-documentation",
+      "category": "execute",
+      "description": "Update documentation to match code changes",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "After adding new features;After changing APIs;After fixing bugs (if user-facing);",
+      "inputs": "Code changes|Existing documentation",
+      "outputs": "Updated documentation"
+    }
+,
+    {
+      "name": "write-code",
+      "path": "skills/execute/write-code",
+      "category": "execute",
+      "description": "Write code using test-driven development",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "New feature;Bug fix;Refactoring;",
+      "inputs": "Task to implement",
+      "outputs": "Code in src/|Tests in tests/"
+    }
+,
+    {
+      "name": "commit-changes",
+      "path": "skills/integrate/commit-changes",
+      "category": "integrate",
+      "description": "Write commit message and commit changes",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Task complete;Tests pass;Review done;",
+      "inputs": "Staged changes (git diff)",
+      "outputs": "Git commit"
+    }
+,
+    {
+      "name": "create-merge-request",
+      "path": "skills/integrate/create-merge-request",
+      "category": "integrate",
+      "description": "Create merge request for completed work",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "All tasks done;All commits done;Ready to merge;",
+      "inputs": "Completed branch",
+      "outputs": "Merge Request URL"
+    }
+,
+    {
+      "name": "merge-changes",
+      "path": "skills/integrate/merge-changes",
+      "category": "integrate",
+      "description": "Merge approved changes into target branch",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "MR/PR approved;CI passed;Ready to integrate;",
+      "inputs": "Approved MR/PR|Target branch",
+      "outputs": "Merged code|Closed MR/PR"
+    }
+,
+    {
+      "name": "notify-stakeholders",
+      "path": "skills/integrate/notify-stakeholders",
+      "category": "integrate",
+      "description": "Notify relevant stakeholders about changes",
+      "version": "1.0.0",
+      "role": "both",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Feature released;Breaking changes;Incidents;",
+      "inputs": "Change details|Stakeholder list",
+      "outputs": "Notifications sent"
+    }
+,
+    {
+      "name": "publish-report",
+      "path": "skills/integrate/publish-report",
+      "category": "integrate",
+      "description": "Publish project reports and metrics",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "implementation",
+      "cursor_mode": "agent",
+      "when_to_use": "Sprint completion;Release milestones;Status updates;",
+      "inputs": "Report data|Report type",
+      "outputs": "Published report"
+    }
+,
+    {
+      "name": "allocate-resources",
+      "path": "skills/planning/allocate-resources",
+      "category": "plan",
+      "description": "Allocate team resources to tasks and projects",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "Sprint planning;Project staffing;Workload balancing;",
+      "inputs": "Task list with estimates|Team member availability|Skill requirements",
+      "outputs": "Resource allocation plan|Capacity utilization"
+    }
+,
+    {
+      "name": "breakdown-work",
+      "path": "skills/planning/breakdown-work",
+      "category": "plan",
+      "description": "Break down large tasks into manageable subtasks",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "Large feature implementation;Epic to task decomposition;Sprint planning;",
+      "inputs": "Task or feature description|Design document (optional)",
+      "outputs": "Subtask list with estimates|Dependency graph"
+    }
+,
+    {
+      "name": "design-solution",
+      "path": "skills/planning/design-solution",
+      "category": "plan",
+      "description": "Design solution and plan implementation",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "Design approved;Before coding;Need task breakdown;",
+      "inputs": "design/{feature}.md",
+      "outputs": "plan/{feature}-plan.md"
+    }
+,
+    {
+      "name": "design-test-plan",
+      "path": "skills/planning/design-test-plan",
+      "category": "plan",
+      "description": "Design comprehensive test plan for implementation",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "After design-solution complete;Before implementation starts;Complex features requiring multiple test levels;",
+      "inputs": "design/{feature}.md|plan/{feature}-plan.md",
+      "outputs": "tests/plan/{feature}-test-plan.md"
+    }
+,
+    {
+      "name": "estimate-effort",
+      "path": "skills/planning/estimate-effort",
+      "category": "plan",
+      "description": "Estimate effort for tasks and features",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "Sprint planning;Project estimation;Resource allocation;",
+      "inputs": "Task description|Historical data (optional)",
+      "outputs": "Effort estimate|Confidence level|Assumptions"
+    }
+,
+    {
+      "name": "schedule-timeline",
+      "path": "skills/planning/schedule-timeline",
+      "category": "plan",
+      "description": "Create project timeline and schedule",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "planning",
+      "cursor_mode": "plan",
+      "when_to_use": "Project kickoff;Sprint planning;Release planning;",
+      "inputs": "Task list with estimates|Resource availability|Deadlines/milestones",
+      "outputs": "Project timeline|Milestone dates|Resource allocation"
+    }
+,
+    {
+      "name": "analyze-impact",
+      "path": "skills/validate/analyze-impact",
+      "category": "validate",
+      "description": "Analyze impact of proposed changes",
+      "version": "1.0.0",
+      "role": "manager",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "Before major changes;Release planning;Risk assessment;",
+      "inputs": "Proposed changes|Affected systems",
+      "outputs": "Impact assessment|Risk analysis"
+    }
+,
+    {
+      "name": "check-intent",
+      "path": "skills/validate/check-intent",
+      "category": "validate",
+      "description": "Lightweight intent alignment check during development",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "During `agent dev check` (automated);After making changes, before commit;When unsure if changes align with plan;",
+      "inputs": "Current changes (git diff)|Plan files (plan/*.md)",
+      "outputs": "Alignment status (pass/warn)|List of unplanned changes (if any)"
+    }
+,
+    {
+      "name": "check-style",
+      "path": "skills/validate/check-style",
+      "category": "validate",
+      "description": "Check code style and lint",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "After code change;Before commit;In CI/CD;",
+      "inputs": "Changed code files",
+      "outputs": "Lint results (pass/fail)"
+    }
+,
+    {
+      "name": "review-code",
+      "path": "skills/validate/review-code",
+      "category": "validate",
+      "description": "Review code quality",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "After tests pass;Before commit/PR;Code complete;",
+      "inputs": "Git diff (changes)|Test results",
+      "outputs": "Review report|Issue list"
+    }
+,
+    {
+      "name": "run-tests",
+      "path": "skills/validate/run-tests",
+      "category": "validate",
+      "description": "Run tests and check coverage",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "After code change;Before commit;In CI/CD;",
+      "inputs": "Code with tests",
+      "outputs": "Test results (JUnit XML)|Coverage report"
+    }
+,
+    {
+      "name": "verify-requirements",
+      "path": "skills/validate/verify-requirements",
+      "category": "validate",
+      "description": "Verify implementation matches original intent",
+      "version": "1.0.0",
+      "role": "developer",
+      "mode": "verification",
+      "cursor_mode": "debug",
+      "when_to_use": "After implementation complete;Before commit/PR;When unsure if requirements are met;",
+      "inputs": "Original requirements (design/*.md)|Implementation plan (plan/*.md)|Current implementation",
+      "outputs": "Verification checklist|Gap analysis (if any)"
+    }
+
+  ]
+}

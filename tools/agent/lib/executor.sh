@@ -14,9 +14,10 @@ STATE_WAITING_HUMAN="waiting_human"
 STATE_COMPLETED="completed"
 STATE_FAILED="failed"
 
-# Source permissions
+# Source dependencies
 EXECUTOR_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$EXECUTOR_SCRIPT_DIR/permissions.sh" 2>/dev/null || true
+source "$EXECUTOR_SCRIPT_DIR/progress.sh" 2>/dev/null || true
 
 # Execute a command with permission check
 # Usage: execute_with_check <command> <args...>
@@ -41,6 +42,9 @@ wait_for_human() {
 
     local executor
     executor=$(detect_executor)
+
+    # Log to progress
+    progress_info "Waiting for human: $reason" 2>/dev/null || true
 
     echo ""
     echo "=================================================="
@@ -109,6 +113,9 @@ history:
     timestamp: "$timestamp"
 EOF
 
+    # Log to progress
+    progress_info "Workflow state: $state" 2>/dev/null || true
+
     echo "[INFO] Workflow state saved: $state"
 }
 
@@ -166,6 +173,9 @@ execute_or_human() {
     if "$command" "$@" 2>/dev/null; then
         return 0
     fi
+
+    # Log failure to progress
+    progress_error "Command failed: $command - fallback to human" 2>/dev/null || true
 
     # If failed, provide human instruction
     echo ""

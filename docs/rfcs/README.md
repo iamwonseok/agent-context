@@ -4,95 +4,62 @@ Design proposals and implementation plans for agent-context framework.
 
 ## Active RFCs
 
-**Last Updated**: 2026-01-27
+**Last Updated**: 2026-01-29
 
-| # | Title | File | Status | Progress | Priority |
-|---|-------|------|--------|----------|----------|
-| 002 | Proposal v2.0 | [002-proposal.md](002-proposal.md) | Active | 0% (Meta RFC) | Low |
-| 004 | Agent Workflow System v2.0 | [004-agent-workflow-system.md](004-agent-workflow-system.md) | Active | **0%** | **Critical** |
-| 005 | Manual Fallback Improvement | [005-manual-fallback-improvement.md](005-manual-fallback-improvement.md) | Active | 20% | High |
-| 006 | Unified Platform Abstraction | [006-unified-platform-abstraction.md](006-unified-platform-abstraction.md) | Active | 30% | Medium |
-| 007 | Architecture Pattern Improvements | [007-architecture-improvements.md](007-architecture-improvements.md) | Active | 70% | Medium |
-| 008 | Domain Extension & Installation | [008-domain-extension.md](008-domain-extension.md) | Active | 30% | Medium |
-| 009 | CLI Documentation Policy | [009-cli-documentation-policy.md](009-cli-documentation-policy.md) | Active | 50% | Medium |
-| 010 | Agent Efficiency & Best Practices | [010-agent-efficiency-best-practices.md](010-agent-efficiency-best-practices.md) | Active | 60% | High |
-| 011 | Language Policy & Internationalization | [011-language-policy.md](011-language-policy.md) | **Complete** | **100%** | Done |
-| 012 | Test Planning Framework | [012-test-planning-framework.md](012-test-planning-framework.md) | Active | 40% | High |
+| # | Title | Status | Priority | Notes |
+|---|-------|--------|----------|-------|
+| 006 | Unified Platform Abstraction | Active | **High** | JIRA/GitLab/Confluence 통합 |
+| 008 | Domain Extension & Installation | Active | Medium | 설치 개선 (RFC-013으로 확장) |
+| 010 | Agent Efficiency Best Practices | Active | High | 효율성 패턴 |
+| 011 | Language Policy | **Complete** | Done | 언어 정책 |
+| **013** | **Simplified Installation** | **Draft** | **High** | Tools 전역 설치 + Minimal Core |
 
-### Implementation Summary
+## Simplified RFCs (축소)
 
-**Overall**: 1/10 RFCs fully implemented (10%)
+이전에 과도하게 복잡했던 RFC들을 핵심만 유지:
 
-**Breakdown by Status**:
-- ✅ Complete: 1 RFC (011)
-- 🔄 In Progress: 6 RFCs (005-010, 012)
-- ❌ Not Started: 2 RFCs (002, 004)
-- 📋 Reference: 1 RFC (002 - meta document)
+| # | Title | Status | Notes |
+|---|-------|--------|-------|
+| 005 | Manual Fallback | Simplified | 핵심: `--skip` 옵션 |
+| 007 | Architecture Improvements | Simplified | 핵심: IR (intermediate.yaml) |
+| 009 | CLI Documentation Policy | Deferred | 낮은 우선순위 |
+| 012 | Test Planning Framework | Simplified | 핵심: E2E Docker 테스트 |
 
-**Priority Distribution**:
-- Critical: 1 RFC (004) - **0% - Needs immediate attention**
-- High: 3 RFCs (005, 010, 012)
-- Medium: 5 RFCs (006-009)
-- Low: 1 RFC (002)
+## Priority Order
 
-### Next Steps (Priority Order)
+1. **P1: RFC-013** - Simplified Installation (1주)
+   - Tools 전역 설치
+   - Minimal core 분리
+   - Docker E2E 테스트
 
-1. **P1: Testing Infrastructure** (1-2 weeks)
-   - E2E tests implementation
-   - Scenario automation
-   - Error handling tests
-   - See [docs/internal/handoff.md](../internal/handoff.md)
+2. **P2: RFC-006** - Platform Abstraction 완성
+   - JIRA ↔ GitLab ↔ Confluence 동기화
 
-2. **P2: RFC-004 Implementation** (4-6 weeks) **CRITICAL**
-   - Phase 1: State Visibility Layer (1-2 weeks)
-   - Phase 2: Feedback Loops Layer (1-2 weeks)
-   - Most important RFC - core workflow system
-
-3. **P2: RFC-012 Completion** (1 week)
-   - Backfill test plans in RFCs 002-009
-   - Foundation already complete (40%)
-
-4. **P2: Other RFCs** (As capacity allows)
-   - RFC-005: Manual Fallback CLI extensions
-   - RFC-006: Platform abstraction completion
-   - RFC-008: Installation flow improvements
-
-### Reference Materials
-
-- [Implementation Handoff](../internal/handoff.md) - Detailed task breakdown
-- [Feedback Analysis](../../.context/claude-opus-feedback-implementation.md) - Current assessment
-- [Future Work](future-work.md) - Long-term enhancements
-
-## Future Work
-
-| Title | File | Description |
-|-------|------|-------------|
-| Future Work | [future-work.md](future-work.md) | 장기 발전 방향 (Phase 2 완료 후 리뷰) |
+3. **P3: 나머지** - 필요 시
 
 ## Archived RFCs
 
-See [archive/](archive/) for superseded documents.
+과도하게 복잡하거나 현재 방향과 맞지 않는 RFC:
+
+| # | Title | Archive Reason |
+|---|-------|---------------|
+| 002 | Proposal v2.0 | 메타 문서, 1100줄 과도 |
+| 004 | Agent Workflow System v2.0 | 1100줄 과도, 복잡한 설계 |
+
+See [archive/](archive/) for full documents.
 
 ## RFC Process
 
-1. Create new RFC file: `NNN-title.md`
-2. Write proposal with motivation, design, and implementation plan
-3. Review with team
-4. Update status as work progresses
-5. Move to `archive/` when superseded or completed
+1. 새 RFC: `NNN-title.md` 생성
+2. 핵심만 작성 (200줄 이내 권장)
+3. 구현 시작 전 리뷰
+4. 완료 시 Status를 Complete로 변경
+5. 더 이상 유효하지 않으면 archive/로 이동
 
-## File Naming
+## Design Philosophy
 
-- Format: `NNN-descriptive-title.md`
-- Use sequential numbers (001, 002, ...)
-- Keep titles short but descriptive
+From [ARCHITECTURE.md](../../ARCHITECTURE.md):
 
-## Status Values
-
-| Status | Meaning |
-|--------|---------|
-| Draft | Work in progress |
-| Active | Accepted and being implemented |
-| Superseded | Replaced by newer RFC |
-| Completed | Fully implemented |
-| Rejected | Not accepted |
+- **Simplicity Over Completeness**: 단순한 솔루션 우선
+- **200줄 예산**: 단일 RFC도 과도하면 분리
+- **구현 가능한 범위**: 1-2주 내 구현 가능한 크기

@@ -136,6 +136,28 @@ services:
     working_dir: /agent-context
     command: ["bash", "/agent-context/tests/meta/run-all-meta-tests.sh"]
 
+  # Logging tests (no tokens required)
+  logging:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - logging-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/e2e/test_logging.sh"]
+
+  # Logging tests with verbose output
+  logging-verbose:
+    image: agent-context-test:latest
+    depends_on:
+      test-base:
+        condition: service_completed_successfully
+    volumes:
+      - logging-verbose-workspace:/workspace
+    working_dir: /agent-context
+    command: ["bash", "/agent-context/tests/e2e/test_logging.sh", "--verbose"]
+
 volumes:
   unit-workspace:
   smoke-workspace:
@@ -146,3 +168,5 @@ volumes:
   error-handling-workspace:
   all-workspace:
   meta-workspace:
+  logging-workspace:
+  logging-verbose-workspace:
