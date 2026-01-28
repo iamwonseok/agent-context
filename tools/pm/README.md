@@ -10,13 +10,14 @@ Jira/Confluence/GitLab integration CLI for development workflow automation.
 - jq (JSON processor)
 - curl
 - git
+- pandoc (for export commands only)
 
 ```bash
 # macOS
-brew install jq
+brew install jq pandoc
 
 # Ubuntu/Debian
-apt-get install jq
+apt-get install jq pandoc
 ```
 
 ## Installation
@@ -107,6 +108,12 @@ pm jira issue view PROJ-123         # View issue details
 pm jira issue create "Title"        # Create issue
 pm jira issue create "Bug" --type Bug
 pm jira issue create "Task" --description "Details here"
+
+# Export issues to Markdown
+pm jira export --project SPF --output ./export/jira/
+pm jira export --jql "project=SPF AND status!=Done" --output ./export/jira/
+pm jira export --project SPF --output ./export/jira/ --include-comments
+pm jira export --project SPF --output ./export/jira/ --limit 100
 ```
 
 ### Confluence
@@ -123,6 +130,10 @@ pm confluence page create --space SFP --title "New Page" --content "<p>Hello</p>
 pm confluence page create --space SFP --title "Child Page" --parent 7574650944
 pm confluence search "type=page AND space=SFP"
 pm confluence search "title ~ 'Review'"
+
+# Export pages to Markdown
+pm confluence export --space SFP --output ./export/confluence/
+pm confluence export --space SFP --output ./export/confluence/ --limit 50
 ```
 
 ### GitLab
@@ -236,6 +247,7 @@ tools/pm/
 |   +-- gitlab.sh             # GitLab API functions
 |   +-- github.sh             # GitHub API functions
 |   +-- workflow.sh           # Workflow functions (init, finish)
+|   +-- export.sh             # Export functions (Markdown export)
 +-- README.md
 ```
 
