@@ -59,8 +59,9 @@ Read the appropriate workflow file:
 - Hotfix: `workflows/solo/hotfix.md`
 
 ### After Modifying Files
-1. Run quality checks: `pre-commit run --all-files`
-2. Fix any failures before committing
+1. Check if related files need updates (docs, README, etc.)
+2. Run quality checks: `pre-commit run --all-files`
+3. Fix any failures before committing
 
 ### Before Committing
 1. Review changes: `git diff --staged`
