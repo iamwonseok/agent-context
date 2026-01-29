@@ -1,137 +1,105 @@
 # Skills
 
-Independent, reusable building blocks for AI agent tasks.
+> **"Skill은 멍청할수록(Generic) 좋다"**
 
-**[-> How to Use (USAGE.md)](USAGE.md)** - Start here for usage guide.
-
-## Core Workflow
-
-Skills support this development workflow:
-
-```
-RFC/Requirement → Design → Implement → Test → Review → Commit → MR → JIRA/Confluence
-```
-
-## Essential Skills (Developer Workflow)
-
-These are the core skills for the main development workflow:
-
-| Stage | Skill | Purpose |
-|-------|-------|---------|
-| **Analyze** | `analyze/parse-requirement` | Clarify requirements, create design doc |
-| **Plan** | `planning/design-solution` | Design solution, create implementation plan |
-| **Execute** | `execute/write-code` | Test-driven development |
-| **Validate** | `validate/run-tests` | Run tests, check coverage |
-| **Validate** | `validate/check-style` | Lint, code style |
-| **Validate** | `validate/review-code` | Code review checklist |
-| **Integrate** | `integrate/commit-changes` | Write commit message |
-| **Integrate** | `integrate/create-merge-request` | Create MR/PR |
-
-## Optional Skills
-
-These skills are useful but not required for every task:
-
-| Category | Skill | When to Use |
-|----------|-------|-------------|
-| Execute | `execute/fix-defect` | Bug fixes |
-| Execute | `execute/manage-issues` | JIRA card management |
-| Execute | `execute/update-documentation` | Update docs after changes |
-| Validate | `validate/verify-requirements` | Check implementation matches spec |
-| Validate | `validate/check-intent` | Verify alignment with plan |
-| Planning | `planning/breakdown-work` | Large feature decomposition |
-| Planning | `planning/design-test-plan` | Comprehensive test planning |
-| Analyze | `analyze/inspect-codebase` | Understand unfamiliar code |
-| Analyze | `analyze/inspect-logs` | Debug production issues |
-| Integrate | `integrate/merge-changes` | Merge approved MR |
-
-## Manager Skills (Future)
-
-These skills are for project management, not currently prioritized:
-
-| Skill | Purpose |
-|-------|---------|
-| `analyze/assess-status` | Sprint/project status |
-| `analyze/evaluate-priority` | Task prioritization |
-| `planning/allocate-resources` | Resource allocation |
-| `planning/schedule-timeline` | Project timeline |
-| `planning/estimate-effort` | Effort estimation |
-| `validate/analyze-impact` | Change impact analysis |
-| `integrate/notify-stakeholders` | Notifications |
-| `integrate/publish-report` | Status reports |
-
-## Skill Format
-
-Each skill has `SKILL.md` with:
-
-```yaml
----
-name: skill-name
-category: analyze|plan|execute|validate|integrate
-description: One line
-version: 1.0.0
-role: developer|manager|both
-inputs:
-  - Input 1
-outputs:
-  - Output 1
----
-
-# Skill Name
-
-## When to Use
-## Prerequisites
-## Workflow
-## Outputs
-## Examples
-```
-
-## Finding Skills
-
-Use `skills_index.json` for quick lookup:
-
-```bash
-# Find all execute skills
-jq '.skills[] | select(.category == "execute")' skills_index.json
-
-# Find skills by keyword
-jq '.skills[] | select(.when_to_use | contains("test"))' skills_index.json
-```
-
-Regenerate index after adding/modifying skills:
-
-```bash
-./scripts/generate-index.sh
-```
-
-## Add New Skill
-
-1. Choose appropriate category (`analyze/`, `planning/`, `execute/`, `validate/`, `integrate/`)
-2. Create directory: `category/skill-name/`
-3. Copy `_template/SKILL.md`
-4. Fill in details with proper frontmatter
-5. Run `./scripts/generate-index.sh` to update index
-
-## Structure
-
-```
-skills/
-├── README.md           # This file
-├── USAGE.md            # Usage guide
-├── PIPELINE.md         # Pipeline flow
-├── _template/          # Skill template
-├── analyze/            # Understand situation
-├── planning/           # Design approach
-├── execute/            # Perform work
-├── validate/           # Verify quality
-└── integrate/          # Deliver results
-```
+Skills are **thin interfaces/templates** that define HOW to do something, without context about WHAT specifically to do.
 
 ## Philosophy
 
-From [ARCHITECTURE.md](../ARCHITECTURE.md):
+| Concept | Role | Developer Analogy |
+|---------|------|-------------------|
+| **Skill** | Interface definition, Template | Function signature, Abstract class |
+| **Workflow** | Context injection, Mapping | DI Container, Implementation |
 
-- **Skill**: What the agent CAN do (Capability)
-- **Workflow**: What the agent SHOULD do in order (Process)
-- **.cursorrules**: What the agent MUST follow (Behavior)
+### Design Principles
 
-Keep these boundaries clear. Don't mix workflow logic into skills.
+1. **Parameter-driven**: Skills request inputs; workflows inject them
+2. **Context-free**: No ticket IDs, project names, or specific details
+3. **Reusable**: Same skill works across different workflows
+4. **Focused on HOW**: Methods, checklists, principles
+
+---
+
+## Available Skills
+
+| Skill | Purpose | Key Inputs |
+|-------|---------|------------|
+| [analyze.md](analyze.md) | Understand the problem space | context, artifacts, goal |
+| [design.md](design.md) | Define the solution | problem, scope, constraints |
+| [implement.md](implement.md) | Execute the solution | design, acceptance_criteria, codebase |
+| [test.md](test.md) | Verify implementation | implementation, acceptance_criteria, test_scope |
+| [review.md](review.md) | Validate quality | changes, context, standards |
+
+---
+
+## Skill Structure
+
+Each skill follows this structure:
+
+```markdown
+# {Skill Name}
+
+> One-line description
+
+## Interface Definition
+- **Input (Required):** Parameters the skill needs
+- **Output:** What the skill produces
+
+## Template
+Fill-in-the-blank sections that workflows populate
+
+## Checklist
+Quality gates to verify before completion
+```
+
+---
+
+## How Skills Are Called
+
+Skills are never used directly. Workflows inject context:
+
+```
+Workflow (e.g., solo/feature.md)
+    │
+    │  Context Mapping:
+    │  - problem = Ticket description
+    │  - scope = Acceptance criteria
+    │  - constraints = Sprint deadline
+    │
+    └──> Call Skill: skills/design.md
+              │
+              └──> Output: Tech Spec
+```
+
+### Same Skill, Different Context
+
+| Workflow | How `design.md` is used |
+|----------|-------------------------|
+| `solo/feature.md` | Full template, all sections |
+| `solo/bugfix.md` | Skip architecture section |
+| `solo/hotfix.md` | Skip entirely (no time) |
+
+---
+
+## Creating New Skills
+
+새 skill 생성 시 기존 파일(`analyze.md`, `design.md` 등) 참고.
+
+---
+
+## Relationship to Workflows
+
+```
+skills/           (Interface/Template - Generic)
+    └── design.md
+    
+workflows/        (Context Injection - Specific)
+    ├── solo/
+    │   └── feature.md  ──calls──> design.md with feature context
+    ├── team/
+    │   └── sprint.md   ──calls──> design.md with sprint context
+    └── project/
+        └── quarter.md  ──calls──> design.md with OKR context
+```
+
+See [workflows/README.md](../workflows/README.md) for how workflows orchestrate skills.

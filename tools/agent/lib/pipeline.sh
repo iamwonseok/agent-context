@@ -190,11 +190,11 @@ pipeline_set_output() {
     # Initialize outputs object if null, then set the value
     local current_outputs
     current_outputs=$(yq -r ".stages.${stage}.outputs" "$ir_file")
-    
+
     if [[ "$current_outputs" == "null" ]]; then
         yq -i ".stages.${stage}.outputs = {}" "$ir_file"
     fi
-    
+
     # Set the output value
     yq -i ".stages.${stage}.outputs.${key} = \"${value}\" | .updated_at = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" "$ir_file"
     echo "(v) Output set: stages.${stage}.outputs.${key}"
@@ -312,19 +312,19 @@ pipeline_status() {
     echo "Updated:       $(yq -r '.updated_at' "$ir_file")"
     echo "------------------------------------------------------------"
     echo "Stages:"
-    
+
     for stage in "${VALID_STAGES[@]}"; do
         local completed
         completed=$(yq -r ".stages.${stage}.completed" "$ir_file" 2>/dev/null)
         local timestamp
         timestamp=$(yq -r ".stages.${stage}.timestamp" "$ir_file" 2>/dev/null)
-        
+
         # Handle null values
         [[ "$timestamp" == "null" ]] && timestamp="-"
-        
+
         local status_icon="[ ]"
         [[ "$completed" == "true" ]] && status_icon="[v]"
-        
+
         printf "  %s %-12s %s\n" "$status_icon" "$stage" "$timestamp"
     done
     echo "============================================================"

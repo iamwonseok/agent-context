@@ -1,8 +1,0 @@
-# GitHub Personal Access Token
-# Create at: https://github.com/settings/tokens
-# Required scopes: repo, workflow (for GitHub Actions)
-#
-# Copy this file to 'github-api-token' and replace with your token:
-# cp github-api-token.example github-api-token
-#
-ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

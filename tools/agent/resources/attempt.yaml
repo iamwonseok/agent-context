@@ -1,6 +1,6 @@
 # Attempt Record Template
 # Records a single attempt within a task
-
+---
 # Attempt number (auto-incremented)
 attempt_number: 0
 
@@ -22,8 +22,8 @@ approach: |
 # What was the outcome?
 result: ""
 
-# Status: "in_progress", "success", "partial", "failed"
-status: "in_progress"
+# Status: in_progress, success, partial, failed
+status: in_progress
 
 # Files changed in this attempt
 files_changed: []

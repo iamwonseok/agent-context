@@ -1,7 +1,5 @@
 # Agent Workflow CLI (agnt-c)
 
-> **User manual**: [docs/cli/agent.md](../../docs/cli/agent.md)
-
 Developer and Manager workflow automation for AI-assisted development.
 
 ## Installation

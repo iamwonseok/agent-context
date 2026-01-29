@@ -1,6 +1,9 @@
 #!/bin/bash
 # Project Management CLI
-# Jira/GitLab integration for development workflows
+# JIRA/Confluence integration for development workflows
+#
+# For GitLab: use glab CLI (https://gitlab.com/gitlab-org/cli)
+# For GitHub: use gh CLI (https://cli.github.com)
 
 set -e
 
@@ -12,17 +15,10 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/lib"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/jira.sh"
 source "$LIB_DIR/confluence.sh"
-source "$LIB_DIR/gitlab.sh"
-source "$LIB_DIR/github.sh"
-source "$LIB_DIR/workflow.sh"
-source "$LIB_DIR/provider.sh"
-source "$LIB_DIR/milestone.sh"
-source "$LIB_DIR/label.sh"
-source "$LIB_DIR/wiki.sh"
 source "$LIB_DIR/export.sh"
 
 # Version
-VERSION="1.0.0"
+VERSION="2.0.0"
 
 # Help message
 show_help() {
@@ -69,45 +65,6 @@ COMMANDS:
     confluence search CQL   Search pages
     confluence export       Export pages to Markdown files
 
-    gitlab me               Show current GitLab user
-    gitlab mr list          List merge requests
-    gitlab mr view IID      View MR details
-    gitlab mr create        Create merge request
-    gitlab issue list       List GitLab issues
-    gitlab issue create TITLE  Create GitLab issue
-
-    github me               Show current GitHub user
-    github pr list          List pull requests
-    github pr view NUM      View PR details
-    github pr create        Create pull request
-    github issue list       List GitHub issues
-    github issue create TITLE  Create GitHub issue
-
-    # Unified commands (platform-agnostic)
-    issue create TITLE      Create issue (auto-select: JIRA/GitLab/GitHub)
-    issue list              List issues
-    review create           Create MR/PR (auto-select: GitLab/GitHub)
-    review list             List MRs/PRs
-    review view ID          View MR/PR details
-    milestone list          List milestones (auto-select: GitLab/GitHub)
-    milestone view ID       View milestone details
-    milestone create TITLE  Create milestone
-    milestone close ID      Close milestone
-    label list              List labels (auto-select: GitLab/GitHub)
-    label create NAME       Create label
-    label delete NAME       Delete label
-    wiki list               List wiki pages (GitLab only)
-    wiki view SLUG          View wiki page content
-    wiki create TITLE       Create wiki page
-    wiki update SLUG        Update wiki page
-    wiki delete SLUG        Delete wiki page
-    doc create TITLE        Create document (Confluence)
-    doc list                List documents
-    provider show           Show current provider configuration
-
-    create TITLE            Create new feature/task
-    finish                  Finish current feature/task
-
 OPTIONS:
     -h, --help              Show this help
     -v, --version           Show version
@@ -115,10 +72,12 @@ OPTIONS:
 EXAMPLES:
     pm config show
     pm jira issue list
-    pm create "Add UART driver"
-    pm create "Fix DMA timeout" --type Bug --workflow bugfix
-    pm finish
-    pm finish --draft --skip-tests
+    pm jira issue create "Add UART driver"
+    pm confluence page list --space PROJ
+
+NOTE:
+    For GitLab operations, use: glab (https://gitlab.com/gitlab-org/cli)
+    For GitHub operations, use: gh (https://cli.github.com)
 
 For more information, see: tools/pm/README.md
 EOF
@@ -168,7 +127,6 @@ cmd_jira() {
                 search)
                     shift
                     local query=""
-                    # First positional arg is query
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         query="$1"
                         shift
@@ -207,7 +165,6 @@ cmd_jira() {
                     local type="Task"
                     local description=""
 
-                    # First positional arg is summary
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         summary="$1"
                         shift
@@ -228,13 +185,11 @@ cmd_jira() {
                     local key=""
                     local assignee=""
 
-                    # First positional arg is key
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         key="$1"
                         shift
                     fi
 
-                    # Second positional arg is assignee email
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         assignee="$1"
                         shift
@@ -247,13 +202,11 @@ cmd_jira() {
                     local key=""
                     local status=""
 
-                    # First positional arg is key
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         key="$1"
                         shift
                     fi
 
-                    # Second positional arg is status
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         status="$1"
                         shift
@@ -265,7 +218,6 @@ cmd_jira() {
                     shift
                     local key=""
 
-                    # First positional arg is key
                     if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                         key="$1"
                         shift
@@ -398,7 +350,6 @@ cmd_jira() {
                 case "$1" in
                     --csv) csv_file="$2"; shift ;;
                     *)
-                        # Treat as csv file if no flag
                         if [[ -z "$csv_file" ]]; then
                             csv_file="$1"
                         fi
@@ -573,7 +524,6 @@ cmd_confluence() {
             local cql=""
             local limit=25
 
-            # First positional arg is CQL
             if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
                 cql="$1"
                 shift
@@ -615,805 +565,6 @@ cmd_confluence() {
     esac
 }
 
-cmd_gitlab() {
-    load_config || exit 1
-
-    case "$1" in
-        me)
-            gitlab_me
-            ;;
-        mr)
-            shift
-            case "$1" in
-                list)
-                    shift
-                    local state="opened"
-                    local limit=20
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -s|--state) state="$2"; shift ;;
-                            -n|--limit) limit="$2"; shift ;;
-                        esac
-                        shift
-                    done
-                    gitlab_mr_list "$state" "$limit"
-                    ;;
-                view)
-                    gitlab_mr_view "$2"
-                    ;;
-                create)
-                    shift
-                    local source=""
-                    local target="main"
-                    local title=""
-                    local description=""
-                    local draft="false"
-
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -s|--source) source="$2"; shift ;;
-                            -t|--target) target="$2"; shift ;;
-                            --title) title="$2"; shift ;;
-                            -d|--description) description="$2"; shift ;;
-                            --draft) draft="true" ;;
-                        esac
-                        shift
-                    done
-
-                    if [[ -z "$source" ]] || [[ -z "$title" ]]; then
-                        echo "[ERROR] --source and --title required" >&2
-                        exit 1
-                    fi
-
-                    gitlab_mr_create "$source" "$target" "$title" "$description" "$draft"
-                    ;;
-                *)
-                    echo "[ERROR] Unknown gitlab mr command: $1" >&2
-                    echo "Usage: pm gitlab mr <list|view|create>" >&2
-                    exit 1
-                    ;;
-            esac
-            ;;
-        issue)
-            shift
-            case "$1" in
-                list)
-                    shift
-                    local state="opened"
-                    local limit=20
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -s|--state) state="$2"; shift ;;
-                            -n|--limit) limit="$2"; shift ;;
-                        esac
-                        shift
-                    done
-                    gitlab_issue_list "$state" "$limit"
-                    ;;
-                create)
-                    shift
-                    local title=""
-                    local description=""
-
-                    # First positional arg is title
-                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                        title="$1"
-                        shift
-                    fi
-
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -d|--description) description="$2"; shift ;;
-                        esac
-                        shift
-                    done
-
-                    if [[ -z "$title" ]]; then
-                        echo "[ERROR] Title required" >&2
-                        echo "Usage: pm gitlab issue create TITLE [-d|--description DESC]" >&2
-                        exit 1
-                    fi
-
-                    local iid
-                    iid=$(gitlab_issue_create "$title" "$description")
-                    if [[ -n "$iid" ]] && [[ "$iid" != "null" ]]; then
-                        echo "(v) GitLab issue: #$iid"
-                    fi
-                    ;;
-                *)
-                    echo "[ERROR] Unknown gitlab issue command: $1" >&2
-                    echo "Usage: pm gitlab issue <list|create>" >&2
-                    exit 1
-                    ;;
-            esac
-            ;;
-        *)
-            echo "[ERROR] Unknown gitlab command: $1" >&2
-            echo "Usage: pm gitlab <me|mr|issue>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_github() {
-    load_config || exit 1
-
-    case "$1" in
-        me)
-            github_me
-            ;;
-        pr)
-            shift
-            case "$1" in
-                list)
-                    shift
-                    local state="open"
-                    local limit=20
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -s|--state) state="$2"; shift ;;
-                            -n|--limit) limit="$2"; shift ;;
-                        esac
-                        shift
-                    done
-                    github_pr_list "$state" "$limit"
-                    ;;
-                view)
-                    github_pr_view "$2"
-                    ;;
-                create)
-                    shift
-                    local head=""
-                    local base="main"
-                    local title=""
-                    local body=""
-                    local draft="false"
-
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -h|--head) head="$2"; shift ;;
-                            -b|--base) base="$2"; shift ;;
-                            --title) title="$2"; shift ;;
-                            -d|--body) body="$2"; shift ;;
-                            --draft) draft="true" ;;
-                        esac
-                        shift
-                    done
-
-                    if [[ -z "$head" ]] || [[ -z "$title" ]]; then
-                        echo "[ERROR] --head and --title required" >&2
-                        exit 1
-                    fi
-
-                    github_pr_create "$head" "$base" "$title" "$body" "$draft"
-                    ;;
-                *)
-                    echo "[ERROR] Unknown github pr command: $1" >&2
-                    echo "Usage: pm github pr <list|view|create>" >&2
-                    exit 1
-                    ;;
-            esac
-            ;;
-        issue)
-            shift
-            case "$1" in
-                list)
-                    shift
-                    local state="open"
-                    local limit=20
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -s|--state) state="$2"; shift ;;
-                            -n|--limit) limit="$2"; shift ;;
-                        esac
-                        shift
-                    done
-                    github_issue_list "$state" "$limit"
-                    ;;
-                create)
-                    shift
-                    local title=""
-                    local body=""
-
-                    # First positional arg is title
-                    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                        title="$1"
-                        shift
-                    fi
-
-                    while [[ $# -gt 0 ]]; do
-                        case "$1" in
-                            -b|--body) body="$2"; shift ;;
-                        esac
-                        shift
-                    done
-
-                    if [[ -z "$title" ]]; then
-                        echo "[ERROR] Title required" >&2
-                        echo "Usage: pm github issue create TITLE [-b|--body BODY]" >&2
-                        exit 1
-                    fi
-
-                    local number
-                    number=$(github_issue_create "$title" "$body")
-                    if [[ -n "$number" ]] && [[ "$number" != "null" ]]; then
-                        echo "(v) GitHub issue: #$number"
-                    fi
-                    ;;
-                *)
-                    echo "[ERROR] Unknown github issue command: $1" >&2
-                    echo "Usage: pm github issue <list|create>" >&2
-                    exit 1
-                    ;;
-            esac
-            ;;
-        *)
-            echo "[ERROR] Unknown github command: $1" >&2
-            echo "Usage: pm github <me|pr|issue>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-# ============================================================
-# Unified Commands (Platform-agnostic)
-# ============================================================
-
-cmd_issue() {
-    load_config || exit 1
-
-    case "$1" in
-        create)
-            shift
-            local title=""
-            local type="Task"
-            local description=""
-
-            # First positional arg is title
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                title="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -t|--type) type="$2"; shift ;;
-                    -d|--description) description="$2"; shift ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$title" ]]; then
-                echo "[ERROR] Title required" >&2
-                echo "Usage: pm issue create TITLE [-t|--type TYPE] [-d|--description DESC]" >&2
-                exit 1
-            fi
-
-            local result
-            result=$(unified_issue_create "$title" "$type" "$description")
-            if [[ -n "$result" ]]; then
-                echo "(v) Issue created: $result"
-            fi
-            ;;
-        list)
-            shift
-            local status="open"
-            local limit=20
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -s|--status) status="$2"; shift ;;
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_issue_list "$status" "$limit"
-            ;;
-        *)
-            echo "[ERROR] Unknown issue command: $1" >&2
-            echo "Usage: pm issue <create|list>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_review() {
-    load_config || exit 1
-
-    case "$1" in
-        create)
-            shift
-            local source=""
-            local target="main"
-            local title=""
-            local description=""
-            local draft="false"
-
-            # Auto-detect source branch if not provided
-            if [[ -z "$source" ]]; then
-                source=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -s|--source) source="$2"; shift ;;
-                    -t|--target) target="$2"; shift ;;
-                    --title) title="$2"; shift ;;
-                    -d|--description) description="$2"; shift ;;
-                    --draft) draft="true" ;;
-                esac
-                shift
-            done
-
-            # Auto-generate title from branch name if not provided
-            if [[ -z "$title" ]] && [[ -n "$source" ]]; then
-                title="$source"
-                # Remove prefix
-                for prefix in "feat/" "fix/" "hotfix/" "feature/" "bugfix/"; do
-                    if [[ "$title" == "$prefix"* ]]; then
-                        title="${title#$prefix}"
-                        break
-                    fi
-                done
-                # Convert hyphens to spaces
-                title=$(echo "$title" | sed 's/-/ /g')
-            fi
-
-            if [[ -z "$source" ]]; then
-                echo "[ERROR] Cannot determine source branch" >&2
-                echo "Usage: pm review create [--source BRANCH] [--title TITLE] [--draft]" >&2
-                exit 1
-            fi
-
-            unified_review_create "$source" "$target" "$title" "$description" "$draft"
-            ;;
-        list)
-            shift
-            local status="open"
-            local limit=20
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -s|--status) status="$2"; shift ;;
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_review_list "$status" "$limit"
-            ;;
-        view)
-            shift
-            local id=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                id="$1"
-            fi
-
-            if [[ -z "$id" ]]; then
-                echo "[ERROR] ID required" >&2
-                echo "Usage: pm review view <ID>" >&2
-                exit 1
-            fi
-
-            unified_review_view "$id"
-            ;;
-        *)
-            echo "[ERROR] Unknown review command: $1" >&2
-            echo "Usage: pm review <create|list|view>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_doc() {
-    load_config || exit 1
-
-    case "$1" in
-        create)
-            shift
-            local title=""
-            local content=""
-            local space=""
-
-            # First positional arg is title
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                title="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -c|--content) content="$2"; shift ;;
-                    -s|--space) space="$2"; shift ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$title" ]]; then
-                echo "[ERROR] Title required" >&2
-                echo "Usage: pm doc create TITLE [-c|--content CONTENT] [-s|--space SPACE]" >&2
-                exit 1
-            fi
-
-            unified_doc_create "$title" "$content" "$space"
-            ;;
-        list)
-            shift
-            local space=""
-            local limit=25
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -s|--space) space="$2"; shift ;;
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_doc_list "$space" "$limit"
-            ;;
-        *)
-            echo "[ERROR] Unknown doc command: $1" >&2
-            echo "Usage: pm doc <create|list>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_milestone() {
-    load_config || exit 1
-
-    case "$1" in
-        list)
-            shift
-            local state="active"
-            local limit=20
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -s|--state) state="$2"; shift ;;
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_milestone_list "$state" "$limit"
-            ;;
-        view)
-            shift
-            local id=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                id="$1"
-            fi
-
-            if [[ -z "$id" ]]; then
-                echo "[ERROR] Milestone ID required" >&2
-                echo "Usage: pm milestone view <ID>" >&2
-                exit 1
-            fi
-
-            unified_milestone_view "$id"
-            ;;
-        create)
-            shift
-            local title=""
-            local due_date=""
-            local description=""
-
-            # First positional arg is title
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                title="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    --due) due_date="$2"; shift ;;
-                    -d|--description) description="$2"; shift ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$title" ]]; then
-                echo "[ERROR] Title required" >&2
-                echo "Usage: pm milestone create TITLE [--due DATE] [-d|--description DESC]" >&2
-                exit 1
-            fi
-
-            unified_milestone_create "$title" "$due_date" "$description"
-            ;;
-        close)
-            shift
-            local id=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                id="$1"
-            fi
-
-            if [[ -z "$id" ]]; then
-                echo "[ERROR] Milestone ID required" >&2
-                echo "Usage: pm milestone close <ID>" >&2
-                exit 1
-            fi
-
-            unified_milestone_close "$id"
-            ;;
-        *)
-            echo "[ERROR] Unknown milestone command: $1" >&2
-            echo "Usage: pm milestone <list|view|create|close>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_label() {
-    load_config || exit 1
-
-    case "$1" in
-        list)
-            shift
-            local limit=50
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_label_list "$limit"
-            ;;
-        create)
-            shift
-            local name=""
-            local color="428BCA"
-            local description=""
-
-            # First positional arg is name
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                name="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -c|--color) color="$2"; shift ;;
-                    -d|--description) description="$2"; shift ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$name" ]]; then
-                echo "[ERROR] Name required" >&2
-                echo "Usage: pm label create NAME [-c|--color HEX] [-d|--description DESC]" >&2
-                exit 1
-            fi
-
-            unified_label_create "$name" "$color" "$description"
-            ;;
-        delete)
-            shift
-            local name=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                name="$1"
-            fi
-
-            if [[ -z "$name" ]]; then
-                echo "[ERROR] Label name required" >&2
-                echo "Usage: pm label delete <NAME>" >&2
-                exit 1
-            fi
-
-            unified_label_delete "$name"
-            ;;
-        *)
-            echo "[ERROR] Unknown label command: $1" >&2
-            echo "Usage: pm label <list|create|delete>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_wiki() {
-    load_config || exit 1
-
-    case "$1" in
-        list)
-            shift
-            local limit=20
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -n|--limit) limit="$2"; shift ;;
-                esac
-                shift
-            done
-
-            unified_wiki_list "$limit"
-            ;;
-        view)
-            shift
-            local slug=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                slug="$1"
-            fi
-
-            if [[ -z "$slug" ]]; then
-                echo "[ERROR] Wiki slug required" >&2
-                echo "Usage: pm wiki view <SLUG>" >&2
-                exit 1
-            fi
-
-            unified_wiki_view "$slug"
-            ;;
-        create)
-            shift
-            local title=""
-            local content=""
-            local file=""
-
-            # First positional arg is title
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                title="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -c|--content) content="$2"; shift ;;
-                    -f|--file)
-                        file="$2"
-                        if [[ -f "$file" ]]; then
-                            content=$(cat "$file")
-                        else
-                            echo "[ERROR] File not found: $file" >&2
-                            exit 1
-                        fi
-                        shift
-                        ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$title" ]]; then
-                echo "[ERROR] Title required" >&2
-                echo "Usage: pm wiki create TITLE [-c|--content TEXT] [-f|--file PATH]" >&2
-                exit 1
-            fi
-
-            unified_wiki_create "$title" "$content"
-            ;;
-        update)
-            shift
-            local slug=""
-            local content=""
-            local title=""
-            local file=""
-
-            # First positional arg is slug
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                slug="$1"
-                shift
-            fi
-
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -c|--content) content="$2"; shift ;;
-                    -t|--title) title="$2"; shift ;;
-                    -f|--file)
-                        file="$2"
-                        if [[ -f "$file" ]]; then
-                            content=$(cat "$file")
-                        else
-                            echo "[ERROR] File not found: $file" >&2
-                            exit 1
-                        fi
-                        shift
-                        ;;
-                esac
-                shift
-            done
-
-            if [[ -z "$slug" ]]; then
-                echo "[ERROR] Wiki slug required" >&2
-                echo "Usage: pm wiki update SLUG [-c|--content TEXT] [-f|--file PATH] [-t|--title TITLE]" >&2
-                exit 1
-            fi
-
-            if [[ -z "$content" ]]; then
-                echo "[ERROR] Content required (use --content or --file)" >&2
-                exit 1
-            fi
-
-            unified_wiki_update "$slug" "$content" "$title"
-            ;;
-        delete)
-            shift
-            local slug=""
-            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-                slug="$1"
-            fi
-
-            if [[ -z "$slug" ]]; then
-                echo "[ERROR] Wiki slug required" >&2
-                echo "Usage: pm wiki delete <SLUG>" >&2
-                exit 1
-            fi
-
-            unified_wiki_delete "$slug"
-            ;;
-        *)
-            echo "[ERROR] Unknown wiki command: $1" >&2
-            echo "Usage: pm wiki <list|view|create|update|delete>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-cmd_provider() {
-    load_config || exit 1
-
-    case "$1" in
-        show|"")
-            show_providers
-            ;;
-        *)
-            echo "[ERROR] Unknown provider command: $1" >&2
-            echo "Usage: pm provider <show>" >&2
-            exit 1
-            ;;
-    esac
-}
-
-# ============================================================
-# Legacy Workflow Commands
-# ============================================================
-
-cmd_create() {
-    load_config || exit 1
-
-    local title=""
-    local type="Task"
-    local workflow="feature"
-
-    # First positional arg is title
-    if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
-        title="$1"
-        shift
-    fi
-
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -t|--type) type="$2"; shift ;;
-            -w|--workflow) workflow="$2"; shift ;;
-        esac
-        shift
-    done
-
-    pm_create "$title" "$type" "$workflow"
-}
-
-cmd_finish() {
-    load_config || exit 1
-
-    local target=""
-    local skip_lint="false"
-    local skip_tests="false"
-    local draft="false"
-
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -t|--target) target="$2"; shift ;;
-            --skip-lint) skip_lint="true" ;;
-            --skip-tests) skip_tests="true" ;;
-            --draft) draft="true" ;;
-        esac
-        shift
-    done
-
-    pm_finish "$target" "$skip_lint" "$skip_tests" "$draft"
-}
-
 # Main
 main() {
     case "$1" in
@@ -1434,52 +585,6 @@ main() {
         confluence)
             shift
             cmd_confluence "$@"
-            ;;
-        gitlab)
-            shift
-            cmd_gitlab "$@"
-            ;;
-        github)
-            shift
-            cmd_github "$@"
-            ;;
-        # Unified commands
-        issue)
-            shift
-            cmd_issue "$@"
-            ;;
-        review)
-            shift
-            cmd_review "$@"
-            ;;
-        milestone)
-            shift
-            cmd_milestone "$@"
-            ;;
-        label)
-            shift
-            cmd_label "$@"
-            ;;
-        wiki)
-            shift
-            cmd_wiki "$@"
-            ;;
-        doc)
-            shift
-            cmd_doc "$@"
-            ;;
-        provider)
-            shift
-            cmd_provider "$@"
-            ;;
-        # Legacy workflow commands
-        create)
-            shift
-            cmd_create "$@"
-            ;;
-        finish)
-            shift
-            cmd_finish "$@"
             ;;
         *)
             echo "[ERROR] Unknown command: $1" >&2
