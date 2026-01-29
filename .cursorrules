@@ -51,55 +51,48 @@ Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
 
 ### Before Starting Work
 
-| Task Type | Read First |
-|-----------|------------|
-| New feature | `workflows/solo/feature.md` |
-| Bug fix | `workflows/solo/bugfix.md` |
-| Hotfix | `workflows/solo/hotfix.md` |
-| Sprint planning | `workflows/team/sprint.md` |
-| Release | `workflows/team/release.md` |
+1. Read appropriate workflow file:
+   - New feature: `workflows/solo/feature.md`
+   - Bug fix: `workflows/solo/bugfix.md`
+   - Hotfix: `workflows/solo/hotfix.md`
+   - Sprint planning: `workflows/team/sprint.md`
+   - Release: `workflows/team/release.md`
 
-### Workflow Logging (REQUIRED)
+2. Create feature branch: `git checkout -b feat/TASK-123`
 
-When you enter a workflow, you MUST log the execution:
+3. Ensure pre-commit is installed: `pre-commit install`
 
-```bash
-# 1. Source logging library
-source tools/agent/lib/logging.sh
+### Development Flow
 
-# 2. Start log (user request)
-seq_log_start "user's original request"
-
-# 3. Begin workflow (path, trigger)
-seq_log_workflow_begin "solo/feature" '"keyword" matched "feature"'
-# Or for direct request:
-seq_log_workflow_begin "solo/hotfix" 'User: "@workflows/solo/hotfix.md"'
-
-# 4. For each skill:
-seq_log_skill_begin "analyze"
-seq_log_exec "command you ran" "OK" "0.1"  # or "NG" for failure
-seq_log_skill_end "analyze" "OK"
-
-# 5. End workflow
-seq_log_workflow_end "solo/feature" "OK" "5/5 skills"
-
-# 6. End log
-seq_log_end "OK"
-```
-
-**Log Location:** `.context/logs/workflow_YYYY-MM-DD_HH-MM-SS.log`
+1. Make changes to files
+2. Run quality checks: `pre-commit run --all-files`
+3. Stage changes: `git add .`
+4. Commit: `git commit -m "type: description"`
+5. Push to remote: `git push origin <branch>`
+6. Create PR/MR:
+   - GitHub: `gh pr create --title "TASK-123: description"`
+   - GitLab: `glab mr create --title "TASK-123: description"`
 
 ### After Modifying Files
-1. Run related tests if they exist
-2. Fix any test failures before committing
+1. Run quality checks: `pre-commit run --all-files`
+2. Run related tests if they exist
+3. Fix any failures before committing
 
 ### Before Committing
-1. Review `git diff --staged`
-2. Write commit message immediately (not later)
+1. Review changes: `git diff --staged`
+2. Write descriptive commit message following convention:
+   - `feat:` new feature
+   - `fix:` bug fix
+   - `refactor:` code refactoring
+   - `docs:` documentation changes
+   - `test:` test changes
 
 ### Before Finishing
 1. Ensure all tests pass
-2. Create MR/PR, don't merge directly to main
+2. Push changes: `git push origin <branch>`
+3. Create PR/MR (don't merge directly to main):
+   - GitHub: `gh pr create`
+   - GitLab: `glab mr create`
 
 ### After Merge
 - Delete merged feature branches from local
@@ -133,13 +126,12 @@ agent-context/
 │       ├── quarter.md
 │       └── roadmap.md
 ├── tools/               # CLI tools
-│   ├── agent/           # Main CLI + logging
-│   ├── pm/              # JIRA/GitLab API
-│   └── worktree/        # Git worktree helpers
+│   └── pm/              # JIRA/Confluence API
 ├── docs/                # Documentation
 │   ├── ARCHITECTURE.md  # Design philosophy
 │   └── convention/      # Coding conventions
 └── tests/               # Tests
+    ├── skills/          # Skill verification tests
     └── workflows/       # Workflow integration tests
 ```
 

@@ -12,8 +12,14 @@ INPUT=$(cat)
 REASON=$(echo "$INPUT" | grep -o '"reason":"[^"]*"' | cut -d'"' -f4)
 DURATION_MS=$(echo "$INPUT" | grep -o '"duration_ms":[0-9]*' | cut -d':' -f2)
 
-# Use environment variable from sessionStart
-LOG_FILE="${AGENT_LOG_FILE:-}"
+# Session state file
+STATE_FILE=".context/current-session.json"
+
+# Get log file from state file
+LOG_FILE=""
+if [[ -f "$STATE_FILE" ]]; then
+    LOG_FILE=$(grep -o '"log_file":"[^"]*"' "$STATE_FILE" 2>/dev/null | cut -d'"' -f4 || echo "")
+fi
 
 if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
     # Calculate duration in seconds

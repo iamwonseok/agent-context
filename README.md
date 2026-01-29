@@ -16,25 +16,39 @@ A workflow template for agent-driven development.
 |-----------|---------|----------|
 | Skills | Generic templates | `skills/` |
 | Workflows | Context-aware orchestration | `workflows/` |
-| CLI Tools | AI agent's interface | `tools/agent/`, `tools/pm/` |
+| CLI Tools | JIRA/Confluence interface | `tools/pm/` |
 
-**Goal**: AI agent performs all operations via CLI (`agnt-c`, `pm`, `gh`, `glab`) - no browser, no context switching.
+**Goal**: AI agent performs all operations via CLI (`git`, `gh`, `glab`, `pm`) - no browser, no context switching.
 
 ## Quick Start
 
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/your-org/agent-context.git
 cd agent-context
 
-# Add to PATH (or create alias)
-export PATH="$PATH:$(pwd)/tools/agent/bin:$(pwd)/tools/pm/bin"
+# 2. Install dependencies
+pip install pre-commit
+brew install gh glab jq yq
 
-# Check dependencies
-agnt-c bootstrap --check
+# 3. Configure tools
+gh auth login      # GitHub authentication
+glab auth login    # GitLab authentication
 
-# Start working
-agnt-c dev start TASK-123
+# 4. Setup pm CLI (JIRA/Confluence)
+export PATH="$PATH:$(pwd)/tools/pm/bin"
+pm config init     # Initialize project configuration
+
+# 5. Setup pre-commit hooks
+pre-commit install
+
+# 6. Start working
+git checkout -b feat/TASK-123
+# ... make changes ...
+pre-commit run --all-files
+git commit -m "feat: add new feature"
+git push origin feat/TASK-123
+gh pr create --title "TASK-123: description"
 ```
 
 ## Project Structure
@@ -62,10 +76,9 @@ agent-context/
 │       ├── quarter.md
 │       └── roadmap.md
 ├── tools/               # CLI tools
-│   ├── agent/           # Main CLI (agnt-c)
-│   ├── pm/              # JIRA/Confluence API
-│   └── worktree/        # Git worktree helpers
+│   └── pm/              # JIRA/Confluence API
 └── tests/               # Tests
+    ├── skills/          # Skill verification tests
     └── workflows/       # Workflow integration tests
 ```
 
@@ -102,46 +115,58 @@ SOLO (Dev)                  Plan --> Execute --> Review
 
 ## CLI Tools
 
-### agnt-c (Workflow CLI)
+### Git Operations
+
+Use standard `git` commands for version control:
 
 ```bash
-agnt-c dev start TASK-123    # Start a task (create branch)
-agnt-c dev status            # Show current work status
-agnt-c dev check             # Run quality checks
-agnt-c dev submit            # Create MR and cleanup
-agnt-c bootstrap --check     # Check tool dependencies
+git checkout -b feat/TASK-123   # Create feature branch
+git add .                       # Stage changes
+git commit -m "feat: message"   # Commit changes
+git push origin feat/TASK-123   # Push to remote
+```
+
+### GitHub CLI (gh)
+
+```bash
+gh auth login                   # Authenticate
+gh pr create                    # Create pull request
+gh pr list                      # List pull requests
+gh pr view 123                  # View PR details
+gh pr merge 123                 # Merge PR
+```
+
+### GitLab CLI (glab)
+
+```bash
+glab auth login                 # Authenticate
+glab mr create                  # Create merge request
+glab mr list                    # List merge requests
+glab mr view 123                # View MR details
+glab mr merge 123               # Merge MR
 ```
 
 ### pm (JIRA/Confluence)
 
 ```bash
-pm jira issue list           # List JIRA issues
-pm jira issue view TASK-123  # View issue details
-pm jira issue create "Title" # Create new issue
-pm confluence page list      # List Confluence pages
-```
-
-### External CLIs
-
-For GitLab/GitHub operations, use official CLIs:
-
-```bash
-# GitLab (glab)
-glab mr list                 # List merge requests
-glab mr create               # Create MR
-
-# GitHub (gh)
-gh pr list                   # List pull requests
-gh pr create                 # Create PR
+pm config init                  # Initialize configuration
+pm jira issue list              # List JIRA issues
+pm jira issue view TASK-123     # View issue details
+pm jira issue create "Title"    # Create new issue
+pm jira issue transition        # Change issue status
+pm confluence page list         # List Confluence pages
 ```
 
 ## Required Tools
 
 | Tool | Purpose | Install |
 |------|---------|---------|
-| `pre-commit` | Linting/formatting | `pip install pre-commit` |
+| `git` | Version control | Pre-installed on most systems |
 | `gh` | GitHub CLI | `brew install gh` |
 | `glab` | GitLab CLI | `brew install glab` |
+| `pre-commit` | Linting/formatting | `pip install pre-commit` |
+| `jq` | JSON processor | `brew install jq` |
+| `yq` | YAML processor | `brew install yq` |
 
 ## Documentation
 
@@ -149,7 +174,8 @@ gh pr create                 # Create PR
 |----------|-------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design philosophy |
 | [docs/convention/](docs/convention/) | Coding conventions |
-| [tools/pm/README.md](tools/pm/README.md) | PM CLI usage |
+| [skills/](skills/) | Generic skill templates |
+| [workflows/](workflows/) | Context-aware workflows |
 
 ## License
 

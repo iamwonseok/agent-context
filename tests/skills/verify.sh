@@ -8,9 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SKILLS_DIR="${PROJECT_ROOT}/skills"
 
-# Source logging library
-source "${PROJECT_ROOT}/tools/agent/lib/logging.sh"
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -227,37 +224,6 @@ test_no_context() {
 }
 
 # ============================================================
-# 7. Log Skill Execution (for agent tracking)
-# ============================================================
-log_skill_verification() {
-    section "Skill Verification Log"
-
-    # Create a sequence log for this verification run
-    seq_log_start "skill-verify" "Skill structure verification"
-    seq_log_workflow_begin "tests/skills" "Manual test run"
-
-    for skill in $EXPECTED_SKILLS; do
-        seq_log_skill_begin "$skill"
-        local skill_file="${SKILLS_DIR}/${skill}.md"
-        if [[ -f "$skill_file" ]]; then
-            seq_log_skill_end "$skill" "OK"
-        else
-            seq_log_skill_end "$skill" "NG"
-        fi
-    done
-
-    seq_log_workflow_end "tests/skills" "OK" "$(echo $EXPECTED_SKILLS | wc -w | tr -d ' ') skills verified"
-    local log_file
-    log_file=$(AGENT_LOG_VERBOSE=0 seq_log_end "OK")
-
-    if [[ -n "$log_file" ]] && [[ -f "$log_file" ]]; then
-        echo -e "  ${GREEN}[OK]${NC} Log created: $log_file"
-    else
-        echo -e "  ${YELLOW}[--]${NC} Log not created"
-    fi
-}
-
-# ============================================================
 # Main
 # ============================================================
 main() {
@@ -275,7 +241,6 @@ main() {
     test_interface
     test_checklist
     test_no_context
-    log_skill_verification
 
     echo ""
     echo "=========================================="
