@@ -1,29 +1,27 @@
 # Agent-Context Development Repository
-#
-# This IS the agent-context source repository.
-# - Modifying skills/, workflows/, tools/ IS allowed here
-# - For design philosophy, see docs/ARCHITECTURE.md
 
-# Agent-Context Project Rules
+This IS the agent-context source repository.
+You CAN modify: `skills/`, `workflows/`, `tools/`, `docs/`.
 
-## IMPORTANT: This is a Development Repository
+For project structure, see [README.md](README.md).
+For design philosophy (Thin Skill / Thick Workflow), see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-This repository is where agent-context is developed.
-You CAN modify:
-- `skills/` - Generic skill templates
-- `workflows/` - Context-aware workflow definitions
-- `tools/` - CLI tools
-- `docs/convention/` - Coding conventions
+---
 
-## Design Philosophy
+## Coding Conventions
 
-Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
+Follow the convention for each file type:
 
-1. **Simplicity Over Completeness** - Simple solutions that work > Complex solutions that might work better
-2. **User Autonomy** - Warnings over blocking, provide `--force` escape hatches
-3. **Feedback Over Enforcement** - Teach through clear feedback, not hard blocks
-4. **Composability** - Thin skills, thick workflows
-5. **State Through Artifacts** - Git + files, not databases or complex state machines
+| File Type | Convention |
+|-----------|------------|
+| `*.sh` (Bash) | [docs/convention/bash.md](docs/convention/bash.md) |
+| `*.py` (Python) | [docs/convention/python.md](docs/convention/python.md) |
+| `*.yml`, `*.yaml`, CI, Docker Compose | [docs/convention/yaml.md](docs/convention/yaml.md) |
+| `Makefile`, `*.mk` | [docs/convention/make.md](docs/convention/make.md) |
+| `*.c`, `*.h` | [docs/convention/c.md](docs/convention/c.md) |
+| `*.cpp`, `*.hpp` | Out of scope - see [docs/convention/cpp.md](docs/convention/cpp.md) |
+
+---
 
 ## Language Policy
 
@@ -37,10 +35,14 @@ Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
 - Allowed: `->`, `-->`, `|`, `+`, `-`, standard markdown tables
 - Forbidden: Emoji, checkmark symbols, star symbols
 
+---
+
 ## Output Style
 
 - Log format: `[OK]` pass, `[NG]` fail, `[!!]` warn, `[>>]` info
 - No decorative Unicode in output
+
+---
 
 ## Agent Behavior
 
@@ -51,36 +53,18 @@ Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
 
 ### Before Starting Work
 
-1. Read appropriate workflow file:
-   - New feature: `workflows/solo/feature.md`
-   - Bug fix: `workflows/solo/bugfix.md`
-   - Hotfix: `workflows/solo/hotfix.md`
-   - Sprint planning: `workflows/team/sprint.md`
-   - Release: `workflows/team/release.md`
-
-2. Create feature branch: `git checkout -b feat/TASK-123`
-
-3. Ensure pre-commit is installed: `pre-commit install`
-
-### Development Flow
-
-1. Make changes to files
-2. Run quality checks: `pre-commit run --all-files`
-3. Stage changes: `git add .`
-4. Commit: `git commit -m "type: description"`
-5. Push to remote: `git push origin <branch>`
-6. Create PR/MR:
-   - GitHub: `gh pr create --title "TASK-123: description"`
-   - GitLab: `glab mr create --title "TASK-123: description"`
+Read the appropriate workflow file:
+- New feature: `workflows/solo/feature.md`
+- Bug fix: `workflows/solo/bugfix.md`
+- Hotfix: `workflows/solo/hotfix.md`
 
 ### After Modifying Files
 1. Run quality checks: `pre-commit run --all-files`
-2. Run related tests if they exist
-3. Fix any failures before committing
+2. Fix any failures before committing
 
 ### Before Committing
 1. Review changes: `git diff --staged`
-2. Write descriptive commit message following convention:
+2. Commit message convention:
    - `feat:` new feature
    - `fix:` bug fix
    - `refactor:` code refactoring
@@ -88,104 +72,14 @@ Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
    - `test:` test changes
 
 ### Before Finishing
-1. Ensure all tests pass
-2. Push changes: `git push origin <branch>`
-3. Create PR/MR (don't merge directly to main):
-   - GitHub: `gh pr create`
-   - GitLab: `glab mr create`
+1. Push changes: `git push origin <branch>`
+2. Create PR/MR (don't merge directly to main)
 
-### After Merge
-- Delete merged feature branches from local
-- Keep branches still in use (worktree, unmerged)
-
-## Project Overview
-
-Workflow + CI/CD template for agent-driven development.
-
-### Directory Structure
-
-```
-agent-context/
-├── docs/
-│   └── ARCHITECTURE.md  # Design philosophy (Thin Skill / Thick Workflow)
-├── skills/              # Generic skill templates
-│   ├── analyze.md       # Understand the problem
-│   ├── design.md        # Define the solution
-│   ├── implement.md     # Execute the solution
-│   ├── test.md          # Verify implementation
-│   └── review.md        # Validate quality
-├── workflows/           # Context-aware workflow definitions
-│   ├── solo/            # Individual developer
-│   │   ├── feature.md
-│   │   ├── bugfix.md
-│   │   └── hotfix.md
-│   ├── team/            # Squad coordination
-│   │   ├── sprint.md
-│   │   └── release.md
-│   └── project/         # Organization level
-│       ├── quarter.md
-│       └── roadmap.md
-├── tools/               # CLI tools
-│   └── pm/              # JIRA/Confluence API
-├── docs/                # Documentation
-│   ├── ARCHITECTURE.md  # Design philosophy
-│   └── convention/      # Coding conventions
-└── tests/               # Tests
-    ├── skills/          # Skill verification tests
-    └── workflows/       # Workflow integration tests
-```
-
-## Skills & Workflows
-
-### Engineering Coordinate System
-
-```
-Y-Axis (Layer)              X-Axis (Timeline)
----------------------------------------------------------
-PROJECT (Org)               Plan --> Execute --> Review
-    |
-TEAM (Squad)                Plan --> Execute --> Review
-    |
-SOLO (Dev)                  Plan --> Execute --> Review
-```
-
-### Thin Skill / Thick Workflow Pattern
-
-| Concept | Role |
-|---------|------|
-| **Skill** | Generic template (interface) |
-| **Workflow** | Context injection (implementation) |
-
-**Skills (Thin):** 5 generic templates
-- `analyze.md` - Understand the problem
-- `design.md` - Define the solution
-- `implement.md` - Execute the solution
-- `test.md` - Verify implementation
-- `review.md` - Validate quality
-
-**Workflows (Thick):** Context-aware orchestration
-- `solo/` - feature, bugfix, hotfix
-- `team/` - sprint, release
-- `project/` - quarter, roadmap
-
-## Bash Scripts
-
-### Structure
-- Start with `#!/bin/bash`
-- Use `set -e`
-- Variables: SCRIPT_DIR, PROJECT_ROOT
-
-### Test Output Format
-```
-==========================================
-{Test Suite Name}
-==========================================
-Total: {N} | Passed: {N} | Failed: {N}
-```
+---
 
 ## Batch Operations
 
-When you notice the same operation being repeated 3+ times, STOP and batch it.
+When the same operation repeats 3+ times, STOP and batch it.
 
 | Task Type | Strategy |
 |-----------|----------|
@@ -193,5 +87,3 @@ When you notice the same operation being repeated 3+ times, STOP and batch it.
 | Replace in multiple files | Group by pattern type |
 | Verify changes | Single test run at the end |
 | Read multiple files | Parallel reads |
-
----
