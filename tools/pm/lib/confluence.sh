@@ -228,10 +228,10 @@ confluence_page_text() {
 
     local title
     title=$(echo "$response" | jq -r '.title')
-    
+
     echo "# $title"
     echo ""
-    
+
     # Strip HTML tags (basic)
     echo "$response" | jq -r '.body.storage.value // "(No content)"' | \
         sed 's/<br[^>]*>/\n/g' | \

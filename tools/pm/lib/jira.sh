@@ -717,14 +717,14 @@ jira_issue_update() {
     fi
 
     echo "(v) Updated $key"
-    
+
     # Show what was updated
     [[ -n "$labels" ]] && echo "  - labels: $labels"
     [[ -n "$priority" ]] && echo "  - priority: $priority"
     [[ -n "$due_date" ]] && echo "  - due-date: $due_date"
     [[ -n "$summary" ]] && echo "  - summary: $summary"
     [[ -n "$components" ]] && echo "  - components: $components"
-    
+
     return 0
 }
 
@@ -982,11 +982,11 @@ jira_issue_links() {
     printf "%-8s | %-12s | %-20s | %s\n" "Link ID" "Issue" "Type" "Direction"
     echo "------------------------------------------------------------------------"
 
-    echo "$response" | jq -r '.fields.issuelinks[] | 
-        if .inwardIssue then 
-            [.id, .inwardIssue.key, .type.name, "inward: " + .type.inward] 
-        else 
-            [.id, .outwardIssue.key, .type.name, "outward: " + .type.outward] 
+    echo "$response" | jq -r '.fields.issuelinks[] |
+        if .inwardIssue then
+            [.id, .inwardIssue.key, .type.name, "inward: " + .type.inward]
+        else
+            [.id, .outwardIssue.key, .type.name, "outward: " + .type.outward]
         end | @tsv' | \
     while IFS=$'\t' read -r id issue type direction; do
         printf "%-8s | %-12s | %-20s | %s\n" "$id" "$issue" "${type:0:20}" "$direction"

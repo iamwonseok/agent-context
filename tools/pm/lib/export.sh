@@ -122,7 +122,7 @@ jira_issue_to_markdown() {
     local link_data
     link_data=$(echo "$response" | jq -r '.fields.issuelinks[]?' 2>/dev/null)
     if [[ -n "$link_data" ]]; then
-        links=$(echo "$response" | jq -r '.fields.issuelinks[] | 
+        links=$(echo "$response" | jq -r '.fields.issuelinks[] |
             if .inwardIssue then "- " + .type.inward + ": " + .inwardIssue.key
             else "- " + .type.outward + ": " + .outwardIssue.key
             end' 2>/dev/null)
@@ -340,14 +340,14 @@ jira_export() {
             # Note: jq's // operator treats false as falsy, so we can't use '.isLast // true'
             # Instead, we check if isLast is explicitly true or if it's missing (null -> defaults to true)
             is_last=$(jq -r 'if .isLast == null then "true" else (.isLast | tostring) end' "$tmp_response")
-            
+
             if [[ "$is_last" == "true" ]]; then
                 rm -f "$tmp_response"
                 break
             fi
             next_page_token=$(jq -r '.nextPageToken // empty' "$tmp_response")
             rm -f "$tmp_response"
-            
+
             if [[ -z "$next_page_token" ]]; then
                 break
             fi

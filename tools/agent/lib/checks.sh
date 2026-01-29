@@ -396,7 +396,7 @@ hook_uninstall() {
     if grep -q "$AGENT_HOOK_SIGNATURE" "$hook_file"; then
         rm "$hook_file"
         echo "[OK] Agent pre-commit hook removed"
-        
+
         # Restore backup if exists
         if [[ -f "$hook_file.backup" ]]; then
             echo "[INFO] Restoring backup hook..."
@@ -503,7 +503,7 @@ detect_mode_violation() {
             local code_changes test_changes
             code_changes=$(git diff --cached --name-only 2>/dev/null | grep -cE '\.(c|cpp|py|sh|js|ts|go|rs|java)$' || echo 0)
             test_changes=$(git diff --cached --name-only 2>/dev/null | grep -cE '(test_|_test\.|\.test\.)' || echo 0)
-            
+
             if [[ "$test_changes" -gt 0 ]] && [[ "$code_changes" -eq 0 ]]; then
                 # This is OK - test-only changes can happen during TDD
                 :

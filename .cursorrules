@@ -2,559 +2,204 @@
 #
 # This IS the agent-context source repository.
 # - Modifying skills/, workflows/, tools/ IS allowed here
-# - docs/rfcs/ is the single source of truth for framework plans
-# - For testing: use Docker-based test environment
-#
-# For design philosophy, see ARCHITECTURE.md
+# - For design philosophy, see docs/ARCHITECTURE.md
 
 # Agent-Context Project Rules
 
 ## IMPORTANT: This is a Development Repository
 
 This repository is where agent-context is developed.
-Unlike user projects, you CAN modify:
-- `skills/` - Atomic skills
-- `workflows/` - Workflow definitions
+You CAN modify:
+- `skills/` - Generic skill templates
+- `workflows/` - Context-aware workflow definitions
 - `tools/` - CLI tools
-- `templates/` - User project templates
-
-Single source of truth:
-- `docs/rfcs/` - Framework plans for this repository (SSoT)
-
-### Plan Directory Convention
-| Location | Purpose |
-|----------|---------|
-| `docs/rfcs/` (this repo) | Framework plans (SSoT) |
-| `.agent/docs/rfcs/` (user project) | Framework plans (deployed from this repo) |
-| `plan/` (user project) | User's project-specific plans |
+- `docs/convention/` - Coding conventions
 
 ## Design Philosophy
 
-Read `ARCHITECTURE.md` for the full rationale. Key principles:
+Read `docs/ARCHITECTURE.md` for the full rationale. Key principles:
 
 1. **Simplicity Over Completeness** - Simple solutions that work > Complex solutions that might work better
 2. **User Autonomy** - Warnings over blocking, provide `--force` escape hatches
 3. **Feedback Over Enforcement** - Teach through clear feedback, not hard blocks
-4. **Composability** - Small focused skills, workflows as compositions
+4. **Composability** - Thin skills, thick workflows
 5. **State Through Artifacts** - Git + files, not databases or complex state machines
-
-## Avoiding Over-Engineering
-
-### Before Adding Complexity, Ask:
-- Has the simple solution failed multiple times?
-- Are users consistently making the same mistake?
-- Is the pain documented with real examples?
-- Have simpler alternatives been tried?
-
-### Complexity Budget (Max Lines)
-| Component | Limit |
-|-----------|-------|
-| Single skill | 200 lines |
-| Workflow | 100 lines |
-| CLI command | 100 lines |
-| Helper library | 300 lines |
-
-### Patterns to Avoid
-- Complex state machines (use simple flags instead)
-- Hard blocking without `--force` option
-- Custom DSLs (use standard YAML/Markdown)
-- Deep nesting (max 2 levels)
-- Implicit dependencies (be explicit)
-
-### Enforcement Strategy
-- **Phase 1 (2 weeks)**: Warnings only
-- **Phase 2 (2 weeks)**: Soft enforcement (`--force` to override)
-- **Phase 3 (ongoing)**: Hard enforcement where proven necessary
-
-### When Implementing Features
-1. Write SKILL.md documentation first
-2. Implement minimal version (warnings only)
-3. Gather real usage feedback
-4. Add enforcement gradually
-5. Always keep escape hatches
 
 ## Language Policy
 
-### Enforcement Matrix
+| File Type | Language | Emoji | Unicode |
+|-----------|----------|:-----:|:-------:|
+| Executable (`*.sh`, `*.py`) | English only | Forbidden | Forbidden |
+| Code comments | English only | Forbidden | Forbidden |
+| Markdown (`*.md`) | Korean/English | Forbidden | Restricted |
 
-| File Type | English | Korean | Enforcement |
-|-----------|:-------:|:------:|-------------|
-| Code (`*.sh`, `*.py`) | Required | Forbidden | Automated test |
-| Code comments | Required | Forbidden | Automated test |
-| **Skills** (`skills/**/*.md`) | **Required** | **Forbidden** | Automated test |
-| **Workflows** (`workflows/**/*.md`) | **Required** | **Forbidden** | Automated test |
-| Internal docs (`docs/**/*.md`) | Recommended | Allowed | No enforcement |
-| Test scenarios (`tests/scenario/*.md`) | Recommended | Allowed | No enforcement |
-
-**Critical:** Skills and Workflows are AI-readable instructions, NOT documentation.
-
-### Rationale
-
-- **Why English for Skills/Workflows?** AI agents read these as instructions
-- **Why Korean allowed for docs?** Internal team communication (per RFC-004)
-- **Validation:** `tests/unit/skills/test_skills.sh` enforces this policy
-
-### Language Policy Violations
-
-If you find Korean in skills/ or workflows/:
-
-1. **Batch find all violations:**
-   ```bash
-   LC_ALL=C grep -r -l $'[\xEA-\xED]' skills/ workflows/
-   ```
-
-2. **Show context for each:**
-   ```bash
-   LC_ALL=C grep -n $'[\xEA-\xED]' <file> | head -3
-   ```
-
-3. **Replace in batches** (group by similar content)
-
-4. **Verify once:**
-   ```bash
-   bash tests/unit/skills/test_skills.sh
-   ```
+**Unicode in Markdown:**
+- Allowed: `->`, `-->`, `|`, `+`, `-`, standard markdown tables
+- Forbidden: Emoji, checkmark symbols, star symbols
 
 ## Output Style
-- **No Korean characters in executable code or code comments**
-- Korean is allowed only in `*.md` documents in this repo (see Language Policy)
-- Unicode symbols allowed (arrows, box chars, block elements, math symbols)
-  - Allowed: `→`, `├`, `└`, `│`, `─`, `█`, `░`, `×`, `±`
-- No decorative Unicode (✓✗★⚠️✅🔴)
-  - Output/logs: `[OK]` pass, `[NG]` fail, `[!!]` warn, `[>>]` info
-  - Docs/intent: `[M]` mandatory, `[F]` forbidden, `[R]` recommended, `[I]` info
 
-## Batch Operations & Efficiency
-
-### Detecting Repetitive Patterns
-
-When you notice the same operation being repeated 3+ times, STOP and:
-
-1. **Identify the pattern:**
-   ```bash
-   # Example: Converting Korean to English in multiple files
-   # Pattern: Find Korean → Read file → Replace → Verify
-   ```
-
-2. **Use batch tools instead:**
-   ```bash
-   # Good: Single grep to find all files
-   grep -r -l $'[\xEA-\xED]' skills/ workflows/
-   
-   # Bad: Reading each file individually
-   Read file1 → Read file2 → Read file3...
-   ```
-
-3. **Parallelize independent operations:**
-   - If files don't depend on each other, batch read them in one tool call
-   - Use shell commands for batch operations when appropriate
-
-### Batch Operation Strategies
-
-| Task Type | Strategy | Example |
-|-----------|----------|---------|
-| Find files with pattern | Use grep/find ONCE | `grep -r "pattern" dir/` |
-| Replace in multiple files | Group by pattern type | Replace all `plan/` → `planning/` at once |
-| Verify changes | Single test run | Run test suite once after all changes |
-| Read multiple files | Parallel reads | Read all 5 workflows in one message |
-
-### When to Use Shell vs Individual Tools
-
-**Use Shell commands for:**
-- Finding patterns across many files (`grep -r`)
-- Listing files (`ls`, `find`)
-- Batch operations (`sed`, `awk` for simple replacements)
-- Testing (`bash script.sh`)
-
-**Use Individual tools for:**
-- Precise content replacement (StrReplace for complex logic)
-- File creation/deletion
-- Git operations
-
-### Efficiency Checklist
-
-Before making a change, ask:
-
-- [ ] Can I find ALL affected files in one command?
-- [ ] Can I group similar changes together?
-- [ ] Can I verify the pattern before fixing each file?
-- [ ] Can I run tests once at the end instead of incrementally?
-
-### Example: Efficient Batch Operation
-
-**Bad (Repetitive):**
-```
-1. Read workflows/developer/feature.md
-2. Find Korean text
-3. Replace Korean → English
-4. Repeat for workflows/developer/bug-fix.md
-5. Repeat for workflows/developer/hotfix.md
-... (7 more times)
-```
-
-**Good (Batch):**
-```
-1. grep -r Korean in workflows/ (find ALL at once)
-2. Show all Korean lines in all files
-3. Replace in batches by pattern type
-4. Run test once at the end
-```
+- Log format: `[OK]` pass, `[NG]` fail, `[!!]` warn, `[>>]` info
+- No decorative Unicode in output
 
 ## Agent Behavior
 
-### Branch & Merge Policy
-
-**CRITICAL: Check handoff for merge restrictions**
-
-Before any git operation:
-1. Read `docs/internal/handoff.md` if it exists
-2. Check for "DO NOT MERGE" or checkpoint requirements
-3. If handoff has incomplete checkpoints → Stay on feature branch
-4. Only merge to main when handoff says "all checkpoints complete"
-
-**Default behavior** (when no handoff):
-- Work on feature branch
-- Commit incrementally
-- Create MR when task complete
-
 ### Session Start
 1. Check `git status` and `git branch`
-2. **Read `docs/internal/handoff.md`** if exists (check merge policy)
-3. Ensure on feature branch (NOT main)
-4. If on main, create/checkout feature branch before work
+2. Ensure on feature branch (NOT main)
+3. If on main, create/checkout feature branch before work
 
 ### Before Starting Work
+
 | Task Type | Read First |
 |-----------|------------|
-| New feature | `workflows/developer/feature.md` |
-| Bug fix | `workflows/developer/bug-fix.md` |
-| Hotfix | `workflows/developer/hotfix.md` |
-| Refactoring | `workflows/developer/refactor.md` |
-| Large/complex task | `skills/planning/design-solution/SKILL.md` |
+| New feature | `workflows/solo/feature.md` |
+| Bug fix | `workflows/solo/bugfix.md` |
+| Hotfix | `workflows/solo/hotfix.md` |
+| Sprint planning | `workflows/team/sprint.md` |
+| Release | `workflows/team/release.md` |
 
-If the exact workflow file is unclear, look under:
-- `workflows/developer/` (Developer)
-- `workflows/manager/` (Manager)
+### Workflow Logging (REQUIRED)
+
+When you enter a workflow, you MUST log the execution:
+
+```bash
+# 1. Source logging library
+source tools/agent/lib/logging.sh
+
+# 2. Start log (user request)
+seq_log_start "user's original request"
+
+# 3. Begin workflow (path, trigger)
+seq_log_workflow_begin "solo/feature" '"keyword" matched "feature"'
+# Or for direct request:
+seq_log_workflow_begin "solo/hotfix" 'User: "@workflows/solo/hotfix.md"'
+
+# 4. For each skill:
+seq_log_skill_begin "analyze"
+seq_log_exec "command you ran" "OK" "0.1"  # or "NG" for failure
+seq_log_skill_end "analyze" "OK"
+
+# 5. End workflow
+seq_log_workflow_end "solo/feature" "OK" "5/5 skills"
+
+# 6. End log
+seq_log_end "OK"
+```
+
+**Log Location:** `.context/logs/workflow_YYYY-MM-DD_HH-MM-SS.log`
 
 ### After Modifying Files
 1. Run related tests if they exist
-2. Check `tests/unit/skills/` for test scripts
-3. Fix any test failures before committing
+2. Fix any test failures before committing
 
 ### Before Committing
-1. Read `skills/integrate/commit-changes/SKILL.md` for message format
-2. Review `git diff --staged`
-3. Write commit message immediately (not later)
+1. Review `git diff --staged`
+2. Write commit message immediately (not later)
 
 ### Before Finishing
-1. Read `skills/integrate/create-merge-request/SKILL.md`
-2. Ensure all tests pass
-3. Create MR/PR, don't merge directly to main
+1. Ensure all tests pass
+2. Create MR/PR, don't merge directly to main
 
 ### After Merge
 - Delete merged feature branches from local
 - Keep branches still in use (worktree, unmerged)
 
-### Concurrent Work
-- For parallel work, prefer Detached Mode worktrees (see Hybrid Mode Guidance)
-
-## Operational Invariants (Artifacts as State)
-- `.context/` and `.worktrees/` are **state/log artifacts**, not permanent storage
-  - After submission (MR/PR created), clean them up (archive/delete) per workflow
-  - Prefer keeping logs in Issue/MR description (see Issue N/A policy)
-- Keep the **main working directory clean** (no long-lived generated artifacts)
-
-## Handoff Policy
-- **Branch-level** (`.context/handoff-*.md`): Local only (gitignore), auto-archive on show
-- **Project-level** (`docs/internal/handoff.md`): Git-tracked, delete after takeover
-- See `docs/internal/README.md` for detailed lifecycle policy
-
-## Hybrid Mode Guidance (Git Strategy)
-- Default: **Interactive Mode = branch workflow in current directory**
-- For parallel/background work: **Detached Mode = worktree in `.worktrees/`**
-
-## Merge Strategy (Fast Forward + Rebase)
-- **Recommended**: Fast Forward merge for linear history
-- **Before MR submission**: Run `agnt-c dev sync` to rebase on base branch
-- **On conflict**: Human intervention required (notify and wait)
-- **Override**: Project-specific settings in `.agent/config.yaml` (`merge_strategy: ff-only | squash | merge-commit`)
-
-## Issue N/A Policy
-- If there is no Issue (N/A):
-  - Create MR/PR as usual
-  - Include `.context/` summary/logs in the MR/PR description **instead of uploading to an Issue**
-
-## Human-only Decisions (Permissions Boundary)
-- Decisions like **approval/merge** are `human_only` by default
-  - The agent may prepare, summarize, and suggest actions, but should not execute final decisions unless explicitly authorized
-
-## Secrets Policy (init/setup)
-- On `agnt-c init` or `setup.sh`, validate `.secrets/` directory (API tokens required)
-- Use `--skip-secrets` to bypass validation (for CI environments)
-- See `templates/secrets-examples/README.md` for token setup
-
 ## Project Overview
+
 Workflow + CI/CD template for agent-driven development.
 
 ### Directory Structure
-```
-agent-context/                  # This repo = deployable unit
-├── ARCHITECTURE.md             # Design philosophy
-├── docs/                       # Documentation hub
-│   ├── cli/                    # CLI usage docs
-│   ├── style/                  # Coding conventions
-│   ├── rfcs/                   # Framework plans (SSoT)
-│   └── guides/                 # User guides
-├── skills/                     # Atomic skills (building blocks)
-├── workflows/                  # Workflow definitions (combinations)
-├── tools/                      # CLI tools
-│   ├── agent/                  # Main CLI
-│   ├── pm/                     # JIRA/GitLab API
-│   └── lint/                   # Code quality
-├── templates/                  # User project templates
-│   ├── configs/                # Tool configurations
-│   └── planning/               # Plan templates
-├── tests/                      # All tests
-│   └── unit/                   # Unit tests
-└── setup.sh                    # Installation script
-```
 
-### User Project Structure (After Setup)
 ```
-user-project/
-├── .agent/                     # Agent-context framework (installed)
-│   ├── docs/rfcs/              # Framework plans
-│   └── ...
-│
-└── plan/                       # User's project plans
+agent-context/
+├── docs/
+│   └── ARCHITECTURE.md  # Design philosophy (Thin Skill / Thick Workflow)
+├── skills/              # Generic skill templates
+│   ├── analyze.md       # Understand the problem
+│   ├── design.md        # Define the solution
+│   ├── implement.md     # Execute the solution
+│   ├── test.md          # Verify implementation
+│   └── review.md        # Validate quality
+├── workflows/           # Context-aware workflow definitions
+│   ├── solo/            # Individual developer
+│   │   ├── feature.md
+│   │   ├── bugfix.md
+│   │   └── hotfix.md
+│   ├── team/            # Squad coordination
+│   │   ├── sprint.md
+│   │   └── release.md
+│   └── project/         # Organization level
+│       ├── quarter.md
+│       └── roadmap.md
+├── tools/               # CLI tools
+│   ├── agent/           # Main CLI + logging
+│   ├── pm/              # JIRA/GitLab API
+│   └── worktree/        # Git worktree helpers
+├── docs/                # Documentation
+│   ├── ARCHITECTURE.md  # Design philosophy
+│   └── convention/      # Coding conventions
+└── tests/               # Tests
+    └── workflows/       # Workflow integration tests
 ```
 
 ## Skills & Workflows
 
-### Skills (`skills/`)
-Organized into 5 categories:
-- `analyze/` - Understand situation (parse-requirement, inspect-codebase, ...)
-- `planning/` - Design approach (design-solution, breakdown-work, ...)
-- `execute/` - Perform work (write-code, refactor-code, fix-defect, ...)
-- `validate/` - Verify quality (run-tests, check-style, review-code, ...)
-- `integrate/` - Deliver results (commit-changes, create-merge-request, ...)
+### Engineering Coordinate System
 
-### Workflows (`workflows/`)
-Skill combinations for scenarios:
-- `developer/feature.md` - Full feature development
-- `developer/bug-fix.md` - Standard bug fix
-- `developer/hotfix.md` - Emergency fix
-- `developer/refactor.md` - Code refactoring
-- `manager/*` - Manager workflows (approval, monitoring, initiative, ...)
+```
+Y-Axis (Layer)              X-Axis (Timeline)
+---------------------------------------------------------
+PROJECT (Org)               Plan --> Execute --> Review
+    |
+TEAM (Squad)                Plan --> Execute --> Review
+    |
+SOLO (Dev)                  Plan --> Execute --> Review
+```
 
-### Quality Gates (Recommended Targets)
-| Gate | Target |
-|------|--------|
-| Lint | 0 violations |
-| Test | All pass, ≥80% coverage |
-| Review | 0 critical issues |
+### Thin Skill / Thick Workflow Pattern
 
-> These are **recommended targets**, not hard blocks. If exceptions are needed, document the rationale in MR/commit and proceed. See `ARCHITECTURE.md` for design philosophy.
+| Concept | Role |
+|---------|------|
+| **Skill** | Generic template (interface) |
+| **Workflow** | Context injection (implementation) |
+
+**Skills (Thin):** 5 generic templates
+- `analyze.md` - Understand the problem
+- `design.md` - Define the solution
+- `implement.md` - Execute the solution
+- `test.md` - Verify implementation
+- `review.md` - Validate quality
+
+**Workflows (Thick):** Context-aware orchestration
+- `solo/` - feature, bugfix, hotfix
+- `team/` - sprint, release
+- `project/` - quarter, roadmap
 
 ## Bash Scripts
 
 ### Structure
 - Start with `#!/bin/bash`
 - Use `set -e`
-- Variables: SCRIPT_DIR, TEST_DIR, PROJECT_ROOT
+- Variables: SCRIPT_DIR, PROJECT_ROOT
 
-### JUnit Pattern
-- Source `junit_helper.sh`
-- Use CHECK_RESULT global
-- `check_*_rule()` with case statements
-- Iterate pass/fail directories
-- Call `junit_testsuite()` for XML
-
-### Test Files
-- Prefix: rule ID (e.g., `C-01-01_tab.c`)
-- `pass/`: Should pass
-- `fail/`: Should detect violation
-
-### Output Format
+### Test Output Format
 ```
 ==========================================
-{Language} Coding Convention Test Summary
+{Test Suite Name}
 ==========================================
 Total: {N} | Passed: {N} | Failed: {N}
 ```
 
-## CI/CD
-- GitLab CI
-- Nexus Registry for images
-- JUnit XML as artifacts
+## Batch Operations
 
-## Rule ID Prefixes
-- C: C-XX-XX
-- Bash: Bash-XX-XX
-- Make: Make-XX-XX
-- Python: Py-XX-XX
-- YAML: YAML-XX-XX
-- Dockerfile: Docker-XX-XX
+When you notice the same operation being repeated 3+ times, STOP and batch it.
 
----
-
-## Common Task Patterns (Quick Reference)
-
-### Pattern 1: Fix All Path References
-
-**When:** Changing skill/workflow paths across multiple files
-
-**Command:**
-```bash
-# 1. Find all affected files
-grep -r "old-path/" workflows/ skills/ tests/
-
-# 2. Show context
-grep -n "old-path/" <files>
-
-# 3. Replace in batch (group by file type)
-# - All workflows together
-# - All skills together
-# - All tests together
-
-# 4. Verify once
-bash tests/unit/skills/test_skills.sh
-```
-
-### Pattern 2: Language Policy Cleanup
-
-**When:** Removing Korean from skills/workflows
-
-**Command:**
-```bash
-# 1. Find ALL violations at once
-LC_ALL=C grep -r -l $'[\xEA-\xED]' skills/ workflows/
-
-# 2. Show ALL Korean lines (group by file)
-for file in <files>; do
-  echo "=== $file ==="
-  LC_ALL=C grep -n $'[\xEA-\xED]' "$file"
-done
-
-# 3. Translate in batches (similar content together)
-
-# 4. Verify once
-bash tests/unit/skills/test_skills.sh | tail -20
-```
-
-### Pattern 3: Add New Documentation
-
-**When:** Creating new guide/troubleshooting/reference docs
-
-**Structure:**
-```bash
-# 1. Check existing docs structure
-ls docs/guides/ docs/architecture/
-
-# 2. Create all related docs at once:
-# - Main guide (troubleshooting.md)
-# - Examples (platform-setup-examples.md)
-# - Architecture (skills-tools-mapping.md)
-
-# 3. Link from main README once
-```
-
-### Pattern 4: Update Tests After Structure Change
-
-**When:** Modified skills, workflows, or tools structure
-
-**Command:**
-```bash
-# 1. Update test scripts (SKILL_PATHS, etc.)
-vim tests/unit/skills/test_skills.sh
-
-# 2. Run ALL tests once
-bash tests/unit/run-all-unit-tests.sh
-
-# 3. Fix failures in batch
-
-# 4. Verify CI config includes new tests
-grep -A 5 "test:" .gitlab-ci.yml
-```
-
-### Pattern 5: Batch File Operations
-
-**When:** Need to modify 5+ similar files
-
-**Strategy:**
-```bash
-# DON'T: Read → Modify → Read → Modify (one by one)
-# DO: Batch read → Batch modify → Single verify
-
-# Example: Update 10 workflow files
-# 1. Read all frontmatter at once (parallel reads)
-# 2. Identify common pattern
-# 3. Replace all at once (grouped by pattern)
-# 4. Test once
-```
-
----
-
-## Agent Efficiency Metrics
-
-Track and optimize:
-
-| Metric | Target | Red Flag |
-|--------|--------|----------|
-| Tool calls per task | <20 for simple, <50 for complex | >100 calls |
-| Repeated identical operations | 0 | Same operation 3+ times |
-| Test runs per change batch | 1-2 | Testing after each file |
-| Files read individually | Group related | Reading 10+ files one-by-one |
-
-**Optimization Rule:** If you're about to do the same thing for the 3rd time, STOP and batch it.
-
----
-
-## Skill Selection Validation (Future Work)
-
-### Current State
-
-**What is tested:**
-- [v] "When to Use" section exists (structure)
-- [v] Required sections are present
-
-**What is NOT tested:**
-- [ ] "When to Use" content is accurate
-- [ ] AI selects correct skill for given context
-- [ ] Skill usage patterns match documentation
-
-### Planned Improvements
-
-**Short-term (RFC-007 prerequisite):**
-```bash
-# Add scenario-based skill selection tests
-tests/scenario/skill-selection/
-├── test_bug_fix_selection.sh      # Verify bug-fix workflow selected
-├── test_feature_selection.sh      # Verify feature workflow selected
-└── test_hotfix_selection.sh       # Verify hotfix workflow selected
-```
-
-**Medium-term (RFC-007 implementation):**
-```yaml
-# IR tracks skill usage for validation
-.context/TASK-123/intermediate.yaml:
-  stages:
-    analyze:
-      skill_used: analyze/parse-requirement
-      context:
-        trigger: "User request unclear"
-        matched_when_to_use: true  # ← Auto-validation
-```
-
-**Long-term (AI self-improvement):**
-- Collect skill usage patterns
-- Generate "When to Use" recommendations
-- AI self-evaluates skill selection
-
-### References
-
-- RFC-007: Intermediate Representation (IR)
-- tests/scenario/README.md: Scenario testing guidelines
-- docs/architecture/skills-tools-mapping.md: Current skill-tool relationships
+| Task Type | Strategy |
+|-----------|----------|
+| Find files with pattern | Use grep/find ONCE |
+| Replace in multiple files | Group by pattern type |
+| Verify changes | Single test run at the end |
+| Read multiple files | Parallel reads |
 
 ---

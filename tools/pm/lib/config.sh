@@ -23,15 +23,15 @@ find_project_root() {
 yaml_get() {
     local file="$1"
     local key="$2"
-    
+
     if ! command -v yq &>/dev/null; then
         echo "[ERROR] yq is required. Install with: brew install yq" >&2
         return 1
     fi
-    
+
     local result
     result=$(yq -r "$key" "$file" 2>/dev/null)
-    
+
     # Return empty string for null values
     if [[ "$result" == "null" ]]; then
         echo ""
@@ -45,7 +45,7 @@ detect_config_format() {
     local file="$1"
     local has_roles
     has_roles=$(yq -r '.roles' "$file" 2>/dev/null)
-    
+
     if [[ -n "$has_roles" ]] && [[ "$has_roles" != "null" ]]; then
         echo "role-based"
     else
@@ -74,26 +74,26 @@ load_config() {
             ROLE_DOCS=$(yaml_get "$CONFIG_FILE" '.roles.docs')
             ROLE_PLANNING=$(yaml_get "$CONFIG_FILE" '.roles.planning')
             ROLE_WIKI=$(yaml_get "$CONFIG_FILE" '.roles.wiki')
-            
+
             # Default review to vcs if not set
             ROLE_REVIEW="${ROLE_REVIEW:-$ROLE_VCS}"
             # Default planning to issue provider if not set
             ROLE_PLANNING="${ROLE_PLANNING:-$ROLE_ISSUE}"
             # Default wiki to vcs provider if not set
             ROLE_WIKI="${ROLE_WIKI:-$ROLE_VCS}"
-            
+
             # Load platform configs (environment variables take precedence)
             JIRA_BASE_URL="${JIRA_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.jira.base_url')}"
             JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-$(yaml_get "$CONFIG_FILE" '.platforms.jira.project_key')}"
             JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.jira.email')
-            
+
             CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.confluence.base_url')}"
             CONFLUENCE_SPACE_KEY="${CONFLUENCE_SPACE_KEY:-$(yaml_get "$CONFIG_FILE" '.platforms.confluence.space_key')}"
             CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.platforms.confluence.email')
-            
+
             GITLAB_BASE_URL="${GITLAB_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.base_url')}"
             GITLAB_PROJECT="${GITLAB_PROJECT:-$(yaml_get "$CONFIG_FILE" '.platforms.gitlab.project')}"
-            
+
             GITHUB_REPO="${GITHUB_REPO:-$(yaml_get "$CONFIG_FILE" '.platforms.github.repo')}"
         else
             # Legacy flat format (backward compatibility)
@@ -101,16 +101,16 @@ load_config() {
             JIRA_BASE_URL="${JIRA_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.jira.base_url')}"
             JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-$(yaml_get "$CONFIG_FILE" '.jira.project_key')}"
             JIRA_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.jira.email')
-            
+
             CONFLUENCE_BASE_URL="${CONFLUENCE_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.confluence.base_url')}"
             CONFLUENCE_SPACE_KEY="${CONFLUENCE_SPACE_KEY:-$(yaml_get "$CONFIG_FILE" '.confluence.space_key')}"
             CONFLUENCE_EMAIL_CONFIG=$(yaml_get "$CONFIG_FILE" '.confluence.email')
-            
+
             GITLAB_BASE_URL="${GITLAB_BASE_URL:-$(yaml_get "$CONFIG_FILE" '.gitlab.base_url')}"
             GITLAB_PROJECT="${GITLAB_PROJECT:-$(yaml_get "$CONFIG_FILE" '.gitlab.project')}"
-            
+
             GITHUB_REPO="${GITHUB_REPO:-$(yaml_get "$CONFIG_FILE" '.github.repo')}"
-            
+
             # Legacy: no explicit roles
             ROLE_VCS=""
             ROLE_ISSUE=""
@@ -119,7 +119,7 @@ load_config() {
             ROLE_PLANNING=""
             ROLE_WIKI=""
         fi
-        
+
         # Branch prefixes (same for both formats)
         BRANCH_FEATURE_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.feature_prefix')
         BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.bugfix_prefix')
@@ -132,7 +132,7 @@ load_config() {
     BRANCH_HOTFIX_PREFIX="${BRANCH_HOTFIX_PREFIX:-hotfix/}"
 
     # Auth: Environment > Project .secrets > Global ~/.secrets
-    
+
     # Jira/Atlassian
     if [[ -z "$JIRA_TOKEN" ]] && [[ -f "$PROJECT_ROOT/.secrets/atlassian-api-token" ]]; then
         JIRA_TOKEN=$(cat "$PROJECT_ROOT/.secrets/atlassian-api-token")
@@ -210,7 +210,7 @@ print_config() {
     echo "Project Root: $PROJECT_ROOT"
     echo "Config Format: $config_format"
     echo ""
-    
+
     if [[ "$config_format" == "role-based" ]]; then
         echo "[Roles]"
         echo "  VCS:      ${ROLE_VCS:-(not set)}"
@@ -221,7 +221,7 @@ print_config() {
         echo "  Wiki:     ${ROLE_WIKI:-(not set)}"
         echo ""
     fi
-    
+
     echo "[Platforms]"
     echo ""
     echo "  [Jira]"

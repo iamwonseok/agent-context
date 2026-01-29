@@ -1,11 +1,11 @@
 # Agent Workflow Context Template
 # This file tracks a single work session/try for a task
-
+---
 # Task identifier (e.g., TASK-123, BUG-456)
 task_id: ""
 
-# Work mode: "interactive" (branch) or "detached" (worktree)
-mode: "interactive"
+# Work mode: interactive (branch) or detached (worktree)
+mode: interactive
 
 # Git branch name
 branch: ""
@@ -14,8 +14,8 @@ branch: ""
 started_at: ""
 completed_at: ""
 
-# Status: "in_progress", "completed", "failed", "abandoned"
-status: "in_progress"
+# Status: in_progress, completed, failed, abandoned
+status: in_progress
 
 # Goal description
 # What are we trying to achieve?

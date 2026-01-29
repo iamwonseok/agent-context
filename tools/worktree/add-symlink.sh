@@ -119,13 +119,13 @@ create_symlink() {
     # Symlink 생성
     ln -s "$source" "$dest"
     log_info "'${target_dir}' → '${source}' symlink를 생성했습니다."
-    
+
     # .context symlink인 경우, worktree용 로그 디렉토리 자동 생성
     if [[ "$target_dir" == ".context" ]]; then
         local worktree_name
         worktree_name=$(basename "$current_path")
         local worktree_log_dir="$source/$worktree_name/logs"
-        
+
         if [[ ! -d "$worktree_log_dir" ]]; then
             mkdir -p "$worktree_log_dir"
             log_info "Worktree 로그 디렉토리 생성: $worktree_log_dir"

@@ -400,7 +400,7 @@ EOF
 
     echo "[OK] Verification report created: $verification_file"
     echo ""
-    
+
     # RFC-004 Phase 2: Generate quick-summary.md
     echo "Generating quick summary..."
     if command -v generate_quick_summary &>/dev/null; then
@@ -409,7 +409,7 @@ EOF
             echo "[WARN] Quick summary generation failed (non-critical)"
     fi
     echo ""
-    
+
     echo "[NEXT] Edit the file to check off completed requirements"
     echo "       Then run 'agent dev retro' to create retrospective"
 
@@ -704,7 +704,7 @@ dev_submit() {
         else
             failed_step="sync"
             echo ""
-            _submit_status "$completed_steps" "$failed_step"
+            _submit_status "${completed_steps[*]}" "$failed_step"
             return 1
         fi
         echo ""
@@ -852,7 +852,7 @@ dev_submit() {
 _submit_status() {
     local completed="$1"
     local failed="$2"
-    
+
     if [[ -n "$completed" ]]; then
         echo "Completed: $completed"
     fi

@@ -45,6 +45,16 @@ TOOLS_COMMON=(
     "yq:yq --version:brew install yq:YAML processor"
 )
 
+# Check if array contains element
+array_contains() {
+    local element="$1"
+    shift
+    for item in "$@"; do
+        [[ "$item" == "$element" ]] && return 0
+    done
+    return 1
+}
+
 # Detect package manager
 detect_package_manager() {
     if command -v brew >/dev/null 2>&1; then
@@ -159,7 +169,7 @@ check_tools() {
             IFS=':' read -r tool_name check_cmd install_cmd desc <<< "$tool_def"
 
             # Skip if already checked
-            if [[ " ${checked[*]} " =~ " ${tool_name} " ]]; then
+            if array_contains "$tool_name" "${checked[@]}"; then
                 continue
             fi
             checked+=("$tool_name")
@@ -225,7 +235,7 @@ display_status() {
             IFS=':' read -r tool_name check_cmd install_cmd desc <<< "$tool_def"
 
             # Skip if already checked
-            if [[ " ${checked[*]} " =~ " ${tool_name} " ]]; then
+            if array_contains "$tool_name" "${checked[@]}"; then
                 continue
             fi
             checked+=("$tool_name")

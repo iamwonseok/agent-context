@@ -183,4 +183,3 @@ dev_handoff() {
             ;;
     esac
 }
-

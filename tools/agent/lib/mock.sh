@@ -35,7 +35,7 @@ mock_disable() {
 mock_jira_issue_create() {
     local title="$1"
     local type="${2:-Task}"
-    
+
     echo "[MOCK] Would create JIRA issue:"
     echo "  Type:  $type"
     echo "  Title: $title"
@@ -47,7 +47,7 @@ mock_jira_issue_create() {
 mock_jira_transition() {
     local issue="$1"
     local status="$2"
-    
+
     echo "[MOCK] Would transition $issue to '$status'"
     return 0
 }
@@ -57,7 +57,7 @@ mock_gitlab_mr_create() {
     local source="$1"
     local target="${2:-main}"
     local title="$3"
-    
+
     echo "[MOCK] Would create GitLab MR:"
     echo "  Source: $source"
     echo "  Target: $target"
@@ -71,7 +71,7 @@ mock_github_pr_create() {
     local source="$1"
     local target="${2:-main}"
     local title="$3"
-    
+
     echo "[MOCK] Would create GitHub PR:"
     echo "  Source: $source"
     echo "  Target: $target"
@@ -84,7 +84,7 @@ mock_github_pr_create() {
 mock_confluence_page_create() {
     local title="$1"
     local space="${2:-}"
-    
+
     echo "[MOCK] Would create Confluence page:"
     echo "  Title: $title"
     echo "  Space: ${space:-(default)}"
@@ -95,7 +95,7 @@ mock_confluence_page_create() {
 # Mock git push
 mock_git_push() {
     local branch="${1:-HEAD}"
-    
+
     echo "[MOCK] Would push branch: $branch"
     return 0
 }
@@ -103,7 +103,7 @@ mock_git_push() {
 # Mock git branch creation
 mock_git_branch() {
     local branch="$1"
-    
+
     echo "[MOCK] Would create branch: $branch"
     return 0
 }
@@ -128,7 +128,7 @@ mock_or_exec() {
 mock_or_api() {
     local mock_response="$1"
     shift
-    
+
     if is_mock_mode; then
         echo "[MOCK] $*"
         echo "$mock_response"
@@ -147,12 +147,12 @@ mock_or_api() {
 mock_test() {
     local test_name="$1"
     shift
-    
+
     echo "=== Test: $test_name ==="
-    
+
     local old_mock="${AGENT_MOCK:-}"
     export AGENT_MOCK=1
-    
+
     if "$@"; then
         echo "[PASS] $test_name"
         local result=0
@@ -160,13 +160,13 @@ mock_test() {
         echo "[FAIL] $test_name"
         local result=1
     fi
-    
+
     if [[ -n "$old_mock" ]]; then
         export AGENT_MOCK="$old_mock"
     else
         unset AGENT_MOCK
     fi
-    
+
     return $result
 }
 

@@ -24,7 +24,6 @@ source "$LIB_DIR/permissions.sh"
 source "$LIB_DIR/executor.sh"
 source "$LIB_DIR/init.sh"
 source "$LIB_DIR/manager.sh"
-source "$LIB_DIR/setup.sh"
 source "$LIB_DIR/bootstrap.sh"
 
 # Version
