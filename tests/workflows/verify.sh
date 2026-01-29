@@ -9,9 +9,6 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 WORKFLOWS_DIR="${PROJECT_ROOT}/workflows"
 SKILLS_DIR="${PROJECT_ROOT}/skills"
 
-# Source logging library
-source "${PROJECT_ROOT}/tools/agent/lib/logging.sh"
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -95,33 +92,6 @@ test_workflow() {
     fi
 }
 
-# Generate sequence log for a workflow run
-log_workflow_sequence() {
-    local workflow_path="$1"
-    local task_id="${2:-TEST-$(date +%s)}"
-
-    local workflow_file="${WORKFLOWS_DIR}/${workflow_path}.md"
-    local skills
-    skills=$(extract_skills "$workflow_file")
-
-    # Start sequence log
-    seq_log_start "$task_id" "Test run for ${workflow_path}"
-    seq_log_workflow_begin "$workflow_path"
-
-    # Log each skill call
-    for skill in $skills; do
-        seq_log_skill_begin "$skill"
-        sleep 0.05
-        seq_log_skill_end "$skill" "OK"
-    done
-
-    seq_log_workflow_end "$workflow_path" "OK" "$(echo $skills | wc -w | tr -d ' ') skills"
-    local log_file
-    log_file=$(seq_log_end "OK")
-
-    echo "$log_file"
-}
-
 # Main
 main() {
     echo "=========================================="
@@ -147,30 +117,6 @@ main() {
             ((failed++)) || true
         fi
     done
-
-    echo ""
-    echo -e "${BLUE}--- Sequence Log Test ---${NC}"
-
-    # Generate a sample sequence log
-    echo "  Generating sequence log for solo/feature..."
-    local log_file
-    log_file=$(AGENT_LOG_VERBOSE=0 log_workflow_sequence "solo/feature" "TEST-001")
-
-    if [[ -n "$log_file" ]] && [[ -f "$log_file" ]]; then
-        echo -e "  ${GREEN}[OK]${NC} Log created: $log_file"
-        ((passed++)) || true
-
-        if [[ $VERBOSE -eq 1 ]]; then
-            echo ""
-            echo "  --- Log Content ---"
-            cat "$log_file" | sed 's/^/  /'
-            echo "  -------------------"
-        fi
-    else
-        echo -e "  ${RED}[NG]${NC} Log creation failed"
-        ((failed++)) || true
-    fi
-    ((total++)) || true
 
     echo ""
     echo "=========================================="

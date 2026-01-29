@@ -1,0 +1,142 @@
+#!/bin/bash
+#
+# add-symlink
+#
+# Create symlinks from worktree to main worktree directories.
+# Useful for sharing .context, node_modules, etc.
+#
+# Usage:
+#   add-symlink [dir1] [dir2] ...
+#
+# Example:
+#   add-symlink .context          # Centralize logs
+#   add-symlink node_modules      # Share dependencies
+#   add-symlink .context node_modules
+#
+# Without arguments, defaults to .context
+
+set -e
+
+# Log functions
+log_ok() { echo "[OK] $1"; }
+log_ng() { echo "[NG] $1"; }
+log_warn() { echo "[!!] $1"; }
+log_info() { echo "[>>] $1"; }
+
+# Check if in git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    log_ng "Not in a git repository"
+    exit 1
+fi
+
+# Get main worktree path
+get_main_worktree_path() {
+    local git_common_dir
+    git_common_dir=$(git rev-parse --git-common-dir)
+
+    if [[ "$git_common_dir" == */.git ]]; then
+        dirname "$git_common_dir"
+    elif [[ "$git_common_dir" == ".git" ]]; then
+        pwd
+    else
+        local main_git_dir
+        main_git_dir=$(dirname "$(dirname "$git_common_dir")")
+        dirname "$main_git_dir"
+    fi
+}
+
+# Create symlink
+create_symlink() {
+    local target_dir=$1
+    local main_path=$2
+    local current_path
+    current_path=$(pwd)
+
+    local source="${main_path}/${target_dir}"
+    local dest="${current_path}/${target_dir}"
+
+    # Check if source exists in main worktree
+    if [[ ! -d "$source" ]]; then
+        log_warn "Source '${target_dir}' not found in main worktree, skipping"
+        return 0
+    fi
+
+    # Already a symlink
+    if [[ -L "$dest" ]]; then
+        local existing_target
+        existing_target=$(readlink "$dest")
+        if [[ "$existing_target" == "$source" ]]; then
+            log_ok "'${target_dir}' symlink already correct"
+        else
+            log_warn "'${target_dir}' points elsewhere, updating"
+            rm "$dest"
+            ln -s "$source" "$dest"
+            log_ok "'${target_dir}' symlink updated"
+        fi
+        return 0
+    fi
+
+    # Directory exists - backup and replace
+    if [[ -d "$dest" ]]; then
+        log_warn "'${target_dir}' exists, backing up"
+        mv "$dest" "${dest}.backup.$(date +%Y%m%d%H%M%S)"
+    fi
+
+    # Create symlink
+    ln -s "$source" "$dest"
+    log_ok "'${target_dir}' -> '${source}'"
+
+    # For .context, create worktree-specific log directory
+    if [[ "$target_dir" == ".context" ]]; then
+        local worktree_name
+        worktree_name=$(basename "$current_path")
+        local worktree_log_dir="$source/$worktree_name/logs"
+
+        if [[ ! -d "$worktree_log_dir" ]]; then
+            mkdir -p "$worktree_log_dir"
+            log_info "Created worktree log dir: $worktree_log_dir"
+        fi
+    fi
+}
+
+# Default directories
+DEFAULT_DIRS=(".context")
+
+# Main
+main() {
+    local main_worktree_path
+    main_worktree_path=$(get_main_worktree_path)
+
+    local current_path
+    current_path=$(pwd)
+
+    log_info "Main worktree: ${main_worktree_path}"
+    log_info "Current path: ${current_path}"
+
+    # Running from main worktree
+    if [[ "$main_worktree_path" == "$current_path" ]]; then
+        log_info "Already in main worktree, no symlink needed"
+        exit 0
+    fi
+
+    # Determine target directories
+    local dirs=()
+    if [[ $# -gt 0 ]]; then
+        dirs=("$@")
+    else
+        dirs=("${DEFAULT_DIRS[@]}")
+    fi
+
+    log_info "Targets: ${dirs[*]}"
+    echo ""
+
+    # Create symlinks
+    for dir in "${dirs[@]}"; do
+        create_symlink "$dir" "$main_worktree_path"
+    done
+
+    echo ""
+    log_ok "Worktree symlink setup complete"
+}
+
+main "$@"

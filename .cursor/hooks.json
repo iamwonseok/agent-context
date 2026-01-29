@@ -1,24 +1,14 @@
 {
   "version": 1,
   "hooks": {
-    "sessionStart": [
+    "beforeSubmitPrompt": [
       {
-        "command": ".cursor/hooks/session-start.sh"
+        "command": ".cursor/hooks/before-submit-prompt.sh"
       }
     ],
     "sessionEnd": [
       {
         "command": ".cursor/hooks/session-end.sh"
-      }
-    ],
-    "afterFileEdit": [
-      {
-        "command": ".cursor/hooks/after-file-edit.sh"
-      }
-    ],
-    "stop": [
-      {
-        "command": ".cursor/hooks/stop.sh"
       }
     ]
   }
