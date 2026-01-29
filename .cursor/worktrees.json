@@ -1,5 +1,0 @@
-{
-  "setup-worktree": [
-    "$ROOT_WORKTREE_PATH/tools/worktree/bin/add-symlink .context"
-  ]
-}
