@@ -1,14 +1,14 @@
 {
   "version": 1,
   "hooks": {
-    "beforeSubmitPrompt": [
+    "sessionStart": [
       {
-        "command": ".cursor/hooks/before-submit-prompt.sh"
+        "command": ".cursor/hooks/init-context.sh"
       }
     ],
-    "sessionEnd": [
+    "beforeSubmitPrompt": [
       {
-        "command": ".cursor/hooks/session-end.sh"
+        "command": ".cursor/hooks/sync-context.sh"
       }
     ]
   }
