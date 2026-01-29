@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/session-start.sh"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": ".cursor/hooks/session-end.sh"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/after-file-edit.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/stop.sh"
+      }
+    ]
+  }
+}
