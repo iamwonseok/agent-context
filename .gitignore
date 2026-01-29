@@ -4,7 +4,9 @@
 # Editor and IDE
 .idea/
 .vscode/
-.cursor/
+.cursor/*
+!.cursor/hooks.json
+!.cursor/hooks/
 *.swp
 *.swo
 *~
