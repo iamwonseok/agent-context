@@ -4,7 +4,7 @@
 **Author:** @{github-username}
 **Created:** YYYY-MM-DD
 **Updated:** YYYY-MM-DD
-**Issue:** #{issue-number} (fill after creating GitHub issue)
+**Issue:** #{issue-number} (fill after creating the issue)
 
 ---
 

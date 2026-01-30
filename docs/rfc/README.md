@@ -6,7 +6,7 @@ RFCs provide a structured way to document significant design decisions before im
 
 **Key Philosophy:**
 - RFC drafts are **personal workspace** (not committed)
-- Discussions happen in **GitHub Issues**
+- Discussions happen in the **Issue Tracker** (GitHub, GitLab, JIRA, etc.)
 - Only **implemented RFCs** are archived here for reference
 
 ---
@@ -14,7 +14,7 @@ RFCs provide a structured way to document significant design decisions before im
 ## RFC Lifecycle
 
 ```
-Draft (.context/rfc/) -> Issue (GitHub) -> Implementation -> Archive (docs/rfc/)
+Draft (.context/rfc/) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive (docs/rfc/)
    |                        |                    |                |
    Personal              Discussion           Execute         Reference
    Workspace              & Review              Code           Material
@@ -42,15 +42,32 @@ cp docs/rfc/000-template.md ".context/rfc/${NEXT_NUM}-short-description.md"
 
 **Location:** `.context/rfc/NNN-short-description.md` (gitignored)
 
-### 2. Create GitHub Issue
+### 2. Create an Issue
 
-Once RFC draft is ready, create issue for discussion:
+Once the RFC draft is ready, create an issue for discussion.
+
+Select the tool based on `.project.yaml` (`roles.issue`, `roles.vcs`, `roles.review`).
 
 ```bash
+# GitHub
 gh issue create \
   --title "RFC-NNN: Short Description" \
   --label "rfc,proposal" \
   --body-file .context/rfc/NNN-short-description.md
+
+# GitLab
+# Note: glab does not have a stable --body-file flag across versions.
+# Use --description and pass content via your shell, or paste manually.
+glab issue create \
+  --title "RFC-NNN: Short Description" \
+  --label "rfc,proposal" \
+  --description "$(cat .context/rfc/NNN-short-description.md)"
+
+# JIRA (pm)
+# Note: pm supports --description as a string (not a file flag).
+pm jira issue create "RFC-NNN: Short Description" \
+  --type Task \
+  --description "$(cat .context/rfc/NNN-short-description.md)"
 ```
 
 **Result:** Issue URL becomes the single source of truth
@@ -96,7 +113,7 @@ git commit -m "docs: archive RFC-NNN (implemented)"
 # Update index below
 ```
 
-**Note:** Archiving is optional. The GitHub issue remains the primary reference.
+**Note:** Archiving is optional. The issue remains the primary reference.
 
 ---
 
@@ -116,35 +133,9 @@ git commit -m "docs: archive RFC-NNN (implemented)"
 
 ---
 
-## Naming Convention
+## Conventions
 
-Format: `NNN-short-description.md`
-
-- `NNN`: Zero-padded 3-digit number (001, 002, 003, ...)
-- `short-description`: Lowercase, hyphen-separated, descriptive
-- Extension: `.md`
-
-**Examples:**
-- ✅ `001-context-management-system.md`
-- ✅ `002-parallel-task-execution.md`
-- ✅ `010-git-workflow-automation.md`
-- ❌ `1-context.md` (not zero-padded)
-- ❌ `001_context_management.md` (underscore)
-- ❌ `001-ContextManagement.md` (not lowercase)
-
-See [docs/convention/rfc.md](../convention/rfc.md) for detailed conventions.
-
----
-
-## Status Values
-
-| Status | Meaning | Location |
-|--------|---------|----------|
-| `Proposed` | Under review | `.context/rfc/` + GitHub Issue |
-| `Accepted` | Approved for implementation | `.context/rfc/` + GitHub Issue |
-| `Rejected` | Not proceeding | GitHub Issue (closed) |
-| `Implemented` | Completed | Optionally in `docs/rfc/` |
-| `Superseded` | Replaced by newer RFC | GitHub Issue (link to successor) |
+See [docs/convention/rfc.md](../convention/rfc.md) for naming, structure, and status rules.
 
 ---
 
@@ -160,8 +151,8 @@ Copy to `.context/rfc/` when creating new RFC.
 
 This section lists RFCs that have been implemented and archived for reference.
 
-| Number | Title | GitHub Issue | Implemented |
-|--------|-------|--------------|-------------|
+| Number | Title | Issue | Implemented |
+|--------|-------|-------|-------------|
 | - | No archived RFCs yet | - | - |
 
 *(Add entries here when archiving implemented RFCs)*
