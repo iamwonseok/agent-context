@@ -1077,3 +1077,115 @@ jira_link_delete() {
     echo "(v) Deleted link: $link_id"
     return 0
 }
+
+# Add comment to an issue
+jira_issue_comment_add() {
+    local key="$1"
+    local comment_text="$2"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if [[ -z "$comment_text" ]]; then
+        echo "[ERROR] Comment text required" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local payload
+    # Jira Cloud API v3 requires ADF format for comment body
+    if is_jira_cloud; then
+        payload=$(jq -n \
+            --arg text "$comment_text" \
+            '{
+                body: {
+                    type: "doc",
+                    version: 1,
+                    content: [
+                        {
+                            type: "paragraph",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: $text
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }')
+    else
+        # Jira Server uses plain text body
+        payload=$(jq -n --arg text "$comment_text" '{ body: $text }')
+    fi
+
+    local response
+    response=$(jira_api POST "/issue/${key}/comment" "$payload")
+
+    local comment_id
+    comment_id=$(echo "$response" | jq -r '.id')
+
+    if [[ -z "$comment_id" ]] || [[ "$comment_id" == "null" ]]; then
+        echo "[ERROR] Failed to add comment:" >&2
+        echo "$response" | jq -r '.errors // .errorMessages // .' >&2
+        return 1
+    fi
+
+    echo "(v) Added comment to $key (id: $comment_id)"
+    return 0
+}
+
+# List comments on an issue
+jira_issue_comment_list() {
+    local key="$1"
+
+    if [[ -z "$key" ]]; then
+        echo "[ERROR] Issue key required" >&2
+        return 1
+    fi
+
+    if ! jira_configured; then
+        echo "[ERROR] Jira not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(jira_api GET "/issue/${key}/comment")
+
+    echo "=========================================="
+    echo "Comments for $key"
+    echo "=========================================="
+    echo ""
+
+    local total
+    total=$(echo "$response" | jq -r '.total // 0')
+
+    if [[ "$total" == "0" ]]; then
+        echo "(No comments)"
+        return 0
+    fi
+
+    echo "------------------------------------------------------------------------"
+    printf "%-8s | %-20s | %-20s | %s\n" "ID" "Author" "Created" "Preview"
+    echo "------------------------------------------------------------------------"
+
+    echo "$response" | jq -r '.comments[] |
+        [
+            .id,
+            .author.displayName,
+            (.created | split("T")[0]),
+            (if .body.content then (.body.content[0].content[0].text // "(ADF content)") else (.body | tostring) end | .[0:30])
+        ] | @tsv' | \
+    while IFS=$'\t' read -r id author created preview; do
+        printf "%-8s | %-20s | %-20s | %s...\n" "$id" "${author:0:20}" "$created" "$preview"
+    done
+
+    echo "------------------------------------------------------------------------"
+    echo "Total: $total comments"
+}
