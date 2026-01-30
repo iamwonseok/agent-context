@@ -130,6 +130,17 @@ repos:
       - id: checkmake
         name: checkmake
 
+  # ===================
+  # Markdown Hooks
+  # ===================
+  - repo: local
+    hooks:
+      - id: check-no-emoji-markdown
+        name: Check no emoji in Markdown
+        entry: python3 tools/lint/check_no_emoji_md.py
+        language: system
+        files: \.md$
+
 ci:
   autofix_commit_msg: "[pre-commit.ci] auto fixes"
   autofix_prs: true
