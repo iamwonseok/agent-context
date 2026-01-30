@@ -20,6 +20,7 @@ Follow the convention for each file type:
 | `Makefile`, `*.mk` | [docs/convention/make.md](docs/convention/make.md) |
 | `*.c`, `*.h` | [docs/convention/c.md](docs/convention/c.md) |
 | `*.cpp`, `*.hpp` | Out of scope - see [docs/convention/cpp.md](docs/convention/cpp.md) |
+| RFC (`docs/rfc/*.md`) | [docs/convention/rfc.md](docs/convention/rfc.md) |
 
 ---
 
@@ -29,6 +30,9 @@ Follow the convention for each file type:
 |-----------|----------|:-----:|:-------:|
 | Executable (`*.sh`, `*.py`) | English only | Forbidden | Forbidden |
 | Code comments | English only | Forbidden | Forbidden |
+| Git commit messages | English only | Forbidden | Forbidden |
+| GitHub/GitLab Issue titles | English only | Forbidden | Forbidden |
+| GitHub/GitLab Issue body | Korean/English | Forbidden | Restricted |
 | Markdown (`*.md`) | Korean/English | Forbidden | Restricted |
 
 **Unicode in Markdown:**
@@ -66,6 +70,7 @@ Read the appropriate workflow file:
 ### Before Committing
 1. Review changes: `git diff --staged`
 2. Commit message convention:
+   - **Language:** English only (NO Korean)
    - `feat:` new feature
    - `fix:` bug fix
    - `refactor:` code refactoring
