@@ -9,7 +9,29 @@ stages:
   - lint
   - test
 
-# Linting via pre-commit (same tools as local development)
+# =============================================================================
+# Job Templates
+# =============================================================================
+
+.docker-test:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker compose -f tests/docker-compose.test.yml build
+
+.rules-mr-or-main:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# =============================================================================
+# Lint Stage
+# =============================================================================
+
 lint:
   stage: lint
   image: python:3.11-slim
@@ -18,37 +40,31 @@ lint:
   script:
     - pre-commit run --all-files --show-diff-on-failure
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.rules-mr-or-main, rules]
+
+# =============================================================================
+# Test Stage - Core Tests (Always Run)
+# =============================================================================
 
 # Workflow tests (Stage 0-2: unit, smoke, local-git)
 # E2E tests (Stage 3) require API tokens and are run locally only
 test:workflow:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  extends: .docker-test
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run unit
     - docker compose -f tests/docker-compose.test.yml run smoke
     - docker compose -f tests/docker-compose.test.yml run local-git
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - !reference [.rules-mr-or-main, rules]
+
+# =============================================================================
+# Test Stage - Conditional Tests (Run on Specific Changes)
+# =============================================================================
 
 # Meta-validation tests (framework self-validation)
 test:meta:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  extends: .docker-test
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run meta
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -60,14 +76,8 @@ test:meta:
 
 # Error handling tests (no tokens required)
 test:error-handling:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  extends: .docker-test
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run error-handling
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -79,28 +89,23 @@ test:error-handling:
 
 # Scenario tests (quick mode, core scenarios only)
 test:scenario:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
+  extends: .docker-test
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run scenario
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - tests/scenario/**/*
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  allow_failure: true  # Scenarios may skip due to missing tokens
+  allow_failure: true
+
+# =============================================================================
+# Test Stage - Manual/Scheduled Tests (Require Tokens)
+# =============================================================================
 
 # E2E tests (requires tokens, manual/scheduled only)
 test:e2e:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
+  extends: .docker-test
   variables:
     DOCKER_TLS_CERTDIR: ""
     GITLAB_API_TOKEN: ${GITLAB_API_TOKEN}
@@ -111,19 +116,15 @@ test:e2e:
     JIRA_EMAIL: ${JIRA_EMAIL}
     JIRA_TEST_PROJECT: ${JIRA_TEST_PROJECT}
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run e2e
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - when: manual
-  allow_failure: true  # E2E may fail due to external service issues
+  allow_failure: true
 
 # Full scenario tests (all 15 scenarios, manual only)
 test:scenario-full:
-  stage: test
-  image: docker:24
-  services:
-    - docker:24-dind
+  extends: .docker-test
   variables:
     DOCKER_TLS_CERTDIR: ""
     GITLAB_API_TOKEN: ${GITLAB_API_TOKEN}
@@ -133,7 +134,6 @@ test:scenario-full:
     JIRA_URL: ${JIRA_URL}
     JIRA_EMAIL: ${JIRA_EMAIL}
   script:
-    - docker compose -f tests/docker-compose.test.yml build
     - docker compose -f tests/docker-compose.test.yml run scenario-full
   rules:
     - when: manual
