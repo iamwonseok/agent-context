@@ -46,3 +46,4 @@ tests/reports/
 
 # Demo files (local only)
 agent-live-demo/
+demo/export/
