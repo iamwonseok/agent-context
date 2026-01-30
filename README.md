@@ -57,7 +57,8 @@ gh pr create --title "TASK-123: description"
 agent-context/
 ├── docs/                # Documentation
 │   ├── ARCHITECTURE.md  # Design philosophy
-│   └── convention/      # Coding conventions
+│   ├── convention/      # Coding conventions
+│   └── rfc/             # Design proposals (RFC)
 ├── skills/              # Generic skill templates (Thin)
 │   ├── analyze.md       # Understand situation
 │   ├── design.md        # Design approach
@@ -174,6 +175,7 @@ pm confluence page list         # List Confluence pages
 |----------|-------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design philosophy |
 | [docs/convention/](docs/convention/) | Coding conventions |
+| [docs/rfc/](docs/rfc/) | Design proposals (RFC) |
 | [skills/](skills/) | Generic skill templates |
 | [workflows/](workflows/) | Context-aware workflows |
 
