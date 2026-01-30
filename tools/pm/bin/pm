@@ -225,9 +225,55 @@ cmd_jira() {
 
                     jira_issue_update "$key" "$@"
                     ;;
+                comment)
+                    shift
+                    local comment_cmd="${1:-}"
+                    shift || true
+
+                    case "$comment_cmd" in
+                        add)
+                            local key=""
+                            local text=""
+
+                            # Parse: pm jira issue comment add KEY "text"
+                            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                                key="$1"
+                                shift
+                            fi
+                            if [[ -n "$1" ]]; then
+                                text="$1"
+                            fi
+
+                            if [[ -z "$key" ]] || [[ -z "$text" ]]; then
+                                echo "[ERROR] Usage: pm jira issue comment add <KEY> <TEXT>" >&2
+                                exit 1
+                            fi
+
+                            jira_issue_comment_add "$key" "$text"
+                            ;;
+                        list)
+                            local key=""
+                            if [[ -n "$1" ]] && [[ "$1" != -* ]]; then
+                                key="$1"
+                            fi
+
+                            if [[ -z "$key" ]]; then
+                                echo "[ERROR] Usage: pm jira issue comment list <KEY>" >&2
+                                exit 1
+                            fi
+
+                            jira_issue_comment_list "$key"
+                            ;;
+                        *)
+                            echo "[ERROR] Unknown comment command: $comment_cmd" >&2
+                            echo "Usage: pm jira issue comment <add|list>" >&2
+                            exit 1
+                            ;;
+                    esac
+                    ;;
                 *)
                     echo "[ERROR] Unknown jira issue command: $1" >&2
-                    echo "Usage: pm jira issue <list|view|create|assign|update|transition>" >&2
+                    echo "Usage: pm jira issue <list|view|create|assign|update|transition|comment>" >&2
                     exit 1
                     ;;
             esac
