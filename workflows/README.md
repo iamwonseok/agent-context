@@ -4,6 +4,34 @@
 
 Workflows are **thick orchestrators** that inject context into skills based on the current situation.
 
+## Global Defaults
+
+> All workflows inherit these minimum policies. Override per-project if needed.
+
+### Branch Naming
+
+| Type | Rule |
+|------|------|
+| General | Free (no enforcement) |
+| Release | `release/<anything>/v<MAJOR>.<MINOR>.<PATCH>` (last segment only matters) |
+
+**Release branch detection regex:** `^release\/.+\/v[0-9]+\.[0-9]+\.[0-9]+$`
+
+### MR/PR Policy
+
+| Item | Rule |
+|------|------|
+| Title | Jira key required (e.g., `[SPF-1290] ...` or `SPF-1290 ...`) |
+| Evidence | Optional (pipeline results visible in MR UI) |
+
+### Jira-GitLab Integration
+
+- **Direction**: GitLab -> Jira (via Jira key in branch/commit/MR title)
+- **Limitation**: Jira -> GitLab attach/create may be restricted depending on setup
+- **Recommendation**: Always include Jira key in MR title for automatic linking
+
+---
+
 ## Philosophy
 
 | Concept | Role | Developer Analogy |
