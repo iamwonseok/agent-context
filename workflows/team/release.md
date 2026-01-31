@@ -11,6 +11,33 @@
 | **Output** | Production deployment |
 | **Duration** | Hours to 1 day |
 
+**Inherits:** [Global Defaults](../README.md#global-defaults)
+
+---
+
+## Release Policy
+
+### Branch Naming
+
+| Pattern | Example |
+|---------|---------|
+| `release/<anything>/v<MAJOR>.<MINOR>.<PATCH>` | `release/sprint-42/v1.2.0`, `release/2025-q1/v2.0.0` |
+
+**Detection regex:** `^release\/.+\/v[0-9]+\.[0-9]+\.[0-9]+$`
+
+### RACI (Simplified for Developer-Driven Release)
+
+| Role | Responsibility |
+|------|----------------|
+| **Release Owner** | Coordinates release, creates branch/tag, monitors deployment |
+| **Reviewer** | 1 peer reviewer for release MR (mutual review) |
+| **Stakeholders** | Notify if external impact (optional) |
+
+### MR Requirements
+
+- **Title**: Must include Jira key (e.g., `[SPF-1290] Release v1.2.0`)
+- **Evidence**: Optional (CI/CD pipeline visible in MR UI)
+
 ---
 
 ## Release Phases
@@ -100,9 +127,8 @@
 4. **Sign-off**
    | Role | Name | Approved |
    |------|------|----------|
-   | Tech Lead | {name} | [ ] |
-   | QA | {name} | [ ] |
-   | Product | {name} | [ ] |
+   | Release Owner | {name} | [ ] |
+   | Reviewer | {name} | [ ] |
 
 ---
 
@@ -163,10 +189,10 @@
 
 | Artifact | Location | Owner |
 |----------|----------|-------|
-| Release Branch | `release/v{version}` | Tech Lead |
-| Changelog | `CHANGELOG.md` | Tech Lead |
+| Release Branch | `release/<context>/v{version}` | Release Owner |
+| Changelog | `CHANGELOG.md` | Release Owner |
 | Release Tag | `v{version}` | CI/CD |
-| Release Notes | Email/Slack | Product |
+| Release Notes | Email/Slack | Release Owner |
 
 ---
 

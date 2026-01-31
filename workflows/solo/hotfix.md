@@ -11,6 +11,19 @@
 | **Output** | Deployed fix |
 | **Duration** | Minutes to hours |
 
+**Inherits:** [Global Defaults](../README.md#global-defaults)
+
+---
+
+## Hotfix Policy
+
+### MR Requirements
+
+| Item | Rule |
+|------|------|
+| Title | Jira key required (e.g., `[SPF-1290] Fix critical auth failure`) |
+| Evidence | Optional (pipeline visible in MR UI) |
+
 ---
 
 ## Prerequisites

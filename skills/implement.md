@@ -19,42 +19,42 @@
 ## Template
 
 ### 1. Implementation Target
-**Design Reference:** {design_doc_or_ticket}
-**Target Location:** {file_path_or_module}
+
+| Item | Value |
+|------|-------|
+| Design Reference | {design_doc_or_ticket} |
+| Target Module | {module_or_component} |
 
 ### 2. Acceptance Criteria
+
 - [ ] {ac_1}
 - [ ] {ac_2}
 - [ ] {ac_3}
 
-### 3. Implementation Steps
+### 3. Change Summary
 
-#### Step 1: {step_name}
-```{language}
-{code_change}
-```
+> Brief description of what was changed and why (avoid duplicating MR diff)
 
-**Rationale:** {why_this_approach}
+**Approach:** {brief_approach_description}
 
-#### Step 2: {step_name}
-```{language}
-{code_change}
-```
+**Key Decisions:**
+- {decision_1}: {rationale}
+- {decision_2}: {rationale}
 
 ### 4. Files Changed
+
 | File | Change Type | Description |
 |------|-------------|-------------|
 | {file_1} | {add/modify/delete} | {what_changed} |
 | {file_2} | {add/modify/delete} | {what_changed} |
 
-### 5. Commit Message
-```
-{type}({scope}): {description}
+### 5. Traceability
 
-{body}
-
-{footer}
-```
+| Item | Reference |
+|------|-----------|
+| Ticket | {ticket_key} |
+| MR/PR | {mr_url_or_number} |
+| Related | {related_tickets_or_docs} |
 
 ---
 
