@@ -1,18 +1,18 @@
-# AITL Demo - Agent-in-the-Loop Grand Scenario
+# AITL Demo - project-opentitan Scenario
 
 ## Project Goals
 
-This demo realizes the **Agent-in-the-Loop (AITL)** concept where an AI agent autonomously manages the software development lifecycle.
+This demo realizes the **Agent-in-the-Loop (AITL)** concept using the project-opentitan reference scenario.
 
 ### Primary Objectives
 
-1. **Verify Real Infrastructure Integration**: Demonstrate that agent-context works with real Jira, GitLab, and Confluence (not mocks)
-2. **Full Lifecycle Management**: Agent manages Project -> Team -> Solo layer transitions
-3. **Automated Verification**: When issues occur, record observations, root causes, fixes, and re-verify results to minimize revisits
+1. **Verify Real Infrastructure Integration**: Use real Jira, GitLab, and Confluence (not mocks)
+2. **Full Lifecycle Management**: Project -> Team -> Solo transitions in a single run
+3. **Realistic Ticket Content**: Jira cards include context, deliverables, verification, and DoD
 
 ### What the Demo Proves
 
-- Programmatic Epic/Task creation in Jira
+- Programmatic Epic/Task/Hotfix creation in Jira
 - Status transitions via workflow rules
 - Blocker link creation for dependency tracking
 - Work interruption handling (hotfix scenario)
@@ -20,7 +20,7 @@ This demo realizes the **Agent-in-the-Loop (AITL)** concept where an AI agent au
 - **Full GitLab MR flow**: Issue -> Branch -> Commit -> MR -> Merge
 - **MR Gate enforcement**: Jira Done transition blocked until MR merged
 - **GitLab trace**: MR/commit info recorded as Jira comments
-- Automatic metrics extraction and report generation
+- Run-isolated exports and report generation
 
 ---
 
@@ -133,13 +133,29 @@ cd demo/
 
 ```bash
 # View dashboard
-cat export/DASHBOARD.md
+cat export/latest/DASHBOARD.md
 
 # View full report
-cat export/DEMO_REPORT.md
+cat export/latest/DEMO_REPORT.md
 
 # List created issues
 ./tools/pm/bin/pm jira issue list --jql "project = SVI ORDER BY created DESC"
+```
+
+### Step 6: Generate Sample Prepare/Results
+
+```bash
+# Prepare templates (no external changes)
+./demo.sh sample-prepare
+
+# Run the demo (creates Jira/GitLab/Confluence resources)
+./demo.sh run --jira-project SVI --gitlab-group soc-ip/agentic-ai --confluence-space '~wonseok' --skip-cleanup --repo project-opentitan
+
+# Generate results from the latest run
+./demo.sh sample-results --run-id 20260201-220917
+
+# Compare prepare/ vs results/ structure
+./demo.sh sample-compare
 ```
 
 ### Manual E2E Test (Jira + GitLab Full Integration)
@@ -178,73 +194,14 @@ glab mr merge N --yes
 
 ---
 
-## Verified Execution History
+## Example Run Summary
 
-### 2026-01-30: GitLab MR Flow Implementation Complete
-
-**New Features Implemented:**
-
-| Feature | Status | Description |
-|---------|:------:|-------------|
-| RUN_ID for test isolation | OK | All Jira issues prefixed with unique run ID |
-| GitLab Flow library | OK | `lib/gitlab_flow.sh` with 8 functions |
-| MR Gate enforcement | OK | Jira Done blocked until MR merged |
-| Jira comment trace | OK | `pm jira issue comment add/list` commands |
-| Developer Initiative | OK | Self-assigned task with full flow |
-
-**Code Quality Verification:**
-
-| Check | Result |
-|-------|:------:|
-| Bash syntax (`bash -n`) | PASS |
-| ShellCheck | PASS |
-| shfmt | PASS |
-| Pre-commit hooks | PASS |
-
-**E2E Test: Jira-GitLab Full Integration (Run ID: e2e-151417):**
-
-| Step | Action | Result | Artifact |
-|------|--------|:------:|----------|
-| 1 | Create Jira Task | OK | SVI-34 |
-| 2 | Create GitLab Issue (with Jira link) | OK | [#4](https://gitlab.fadutec.dev/soc-ip/demo/-/issues/4) |
-| 3 | Create Feature Branch | OK | `feat/SVI-34-implement-auth` |
-| 4 | Write Code | OK | `src/auth.py`, `worklog/SVI-34.md` |
-| 5 | Commit and Push | OK | Commit with Jira key |
-| 6 | Create MR (Closes #4) | OK | [!6](https://gitlab.fadutec.dev/soc-ip/demo/-/merge_requests/6) |
-| 7 | Merge MR | OK | state: `merged`, Issue #4 auto-closed |
-| 8 | Add GitLab trace to Jira | OK | comment id: 205203 |
-| 9 | Transition Jira to Done | OK | SVI-34 -> Done |
-
-**Final Status:**
-
-| Platform | Resource | Status | URL |
-|----------|----------|:------:|-----|
-| Jira | SVI-34 | Done | https://fadutec.atlassian.net/browse/SVI-34 |
-| GitLab | Issue #4 | Closed | https://gitlab.fadutec.dev/soc-ip/demo/-/issues/4 |
-| GitLab | MR !6 | Merged | https://gitlab.fadutec.dev/soc-ip/demo/-/merge_requests/6 |
-
-**Demo Execution Test (Run ID: mr-test-144139):**
-
-| Phase | Description | Result |
-|-------|-------------|:------:|
-| Phase 1 | Epic + 5 Tasks created | OK |
-| Phase 1.5 | GitLab flow (skipped - no workspace) | SKIP |
-| Phase 2 | Hotfix with blocker link | OK |
-| Phase 2.5 | Developer initiative task | OK |
-| Phase 3 | Export + Report generation | OK |
-
-**Created Jira Issues (Latest Run):**
-
-| Key | Type | Status | Summary |
-|-----|------|--------|---------|
-| SVI-18 | Epic | Backlog | [mr-test-144139] AITL Demo Epic |
-| SVI-19 | Task | Done | [mr-test-144139] Setup development environment |
-| SVI-20 | Task | Backlog | [mr-test-144139] Implement core feature |
-| SVI-21 | Task | Backlog | [mr-test-144139] Write unit tests |
-| SVI-22 | Task | Backlog | [mr-test-144139] Documentation update |
-| SVI-23 | Task | Backlog | [mr-test-144139] Performance optimization |
-| SVI-24 | Task | Done | [mr-test-144139][HOTFIX] Critical production issue |
-| SVI-25 | Task | Done | Developer Initiative: Improvement idea |
+- Scenario: project-opentitan reference project
+- Issues: Epic + 3 tasks + 1 hotfix + 1 initiative (6 total)
+- Jira content: Context, Deliverables, Verification, DoD in every card
+- GitLab: repo reused, branch name includes run ID, MR gate enforced
+- Confluence: Project Charter and Run Report pages
+- Export: demo/export/runs/<RUN_ID>/ and demo/export/latest/
 
 ---
 
@@ -330,15 +287,15 @@ Note: "On Hold" status is not available in SVI. The demo handles this with a gra
 Creates the initial project structure:
 
 - Epic in Jira representing the project
-- 5 child Tasks under the Epic
-- Confluence roadmap page (if configured)
+- 3 child Tasks under the Epic
+- Confluence Project Charter page (if configured)
 
 ### Phase 1.5: GitLab Flow
 
 Demonstrates full GitLab integration for a selected task:
 
 1. Creates GitLab issue linked to Jira task
-2. Creates feature branch (`feat/<JIRA-KEY>-<slug>`)
+2. Creates feature branch (`feat/<JIRA-KEY>-<RUN_ID>-<slug>`)
 3. Creates worklog file and commits with Jira key
 4. Pushes branch to remote
 5. Creates Merge Request referencing Jira
@@ -374,8 +331,8 @@ Generates comprehensive reports:
 
 - Exports all Jira issues to Markdown
 - Calculates completion metrics
-- Creates `DEMO_REPORT.md` with full analysis
-- Creates `DASHBOARD.md` for quick overview
+- Creates `DEMO_REPORT.md` with full analysis (run-isolated)
+- Creates `DASHBOARD.md` for quick overview (latest)
 
 ---
 
@@ -390,6 +347,7 @@ Generates comprehensive reports:
 | `--repo NAME` | GitLab repository name |
 | `--dry-run` | Show actions without executing |
 | `--skip-cleanup` | Do not prompt for cleanup |
+| `--cleanup-repo` | Allow cleanup to delete GitLab repo (opt-in) |
 | `--skip-gitlab` | Skip GitLab operations |
 | `--hitl` | Enable Human-in-the-Loop pauses |
 
@@ -397,9 +355,9 @@ Generates comprehensive reports:
 
 Each demo run generates a unique `RUN_ID` (e.g., `20260130-143052`) that prefixes all created resources:
 
-- Jira Epic: `[20260130-143052] AITL Demo Epic`
-- Jira Tasks: `[20260130-143052] Setup development environment`
-- GitLab issues/branches: Contains RUN_ID for traceability
+- Jira Epic: `[20260130-143052] project-opentitan bring-up`
+- Jira Tasks: `[20260130-143052] Repo bootstrap and project charter`
+- GitLab branches: `feat/<JIRA-KEY>-<RUN_ID>-<slug>`
 
 This ensures multiple test runs do not conflict with each other.
 
@@ -416,9 +374,14 @@ demo/
     jira_sync.sh    # Jira synchronization library
     gitlab_flow.sh  # GitLab issue/branch/MR flow library
   export/           # Generated during demo
-    jira/           # Exported Jira issues
-    DEMO_REPORT.md  # Full report
-    DASHBOARD.md    # Quick overview
+    runs/           # Run-isolated exports
+      <RUN_ID>/
+        jira/       # Exported Jira issues
+        DEMO_REPORT.md  # Full report
+        DASHBOARD.md    # Quick overview
+    latest/         # Latest run summary
+      DEMO_REPORT.md
+      DASHBOARD.md
 ```
 
 ---
