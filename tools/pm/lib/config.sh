@@ -5,6 +5,35 @@
 
 set -e
 
+# Normalize Jira Cloud base URL for fadutec.
+# Accepts UI URLs like:
+# - https://atlassian.jira.fadutec.dev/jira/software/c
+# - https://fadutec.atlassian.net/projects/SVI/boards/1172
+# and normalizes them to:
+# - https://fadutec.atlassian.net
+normalize_jira_base_url() {
+    local input="${1:-}"
+    if [[ -z "$input" ]]; then
+        echo ""
+        return 0
+    fi
+
+    # Hard mapping for internal proxy -> Jira Cloud.
+    if [[ "$input" == *"atlassian.jira.fadutec.dev"* ]]; then
+        echo "https://fadutec.atlassian.net"
+        return 0
+    fi
+
+    # If user pasted a Jira Cloud UI URL, normalize to base origin.
+    if [[ "$input" == *"fadutec.atlassian.net"* ]]; then
+        echo "https://fadutec.atlassian.net"
+        return 0
+    fi
+
+    echo "$input"
+    return 0
+}
+
 # Find project root (contains .project.yaml or .git)
 find_project_root() {
     local dir="${1:-$(pwd)}"
@@ -125,6 +154,9 @@ load_config() {
         BRANCH_BUGFIX_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.bugfix_prefix')
         BRANCH_HOTFIX_PREFIX=$(yaml_get "$CONFIG_FILE" '.branch.hotfix_prefix')
     fi
+
+    # Normalize Jira URL after config load.
+    JIRA_BASE_URL=$(normalize_jira_base_url "$JIRA_BASE_URL")
 
     # Defaults
     BRANCH_FEATURE_PREFIX="${BRANCH_FEATURE_PREFIX:-feat/}"

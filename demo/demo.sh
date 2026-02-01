@@ -28,11 +28,16 @@ fi
 # Configuration
 # RUN_ID: unique identifier for this demo run (used to distinguish test runs)
 DEMO_RUN_ID="${DEMO_RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
-DEMO_REPO_NAME="${DEMO_REPO_NAME:-aitl-demo-${DEMO_RUN_ID}}"
+DEMO_REPO_NAME="${DEMO_REPO_NAME:-demo-${DEMO_RUN_ID}}"
 DEMO_EPIC_SUMMARY="${DEMO_EPIC_SUMMARY:-[${DEMO_RUN_ID}] AITL Demo Epic}"
-DEMO_JIRA_PROJECT="${DEMO_JIRA_PROJECT:-}"
+DEMO_JIRA_PROJECT="${DEMO_JIRA_PROJECT:-SVI}"
+DEMO_JIRA_BASE_URL="${DEMO_JIRA_BASE_URL:-https://fadutec.atlassian.net}"
+DEMO_CONFLUENCE_BASE_URL="${DEMO_CONFLUENCE_BASE_URL:-https://fadutec.atlassian.net/wiki}"
+DEMO_GITLAB_BASE_URL="${DEMO_GITLAB_BASE_URL:-https://gitlab.fadutec.dev}"
+DEMO_JIRA_EMAIL="${DEMO_JIRA_EMAIL:-${JIRA_EMAIL:-}}"
+DEMO_BOARD_TYPE="${DEMO_BOARD_TYPE:-kanban}"
 DEMO_CONFLUENCE_SPACE="${DEMO_CONFLUENCE_SPACE:-}"
-DEMO_GITLAB_GROUP="${DEMO_GITLAB_GROUP:-}"
+DEMO_GITLAB_GROUP="${DEMO_GITLAB_GROUP:-soc-ip/agentic-ai}"
 
 # State tracking
 CREATED_GITLAB_REPO=""
@@ -80,6 +85,225 @@ log_phase() {
 	echo ""
 }
 
+# Run pm command in demo workspace (so it loads workspace .project.yaml)
+pm_ws() {
+	if [[ -z "${DEMO_WORKSPACE}" ]]; then
+		log_error "DEMO_WORKSPACE is not set"
+		return 1
+	fi
+	(
+		cd "${DEMO_WORKSPACE}" || exit 1
+		"${PROJECT_ROOT}/tools/pm/bin/pm" "$@"
+	)
+}
+
+# Best-effort: derive Jira email if not provided
+ensure_demo_jira_email() {
+	if [[ -n "${DEMO_JIRA_EMAIL}" ]]; then
+		return 0
+	fi
+
+	if command -v git &>/dev/null; then
+		local git_email
+		git_email=$(git -C "${PROJECT_ROOT}" config user.email 2>/dev/null || true)
+		if [[ -n "${git_email}" ]]; then
+			DEMO_JIRA_EMAIL="${git_email}"
+			return 0
+		fi
+	fi
+
+	return 0
+}
+
+url_encode() {
+	local raw="$1"
+	python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${raw}"
+}
+
+is_jira_cloud_url() {
+	local base_url="$1"
+	[[ "${base_url}" == *".atlassian.net"* ]]
+}
+
+normalize_demo_jira_base_url() {
+	local input="${1:-}"
+	if [[ -z "${input}" ]]; then
+		echo ""
+		return 0
+	fi
+
+	if [[ "${input}" == *"atlassian.jira.fadutec.dev"* ]]; then
+		echo "https://fadutec.atlassian.net"
+		return 0
+	fi
+
+	if [[ "${input}" == *"fadutec.atlassian.net"* ]]; then
+		echo "https://fadutec.atlassian.net"
+		return 0
+	fi
+
+	echo "${input}"
+	return 0
+}
+
+jira_ws_load_auth() {
+	if [[ -z "${DEMO_WORKSPACE}" ]]; then
+		log_error "DEMO_WORKSPACE is not set"
+		return 1
+	fi
+
+	if [[ ! -f "${DEMO_WORKSPACE}/.project.yaml" ]]; then
+		log_error "Workspace .project.yaml not found: ${DEMO_WORKSPACE}/.project.yaml"
+		return 1
+	fi
+
+	JIRA_BASE_URL=$(yq -r '.platforms.jira.base_url // .jira.base_url' "${DEMO_WORKSPACE}/.project.yaml")
+	JIRA_BASE_URL=$(normalize_demo_jira_base_url "${JIRA_BASE_URL}")
+	JIRA_PROJECT_KEY=$(yq -r '.platforms.jira.project_key // .jira.project_key' "${DEMO_WORKSPACE}/.project.yaml")
+	JIRA_EMAIL=$(yq -r '.platforms.jira.email // .jira.email' "${DEMO_WORKSPACE}/.project.yaml")
+
+	if [[ -z "${JIRA_TOKEN:-}" ]] && [[ -f "${HOME}/.secrets/atlassian-api-token" ]]; then
+		JIRA_TOKEN=$(cat "${HOME}/.secrets/atlassian-api-token")
+	fi
+
+	if [[ -z "${JIRA_BASE_URL}" ]] || [[ "${JIRA_BASE_URL}" == "null" ]]; then
+		log_error "Jira base_url missing in workspace .project.yaml"
+		return 1
+	fi
+	if [[ -z "${JIRA_PROJECT_KEY}" ]] || [[ "${JIRA_PROJECT_KEY}" == "null" ]]; then
+		log_error "Jira project_key missing in workspace .project.yaml"
+		return 1
+	fi
+	if [[ -z "${JIRA_EMAIL}" ]] || [[ "${JIRA_EMAIL}" == "null" ]]; then
+		log_error "Jira email missing in workspace .project.yaml"
+		return 1
+	fi
+	if [[ -z "${JIRA_TOKEN:-}" ]]; then
+		log_error "Jira token missing (expected at ~/.secrets/atlassian-api-token)"
+		return 1
+	fi
+
+	export JIRA_BASE_URL JIRA_PROJECT_KEY JIRA_EMAIL JIRA_TOKEN
+	return 0
+}
+
+jira_ws_api() {
+	local method="$1"
+	local path="$2"
+	local body="${3:-}"
+
+	if ! jira_ws_load_auth; then
+		return 1
+	fi
+
+	local url="${JIRA_BASE_URL}${path}"
+
+	if is_jira_cloud_url "${JIRA_BASE_URL}"; then
+		if [[ -n "${body}" ]]; then
+			curl -s -X "${method}" \
+				-u "${JIRA_EMAIL}:${JIRA_TOKEN}" \
+				-H "Accept: application/json" \
+				-H "Content-Type: application/json" \
+				"${url}" \
+				-d "${body}"
+		else
+			curl -s -X "${method}" \
+				-u "${JIRA_EMAIL}:${JIRA_TOKEN}" \
+				-H "Accept: application/json" \
+				"${url}"
+		fi
+	else
+		if [[ -n "${body}" ]]; then
+			curl -s -X "${method}" \
+				-H "Authorization: Bearer ${JIRA_TOKEN}" \
+				-H "Accept: application/json" \
+				-H "Content-Type: application/json" \
+				"${url}" \
+				-d "${body}"
+		else
+			curl -s -X "${method}" \
+				-H "Authorization: Bearer ${JIRA_TOKEN}" \
+				-H "Accept: application/json" \
+				"${url}"
+		fi
+	fi
+}
+
+jira_create_board_best_effort() {
+	log_info "Ensuring Jira board exists for project ${DEMO_JIRA_PROJECT} (${DEMO_BOARD_TYPE})..."
+
+	if [[ "${DRY_RUN}" == "true" ]]; then
+		log_info "[DRY-RUN] Would create Jira filter + ${DEMO_BOARD_TYPE} board for ${DEMO_JIRA_PROJECT}"
+		return 0
+	fi
+
+	if ! jira_ws_load_auth; then
+		log_warn "Skipping board creation (Jira not configured in workspace)"
+		return 0
+	fi
+
+	local board_name="[${DEMO_RUN_ID}] AITL Demo Board"
+	local encoded_name
+	encoded_name=$(url_encode "${board_name}")
+
+	local list_resp
+	list_resp=$(jira_ws_api GET "/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}&name=${encoded_name}" || echo "")
+
+	local existing_id
+	existing_id=$(echo "${list_resp}" | jq -r '.values[0].id // empty' 2>/dev/null || echo "")
+
+	if [[ -n "${existing_id}" ]]; then
+		log_ok "Jira board already exists: ${board_name} (id: ${existing_id})"
+		DEMO_JIRA_BOARD_ID="${existing_id}"
+		return 0
+	fi
+
+	# Create filter first (required by Jira Agile board create API)
+	local filter_name="[${DEMO_RUN_ID}] AITL Demo Board Filter"
+	local filter_jql="project = ${JIRA_PROJECT_KEY} ORDER BY Rank ASC"
+	local filter_payload
+	filter_payload=$(jq -n \
+		--arg name "${filter_name}" \
+		--arg jql "${filter_jql}" \
+		'{name: $name, jql: $jql, favourite: false}')
+
+	local filter_resp
+	filter_resp=$(jira_ws_api POST "/rest/api/3/filter" "${filter_payload}" || echo "")
+
+	local filter_id
+	filter_id=$(echo "${filter_resp}" | jq -r '.id // empty' 2>/dev/null || echo "")
+
+	if [[ -z "${filter_id}" ]]; then
+		log_warn "Failed to create Jira filter (skipping board creation)"
+		echo "${filter_resp}" >&2
+		return 0
+	fi
+
+	local board_payload
+	board_payload=$(jq -n \
+		--arg name "${board_name}" \
+		--arg type "${DEMO_BOARD_TYPE}" \
+		--argjson filterId "${filter_id}" \
+		--arg project "${JIRA_PROJECT_KEY}" \
+		'{name: $name, type: $type, filterId: $filterId, location: {type: "project", projectKeyOrId: $project}}')
+
+	local board_resp
+	board_resp=$(jira_ws_api POST "/rest/agile/1.0/board" "${board_payload}" || echo "")
+
+	local board_id
+	board_id=$(echo "${board_resp}" | jq -r '.id // empty' 2>/dev/null || echo "")
+
+	if [[ -z "${board_id}" ]]; then
+		log_warn "Failed to create Jira board"
+		echo "${board_resp}" >&2
+		return 0
+	fi
+
+	DEMO_JIRA_BOARD_ID="${board_id}"
+	log_ok "Created Jira board: ${board_name} (id: ${board_id})"
+	return 0
+}
+
 # Show usage
 usage() {
 	cat <<EOF
@@ -99,11 +323,17 @@ OPTIONS:
                         Used to distinguish test runs in Jira issue names
     --repo NAME         GitLab repository name (default: aitl-demo-RUN_ID)
     --jira-project KEY  Jira project key (required for run)
+    --jira-email EMAIL  Jira user email (defaults to git config user.email if set)
+    --jira-base-url URL Jira base URL (default: https://fadutec.atlassian.net)
+    --board-type TYPE   Jira board type: kanban|scrum (default: kanban)
     --confluence-space  Confluence space key (optional)
-    --gitlab-group      GitLab group/namespace (optional)
+    --confluence-base-url URL Confluence base URL (default: https://fadutec.atlassian.net/wiki)
+    --gitlab-base-url URL  GitLab base URL (default: https://gitlab.fadutec.dev)
+    --gitlab-group      GitLab group/namespace (default: soc-ip/agentic-ai)
     --dry-run           Show what would be done without executing
     --skip-cleanup      Don't prompt for cleanup at the end
     --hitl              Enable Human-in-the-Loop pause points
+    --skip-gitlab        Skip all GitLab operations
 
 ENVIRONMENT:
     JIRA_BASE_URL       Jira base URL
@@ -120,7 +350,7 @@ EXAMPLES:
     $(basename "$0") run --jira-project DEMO
 
     # Run with all options
-    $(basename "$0") run --jira-project DEMO --confluence-space DEMO --gitlab-group mygroup
+    $(basename "$0") run --jira-project SVI --gitlab-group soc-ip/agentic-ai --repo demo-unique-name --skip-cleanup
 
     # Clean up resources
     $(basename "$0") cleanup
@@ -180,6 +410,7 @@ check_dependencies() {
 		log_ok "Jira email configured"
 	else
 		log_warn "JIRA_EMAIL not set (required unless configured in .project.yaml)"
+		log_info "  Demo will try: git config user.email"
 		log_info "  Set with: export JIRA_EMAIL=\"your-email@example.com\""
 		log_info "  Or use:   --jira-email your-email@example.com"
 	fi
@@ -202,11 +433,6 @@ check_dependencies() {
 
 # Validate Jira configuration
 validate_jira_config() {
-	if [[ -z "${DEMO_JIRA_PROJECT}" ]]; then
-		log_error "Jira project key is required (--jira-project)"
-		return 1
-	fi
-
 	if [[ "${DRY_RUN}" == "true" ]]; then
 		log_warn "Dry-run mode: skipping Jira connection validation"
 		return 0
@@ -214,10 +440,9 @@ validate_jira_config() {
 
 	log_info "Validating Jira connection..."
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
 
-	if ! ${pm_cmd} jira me &>/dev/null; then
+	if ! pm_ws jira me &>/dev/null; then
 		log_error "Cannot connect to Jira. Check credentials."
 		log_info "  Hint: Set JIRA_EMAIL env var or use --jira-email option"
 		log_info "  Hint: Ensure ~/.secrets/atlassian-api-token exists"
@@ -244,8 +469,9 @@ setup_gitlab_repo() {
 
 	# Use GitLab API directly when group is specified (glab repo create --group has issues)
 	if [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
+		local group_ref="${DEMO_GITLAB_GROUP//\//%2F}"
 		local namespace_id
-		namespace_id=$(glab api "groups/${DEMO_GITLAB_GROUP}" 2>/dev/null | jq -r '.id // empty')
+		namespace_id=$(glab api "groups/${group_ref}" 2>/dev/null | jq -r '.id // empty')
 
 		if [[ -z "${namespace_id}" ]]; then
 			log_error "Could not find GitLab group: ${DEMO_GITLAB_GROUP}"
@@ -331,13 +557,17 @@ setup_project_config() {
 
 	# Determine workspace directory
 	if [[ -z "${DEMO_WORKSPACE}" ]]; then
-		DEMO_WORKSPACE=$(mktemp -d -t aitl-demo-XXXXXX)
+		DEMO_WORKSPACE="/tmp/demo-${DEMO_RUN_ID}"
+		rm -rf "${DEMO_WORKSPACE}" 2>/dev/null || true
+		mkdir -p "${DEMO_WORKSPACE}"
 		log_info "Created demo workspace: ${DEMO_WORKSPACE}"
 		cd "${DEMO_WORKSPACE}" || exit 1
 		git init -q
 	fi
 
 	cd "${DEMO_WORKSPACE}" || exit 1
+
+	ensure_demo_jira_email
 
 	# Run install.sh
 	if [[ -x "${install_script}" ]]; then
@@ -356,28 +586,31 @@ setup_project_config() {
 	# Update .project.yaml with demo settings
 	log_info "Configuring project for demo..."
 
-	if [[ -f ".project.yaml" ]]; then
-		# Update Jira settings
-		yq -i ".platforms.jira.project_key = \"${DEMO_JIRA_PROJECT}\"" .project.yaml
+	# Always create/update workspace .project.yaml (do NOT read/modify repo root config)
+	"${PROJECT_ROOT}/tools/pm/bin/pm" config init --force >/dev/null 2>&1 || true
 
-		# Copy base_url and email from source config if available
-		local source_jira_url
-		source_jira_url=$(yq -r '.platforms.jira.base_url // .jira.base_url' "${PROJECT_ROOT}/.project.yaml" 2>/dev/null || echo "")
-		if [[ -n "${source_jira_url}" ]] && [[ "${source_jira_url}" != "null" ]]; then
-			yq -i ".platforms.jira.base_url = \"${source_jira_url}\"" .project.yaml
-		fi
-
-		# Update Confluence settings
-		if [[ -n "${DEMO_CONFLUENCE_SPACE}" ]]; then
-			yq -i ".platforms.confluence.space_key = \"${DEMO_CONFLUENCE_SPACE}\"" .project.yaml
-		fi
-
-		local source_confluence_url
-		source_confluence_url=$(yq -r '.platforms.confluence.base_url // .confluence.base_url' "${PROJECT_ROOT}/.project.yaml" 2>/dev/null || echo "")
-		if [[ -n "${source_confluence_url}" ]] && [[ "${source_confluence_url}" != "null" ]]; then
-			yq -i ".platforms.confluence.base_url = \"${source_confluence_url}\"" .project.yaml
-		fi
+	if [[ ! -f ".project.yaml" ]]; then
+		log_error "Failed to create .project.yaml in demo workspace"
+		return 1
 	fi
+
+	# Jira
+	DEMO_JIRA_BASE_URL=$(normalize_demo_jira_base_url "${DEMO_JIRA_BASE_URL}")
+	yq -i ".platforms.jira.base_url = \"${DEMO_JIRA_BASE_URL}\"" .project.yaml
+	yq -i ".platforms.jira.project_key = \"${DEMO_JIRA_PROJECT}\"" .project.yaml
+	if [[ -n "${DEMO_JIRA_EMAIL}" ]]; then
+		yq -i ".platforms.jira.email = \"${DEMO_JIRA_EMAIL}\"" .project.yaml
+	fi
+
+	# Confluence (optional for demo, but keep URLs aligned)
+	yq -i ".platforms.confluence.base_url = \"${DEMO_CONFLUENCE_BASE_URL}\"" .project.yaml
+	if [[ -n "${DEMO_CONFLUENCE_SPACE}" ]]; then
+		yq -i ".platforms.confluence.space_key = \"${DEMO_CONFLUENCE_SPACE}\"" .project.yaml
+	fi
+
+	# GitLab (used by demo repo creation + MR flow)
+	yq -i ".platforms.gitlab.base_url = \"${DEMO_GITLAB_BASE_URL}\"" .project.yaml
+	yq -i ".platforms.gitlab.project = \"${DEMO_GITLAB_GROUP}/${DEMO_REPO_NAME}\"" .project.yaml
 
 	log_ok "Agent-context installed to: ${DEMO_WORKSPACE}"
 	echo ""
@@ -393,7 +626,6 @@ setup_project_config() {
 phase_project() {
 	log_phase "Phase 1: Project Layer - Roadmap Creation"
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
 
 	# Create Epic in Jira
@@ -406,7 +638,7 @@ phase_project() {
 	fi
 
 	local epic_result
-	epic_result=$(${pm_cmd} jira issue create "${DEMO_EPIC_SUMMARY}" --type Epic \
+	epic_result=$(pm_ws jira issue create "${DEMO_EPIC_SUMMARY}" --type Epic \
 		--description "AITL Demo: Automated project lifecycle management demonstration")
 
 	local epic_key
@@ -434,7 +666,7 @@ phase_project() {
 
 	for task in "${tasks[@]}"; do
 		local task_result
-		task_result=$(${pm_cmd} jira issue create "${task}" --type Task \
+		task_result=$(pm_ws jira issue create "${task}" --type Task \
 			--description "Child task of ${epic_key}")
 
 		local task_key
@@ -463,7 +695,7 @@ phase_project() {
 		page_content+="<p>Created: $(date '+%Y-%m-%d %H:%M:%S')</p>"
 
 		local page_result
-		page_result=$(${pm_cmd} confluence page create \
+		page_result=$(pm_ws confluence page create \
 			--space "${DEMO_CONFLUENCE_SPACE}" \
 			--title "[${DEMO_RUN_ID}] AITL Demo Roadmap" \
 			--content "${page_content}" 2>&1) || true
@@ -511,12 +743,11 @@ phase_gitlab_flow() {
 		return 0
 	fi
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
 
 	# Get task summary
 	local task_summary
-	task_summary=$(${pm_cmd} jira issue view "${demo_task}" 2>/dev/null | \
+	task_summary=$(pm_ws jira issue view "${demo_task}" 2>/dev/null | \
 		grep "Summary:" | sed 's/Summary:[[:space:]]*//' || echo "Demo task")
 
 	if [[ "${DRY_RUN}" == "true" ]]; then
@@ -541,7 +772,7 @@ phase_gitlab_flow() {
 
 		# Now we can transition Jira to Done (MR merged)
 		log_info "Transitioning ${demo_task} to Done (MR merged)..."
-		${pm_cmd} jira issue transition "${demo_task}" "Done" || true
+		pm_ws jira issue transition "${demo_task}" "Done" || true
 		log_ok "${demo_task} marked as Done"
 	else
 		log_warn "GitLab flow incomplete for ${demo_task}"
@@ -565,9 +796,7 @@ phase_gitlab_flow() {
 phase_team_solo() {
 	log_phase "Phase 2: Team & Solo Layer - Hotfix Scenario"
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
-	export PM_CMD="${pm_cmd}"
 
 	if [[ "${DRY_RUN}" == "true" ]]; then
 		log_info "[DRY-RUN] Would simulate hotfix scenario"
@@ -589,14 +818,14 @@ phase_team_solo() {
 		# Using jira_sync.sh library
 
 		# Start work on current task
-		jira_start_work "${current_task}"
+		(cd "${DEMO_WORKSPACE}" && jira_start_work "${current_task}")
 
 		# Simulate hotfix arrival
 		log_info "Simulating hotfix scenario..."
 
 		# Create hotfix ticket
 		local hotfix_result
-		hotfix_result=$(${pm_cmd} jira issue create "[${DEMO_RUN_ID}][HOTFIX] Critical production issue" \
+		hotfix_result=$(pm_ws jira issue create "[${DEMO_RUN_ID}][HOTFIX] Critical production issue" \
 			--type Task \
 			--description "Urgent: Production system experiencing critical failure. Requires immediate attention.")
 
@@ -612,10 +841,10 @@ phase_team_solo() {
 		log_ok "Created Hotfix: ${hotfix_key}"
 
 		# Set priority to highest
-		${pm_cmd} jira issue update "${hotfix_key}" --priority "Highest" || true
+		pm_ws jira issue update "${hotfix_key}" --priority "Highest" || true
 
 		# Handle hotfix using library function
-		jira_handle_hotfix "${current_task}" "${hotfix_key}"
+		(cd "${DEMO_WORKSPACE}" && jira_handle_hotfix "${current_task}" "${hotfix_key}")
 
 		# GitLab MR Gate: Hotfix must go through MR before Done
 		local hotfix_mr_merged=false
@@ -646,25 +875,25 @@ phase_team_solo() {
 
 		# Resume after hotfix - only if MR merged (or GitLab skipped)
 		if [[ "${hotfix_mr_merged}" == "true" ]]; then
-			jira_resume_after_hotfix "${hotfix_key}" "${current_task}"
+			(cd "${DEMO_WORKSPACE}" && jira_resume_after_hotfix "${hotfix_key}" "${current_task}")
 		else
 			log_warn "Skipping Jira Done transition for ${hotfix_key} (MR not merged)"
 			# Still resume original work
-			jira_start_work "${current_task}"
+			(cd "${DEMO_WORKSPACE}" && jira_start_work "${current_task}")
 		fi
 	else
 		# Fallback: direct pm calls (original behavior)
 
 		# Transition current task to "In Progress"
 		log_info "Starting work on ${current_task}..."
-		${pm_cmd} jira issue transition "${current_task}" "In Progress" || true
+		pm_ws jira issue transition "${current_task}" "In Progress" || true
 
 		# Simulate hotfix arrival
 		log_info "Simulating hotfix scenario..."
 
 		# Create hotfix ticket
 		local hotfix_result
-		hotfix_result=$(${pm_cmd} jira issue create "[${DEMO_RUN_ID}][HOTFIX] Critical production issue" \
+		hotfix_result=$(pm_ws jira issue create "[${DEMO_RUN_ID}][HOTFIX] Critical production issue" \
 			--type Task \
 			--description "Urgent: Production system experiencing critical failure. Requires immediate attention.")
 
@@ -680,21 +909,21 @@ phase_team_solo() {
 		log_ok "Created Hotfix: ${hotfix_key}"
 
 		# Set priority to highest
-		${pm_cmd} jira issue update "${hotfix_key}" --priority "Highest" || true
+		pm_ws jira issue update "${hotfix_key}" --priority "Highest" || true
 
 		# Create blocker link
 		log_info "Creating Blocker link: ${current_task} is blocked by ${hotfix_key}..."
-		${pm_cmd} jira link create "${current_task}" "${hotfix_key}" "Blocks" || true
+		pm_ws jira link create "${current_task}" "${hotfix_key}" "Blocks" || true
 		log_ok "Blocker link created"
 
 		# Put current task on hold (if supported)
 		log_info "Transitioning ${current_task} to On Hold..."
-		${pm_cmd} jira issue transition "${current_task}" "On Hold" 2>/dev/null || \
+		pm_ws jira issue transition "${current_task}" "On Hold" 2>/dev/null || \
 			log_warn "On Hold status not available, keeping In Progress"
 
 		# Start hotfix work
 		log_info "Starting hotfix work on ${hotfix_key}..."
-		${pm_cmd} jira issue transition "${hotfix_key}" "In Progress" || true
+		pm_ws jira issue transition "${hotfix_key}" "In Progress" || true
 
 		# GitLab MR Gate: Hotfix must go through MR before Done
 		local hotfix_mr_merged=false
@@ -726,7 +955,7 @@ phase_team_solo() {
 		# Complete hotfix - only if MR merged (or GitLab skipped)
 		if [[ "${hotfix_mr_merged}" == "true" ]]; then
 			log_info "Completing hotfix..."
-			${pm_cmd} jira issue transition "${hotfix_key}" "Done" || true
+			pm_ws jira issue transition "${hotfix_key}" "Done" || true
 			log_ok "Hotfix ${hotfix_key} completed"
 		else
 			log_warn "Hotfix ${hotfix_key} remains In Progress (MR not merged)"
@@ -734,7 +963,7 @@ phase_team_solo() {
 
 		# Resume original work
 		log_info "Resuming work on ${current_task}..."
-		${pm_cmd} jira issue transition "${current_task}" "In Progress" || true
+		pm_ws jira issue transition "${current_task}" "In Progress" || true
 	fi
 
 	log_ok "Phase 2 completed: Hotfix scenario demonstrated"
@@ -744,7 +973,6 @@ phase_team_solo() {
 phase_dev_initiative() {
 	log_phase "Phase 2.5: Developer Initiative - Self-Assigned Task"
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
 
 	if [[ "${DRY_RUN}" == "true" ]]; then
@@ -759,7 +987,7 @@ phase_dev_initiative() {
 
 	if [[ -z "${current_user_email}" ]]; then
 		# Try to get from pm config
-		current_user_email=$(${pm_cmd} jira me 2>/dev/null | grep "Email:" | sed 's/Email:[[:space:]]*//' || echo "")
+		current_user_email=$(pm_ws jira me 2>/dev/null | grep "Email:" | sed 's/Email:[[:space:]]*//' || echo "")
 	fi
 
 	if [[ -z "${current_user_email}" ]]; then
@@ -783,7 +1011,7 @@ Run ID: ${DEMO_RUN_ID}"
 	log_info "Creating developer initiative task..."
 
 	local task_result
-	task_result=$(${pm_cmd} jira issue create "${dev_summary}" \
+	task_result=$(pm_ws jira issue create "${dev_summary}" \
 		--type Task \
 		--description "${dev_description}")
 
@@ -800,12 +1028,12 @@ Run ID: ${DEMO_RUN_ID}"
 
 	# Assign to self
 	log_info "Assigning ${dev_task_key} to ${current_user_email}..."
-	${pm_cmd} jira issue assign "${dev_task_key}" "${current_user_email}" || \
+	pm_ws jira issue assign "${dev_task_key}" "${current_user_email}" || \
 		log_warn "Could not assign task to self"
 
 	# Start work
 	log_info "Starting work on ${dev_task_key}..."
-	${pm_cmd} jira issue transition "${dev_task_key}" "In Progress" || true
+	pm_ws jira issue transition "${dev_task_key}" "In Progress" || true
 
 	# Run GitLab flow
 	local dev_mr_merged=false
@@ -826,7 +1054,7 @@ Run ID: ${DEMO_RUN_ID}"
 	# Complete task if MR merged
 	if [[ "${dev_mr_merged}" == "true" ]]; then
 		log_info "Completing developer initiative task..."
-		${pm_cmd} jira issue transition "${dev_task_key}" "Done" || true
+		pm_ws jira issue transition "${dev_task_key}" "Done" || true
 		log_ok "${dev_task_key} completed"
 	else
 		log_warn "${dev_task_key} remains In Progress (MR not merged)"
@@ -851,7 +1079,6 @@ Run ID: ${DEMO_RUN_ID}"
 phase_reporting() {
 	log_phase "Phase 3: Reporting & Closure"
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
 	export JIRA_PROJECT_KEY="${DEMO_JIRA_PROJECT}"
 
 	if [[ "${DRY_RUN}" == "true" ]]; then
@@ -876,7 +1103,7 @@ phase_reporting() {
 	local export_dir="${SCRIPT_DIR}/export"
 	mkdir -p "${export_dir}"
 
-	${pm_cmd} jira export --project "${DEMO_JIRA_PROJECT}" \
+	pm_ws jira export --project "${DEMO_JIRA_PROJECT}" \
 		--output "${export_dir}/jira" \
 		--limit 50 || true
 
@@ -894,7 +1121,7 @@ phase_reporting() {
 
 	for issue_key in "${CREATED_JIRA_ISSUES[@]}"; do
 		local status
-		status=$(${pm_cmd} jira issue view "${issue_key}" 2>/dev/null | \
+		status=$(pm_ws jira issue view "${issue_key}" 2>/dev/null | \
 			grep "Status:" | sed 's/Status:[[:space:]]*//' || echo "Unknown")
 
 		case "${status}" in
@@ -908,7 +1135,7 @@ phase_reporting() {
 
 		# Check if hotfix
 		local summary
-		summary=$(${pm_cmd} jira issue view "${issue_key}" 2>/dev/null | \
+		summary=$(pm_ws jira issue view "${issue_key}" 2>/dev/null | \
 			grep "Summary:" | sed 's/Summary:[[:space:]]*//' || echo "")
 
 		if [[ "${summary}" == *"HOTFIX"* ]] || [[ "${summary}" == *"hotfix"* ]]; then
@@ -963,7 +1190,7 @@ EOF
 
 	for issue in "${CREATED_JIRA_ISSUES[@]}"; do
 		local issue_status
-		issue_status=$(${pm_cmd} jira issue view "${issue}" 2>/dev/null | \
+		issue_status=$(pm_ws jira issue view "${issue}" 2>/dev/null | \
 			grep "Status:" | sed 's/Status:[[:space:]]*//' || echo "Unknown")
 		echo "- ${issue} (${issue_status})" >> "${report_file}"
 	done
@@ -1092,8 +1319,6 @@ EOF
 cleanup() {
 	log_phase "Cleanup: Removing Demo Resources"
 
-	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
-
 	log_warn "This will delete all demo resources!"
 	echo ""
 	echo "Resources to be deleted:"
@@ -1149,15 +1374,23 @@ run_demo() {
 	# Step 1: Check prerequisites
 	check_dependencies || exit 1
 
-	# Step 2: Validate configuration
-	log_phase "Step 2: Validating Configuration"
-	validate_jira_config || exit 1
-
-	# Step 3: Setup (optional GitLab repo)
-	if [[ -n "${DEMO_GITLAB_GROUP}" ]] || [[ "${SKIP_GITLAB}" != "true" ]]; then
-		log_phase "Step 3: Environment Setup"
+	# Step 2: Setup workspace (GitLab repo or local /tmp)
+	log_phase "Step 2: Environment Setup"
+	if [[ "${SKIP_GITLAB}" != "true" ]]; then
 		setup_gitlab_repo || log_warn "GitLab setup skipped"
 	fi
+
+	# Step 3: Install + configure workspace (creates workspace .project.yaml)
+	log_phase "Step 3: Install agent-context to workspace"
+	setup_project_config || exit 1
+
+	# Step 4: Validate configuration (Jira)
+	log_phase "Step 4: Validating Configuration"
+	validate_jira_config || exit 1
+
+	# Step 5: Create Jira board (best-effort)
+	log_phase "Step 5: Jira Board Setup"
+	jira_create_board_best_effort || true
 
 	# Phase 1: Project Layer
 	phase_project || exit 1
@@ -1204,7 +1437,7 @@ main() {
 		--run-id)
 			DEMO_RUN_ID="$2"
 			# Force update dependent variables with new run ID
-			DEMO_REPO_NAME="aitl-demo-${DEMO_RUN_ID}"
+			DEMO_REPO_NAME="demo-${DEMO_RUN_ID}"
 			DEMO_EPIC_SUMMARY="[${DEMO_RUN_ID}] AITL Demo Epic"
 			shift
 			;;
@@ -1216,8 +1449,28 @@ main() {
 				DEMO_JIRA_PROJECT="$2"
 				shift
 				;;
+			--jira-email)
+				DEMO_JIRA_EMAIL="$2"
+				shift
+				;;
+			--jira-base-url)
+				DEMO_JIRA_BASE_URL=$(normalize_demo_jira_base_url "$2")
+				shift
+				;;
+			--board-type)
+				DEMO_BOARD_TYPE="$2"
+				shift
+				;;
 			--confluence-space)
 				DEMO_CONFLUENCE_SPACE="$2"
+				shift
+				;;
+			--confluence-base-url)
+				DEMO_CONFLUENCE_BASE_URL="$2"
+				shift
+				;;
+			--gitlab-base-url)
+				DEMO_GITLAB_BASE_URL="$2"
 				shift
 				;;
 			--gitlab-group)
