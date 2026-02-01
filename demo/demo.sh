@@ -55,13 +55,13 @@ else
 	NC=''
 fi
 
-# Logging functions
+# Logging functions (all output to stderr to avoid polluting stdout return values)
 log_info() {
-	echo -e "${BLUE}[>>]${NC} $1"
+	echo -e "${BLUE}[>>]${NC} $1" >&2
 }
 
 log_ok() {
-	echo -e "${GREEN}[OK]${NC} $1"
+	echo -e "${GREEN}[OK]${NC} $1" >&2
 }
 
 log_warn() {
@@ -168,11 +168,20 @@ check_dependencies() {
 	echo ""
 	log_info "Checking credentials..."
 
-	# Jira
+	# Jira token
 	if [[ -n "${JIRA_TOKEN}" ]] || [[ -f "${HOME}/.secrets/atlassian-api-token" ]]; then
 		log_ok "Jira credentials found"
 	else
 		log_warn "Jira credentials not found (set JIRA_TOKEN or create ~/.secrets/atlassian-api-token)"
+	fi
+
+	# Jira email (required for API calls)
+	if [[ -n "${JIRA_EMAIL}" ]] || [[ -n "${DEMO_JIRA_EMAIL}" ]]; then
+		log_ok "Jira email configured"
+	else
+		log_warn "JIRA_EMAIL not set (required unless configured in .project.yaml)"
+		log_info "  Set with: export JIRA_EMAIL=\"your-email@example.com\""
+		log_info "  Or use:   --jira-email your-email@example.com"
 	fi
 
 	# GitLab
@@ -198,6 +207,11 @@ validate_jira_config() {
 		return 1
 	fi
 
+	if [[ "${DRY_RUN}" == "true" ]]; then
+		log_warn "Dry-run mode: skipping Jira connection validation"
+		return 0
+	fi
+
 	log_info "Validating Jira connection..."
 
 	local pm_cmd="${PROJECT_ROOT}/tools/pm/bin/pm"
@@ -205,6 +219,8 @@ validate_jira_config() {
 
 	if ! ${pm_cmd} jira me &>/dev/null; then
 		log_error "Cannot connect to Jira. Check credentials."
+		log_info "  Hint: Set JIRA_EMAIL env var or use --jira-email option"
+		log_info "  Hint: Ensure ~/.secrets/atlassian-api-token exists"
 		return 1
 	fi
 
@@ -216,71 +232,88 @@ validate_jira_config() {
 setup_gitlab_repo() {
 	log_info "Creating GitLab sandbox repository: ${DEMO_REPO_NAME}"
 
-	local create_args=("--private" "--name" "${DEMO_REPO_NAME}")
-
-	if [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
-		create_args+=("--group" "${DEMO_GITLAB_GROUP}")
-	fi
-
 	if [[ "${DRY_RUN}" == "true" ]]; then
-		log_info "[DRY-RUN] Would create: glab repo create ${create_args[*]}"
+		log_info "[DRY-RUN] Would create: ${DEMO_GITLAB_GROUP:-user}/${DEMO_REPO_NAME}"
 		log_info "[DRY-RUN] Would clone to: /tmp/${DEMO_REPO_NAME}"
 		CREATED_GITLAB_REPO="${DEMO_REPO_NAME}"
 		DEMO_WORKSPACE="/tmp/${DEMO_REPO_NAME}"
 		return 0
 	fi
 
-	local result
-	if result=$(glab repo create "${create_args[@]}" 2>&1); then
-		CREATED_GITLAB_REPO="${DEMO_REPO_NAME}"
-		log_ok "Repository created: ${DEMO_REPO_NAME}"
-		echo "${result}"
+	local result repo_path clone_url
 
-		# Extract clone URL from result or construct it
-		local clone_url
-		clone_url=$(echo "${result}" | grep -oE 'git@[^[:space:]]+\.git|https://[^[:space:]]+\.git' | head -1)
+	# Use GitLab API directly when group is specified (glab repo create --group has issues)
+	if [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
+		local namespace_id
+		namespace_id=$(glab api "groups/${DEMO_GITLAB_GROUP}" 2>/dev/null | jq -r '.id // empty')
 
-		# Build repo path for glab commands
-		local repo_path="${DEMO_REPO_NAME}"
-		if [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
+		if [[ -z "${namespace_id}" ]]; then
+			log_error "Could not find GitLab group: ${DEMO_GITLAB_GROUP}"
+			return 1
+		fi
+
+		log_info "Creating GitLab project via API (namespace_id=${namespace_id})..."
+
+		result=$(glab api projects -X POST \
+			-f "name=${DEMO_REPO_NAME}" \
+			-f "namespace_id=${namespace_id}" \
+			-f "visibility=private" \
+			-f "initialize_with_readme=true" \
+			2>&1)
+
+		if echo "${result}" | jq -e '.id' >/dev/null 2>&1; then
 			repo_path="${DEMO_GITLAB_GROUP}/${DEMO_REPO_NAME}"
-		fi
-
-		if [[ -z "${clone_url}" ]]; then
-			# Try to get clone URL via glab
-			clone_url=$(glab repo view "${repo_path}" --output json 2>/dev/null | jq -r '.ssh_url_to_repo // .http_url_to_repo' || echo "")
-		fi
-
-		DEMO_WORKSPACE="/tmp/${DEMO_REPO_NAME}"
-		rm -rf "${DEMO_WORKSPACE}" 2>/dev/null || true
-
-		if [[ -n "${clone_url}" ]]; then
-			log_info "Cloning repository..."
-
-			if git clone "${clone_url}" "${DEMO_WORKSPACE}" 2>&1; then
-				log_ok "Cloned to: ${DEMO_WORKSPACE}"
-			else
-				log_warn "Could not clone, initializing with remote instead"
-				mkdir -p "${DEMO_WORKSPACE}"
-				cd "${DEMO_WORKSPACE}" || exit 1
-				git init -q
-				git remote add origin "${clone_url}" 2>/dev/null || git remote set-url origin "${clone_url}"
-				# Create initial commit so we can push
-				echo "# ${DEMO_REPO_NAME}" > README.md
-				git add README.md
-				git commit -q -m "Initial commit"
-				git push -u origin HEAD:main 2>/dev/null || true
-			fi
+			clone_url=$(echo "${result}" | jq -r '.ssh_url_to_repo // .http_url_to_repo')
+			CREATED_GITLAB_REPO="${DEMO_REPO_NAME}"
+			log_ok "Repository created: ${repo_path}"
 		else
-			log_warn "Could not get clone URL, creating local directory"
+			log_error "Failed to create repository via API"
+			echo "${result}" >&2
+			return 1
+		fi
+	else
+		# Fallback to glab repo create for personal repos
+		if result=$(glab repo create --private --name "${DEMO_REPO_NAME}" 2>&1); then
+			CREATED_GITLAB_REPO="${DEMO_REPO_NAME}"
+			repo_path="${DEMO_REPO_NAME}"
+			clone_url=$(echo "${result}" | grep -oE 'git@[^[:space:]]+\.git|https://[^[:space:]]+\.git' | head -1)
+			log_ok "Repository created: ${DEMO_REPO_NAME}"
+		else
+			log_error "Failed to create repository"
+			echo "${result}" >&2
+			return 1
+		fi
+	fi
+
+	# Get clone URL if not already set
+	if [[ -z "${clone_url}" ]]; then
+		clone_url=$(glab repo view "${repo_path}" --output json 2>/dev/null | jq -r '.ssh_url_to_repo // .http_url_to_repo' || echo "")
+	fi
+
+	DEMO_WORKSPACE="/tmp/${DEMO_REPO_NAME}"
+	rm -rf "${DEMO_WORKSPACE}" 2>/dev/null || true
+
+	if [[ -n "${clone_url}" ]]; then
+		log_info "Cloning repository..."
+
+		if git clone "${clone_url}" "${DEMO_WORKSPACE}" 2>&1; then
+			log_ok "Cloned to: ${DEMO_WORKSPACE}"
+		else
+			log_warn "Could not clone, initializing with remote instead"
 			mkdir -p "${DEMO_WORKSPACE}"
 			cd "${DEMO_WORKSPACE}" || exit 1
 			git init -q
+			git remote add origin "${clone_url}" 2>/dev/null || git remote set-url origin "${clone_url}"
+			echo "# ${DEMO_REPO_NAME}" > README.md
+			git add README.md
+			git commit -q -m "Initial commit"
+			git push -u origin HEAD:main 2>/dev/null || true
 		fi
 	else
-		log_error "Failed to create repository"
-		echo "${result}" >&2
-		return 1
+		log_warn "Could not get clone URL, creating local directory"
+		mkdir -p "${DEMO_WORKSPACE}"
+		cd "${DEMO_WORKSPACE}" || exit 1
+		git init -q
 	fi
 }
 
@@ -1150,7 +1183,7 @@ run_demo() {
 	echo ""
 
 	# Offer cleanup
-	if [[ "${SKIP_CLEANUP}" != "true" ]]; then
+	if [[ "${SKIP_CLEANUP}" != "true" ]] && [[ "${DRY_RUN}" != "true" ]]; then
 		echo ""
 		read -p "Clean up demo resources? (yes/no): " -r cleanup_confirm
 		if [[ "${cleanup_confirm}" == "yes" ]]; then
@@ -1168,13 +1201,13 @@ main() {
 	# Parse remaining arguments (sets global variables directly)
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
-			--run-id)
-				DEMO_RUN_ID="$2"
-				# Update dependent variables with new run ID
-				DEMO_REPO_NAME="${DEMO_REPO_NAME:-aitl-demo-${DEMO_RUN_ID}}"
-				DEMO_EPIC_SUMMARY="${DEMO_EPIC_SUMMARY:-[${DEMO_RUN_ID}] AITL Demo Epic}"
-				shift
-				;;
+		--run-id)
+			DEMO_RUN_ID="$2"
+			# Force update dependent variables with new run ID
+			DEMO_REPO_NAME="aitl-demo-${DEMO_RUN_ID}"
+			DEMO_EPIC_SUMMARY="[${DEMO_RUN_ID}] AITL Demo Epic"
+			shift
+			;;
 			--repo)
 				DEMO_REPO_NAME="$2"
 				shift

@@ -24,7 +24,37 @@ This demo realizes the **Agent-in-the-Loop (AITL)** concept where an AI agent au
 
 ---
 
-## How to Run
+## Quick Start
+
+For users who want to run the demo quickly:
+
+```bash
+# 1. Set required environment variable
+export JIRA_EMAIL="your-email@example.com"
+
+# 2. Store Atlassian API token (get from https://id.atlassian.com/manage-profile/security/api-tokens)
+mkdir -p ~/.secrets && chmod 700 ~/.secrets
+echo "YOUR_API_TOKEN" > ~/.secrets/atlassian-api-token
+chmod 600 ~/.secrets/atlassian-api-token
+
+# 3. Run the demo
+cd demo/
+./demo.sh check                                    # Verify prerequisites
+./demo.sh run --jira-project YOUR_PROJECT --dry-run  # Dry run first
+./demo.sh run --jira-project YOUR_PROJECT --skip-cleanup  # Full run
+```
+
+**Note**: If you see `[ERROR] Jira not configured`, make sure `JIRA_EMAIL` is set or use `--jira-email` option.
+
+For GitLab integration, also run:
+```bash
+glab auth login --hostname your-gitlab-host
+./demo.sh run --jira-project YOUR_PROJECT --gitlab-group your-group --skip-cleanup
+```
+
+---
+
+## How to Run (Detailed)
 
 ### Prerequisites
 
