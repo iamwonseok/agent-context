@@ -8,6 +8,20 @@ For design philosophy (Thin Skill / Thick Workflow), see [docs/ARCHITECTURE.md](
 
 ---
 
+## Rationale
+
+- Prefer retrieval-led reasoning over pre-training-led reasoning.
+- Keep this file short and high-signal (map, not a full doc dump).
+- Avoid decision points by pointing to authoritative paths and workflow-first guidance.
+
+## .cursorrules Policy
+
+- English only. No emoji or decorative Unicode.
+- Keep rules minimal and non-overlapping; link to `docs/` for details.
+- Update rules only when repeated failures are observed.
+
+---
+
 ## Coding Conventions
 
 Follow the convention for each file type:
@@ -33,7 +47,7 @@ Follow the convention for each file type:
 | Git commit messages | English only | Forbidden | Forbidden |
 | GitHub/GitLab Issue titles | English only | Forbidden | Forbidden |
 | GitHub/GitLab Issue body | Korean/English | Forbidden | Restricted |
-| Markdown (`*.md`) | Korean/English | Forbidden | Restricted |
+| Markdown (`*.md`) | Korean-first (except `skills/`, `workflows/`) | Forbidden | Restricted |
 
 **Unicode in Markdown:**
 - Allowed: `->`, `-->`, `|`, `+`, `-`, standard markdown tables
@@ -70,7 +84,6 @@ Read the appropriate workflow file:
 ### Before Committing
 1. Review changes: `git diff --staged`
 2. Commit message convention:
-   - **Language:** English only (NO Korean)
    - `feat:` new feature
    - `fix:` bug fix
    - `refactor:` code refactoring
