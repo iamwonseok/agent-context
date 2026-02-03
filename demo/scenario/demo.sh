@@ -13,7 +13,7 @@ set -o pipefail
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LIB_DIR="${SCRIPT_DIR}/lib"
 
 # Source libraries
