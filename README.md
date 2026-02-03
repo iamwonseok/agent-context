@@ -1,48 +1,48 @@
 # agent-context
 
-A workflow template for agent-driven development.
+에이전트 기반 개발을 위한 워크플로 템플릿.
 
-**Design Philosophy**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for Thin Skill / Thick Workflow pattern.
+**설계 철학**: Thin Skill / Thick Workflow 패턴은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고.
 
-## Why This Project?
+## 왜 이 프로젝트인가?
 
-**Problem**:
-- New project -> Setup workflow from scratch
-- Repetitive work, inconsistent structure
-- No standard for AI agent collaboration
+**문제**:
+- 새 프로젝트마다 워크플로를 처음부터 구성
+- 반복 작업과 구조의 비일관성
+- AI 에이전트 협업에 대한 표준 부재
 
-**Solution**:
-| Component | Purpose | Location |
+**해결**:
+| 구성요소 | 목적 | 위치 |
 |-----------|---------|----------|
-| Skills | Generic templates | `skills/` |
-| Workflows | Context-aware orchestration | `workflows/` |
-| CLI Tools | JIRA/Confluence interface | `tools/pm/` |
+| Skills | 범용 템플릿 | `skills/` |
+| Workflows | 컨텍스트 기반 오케스트레이션 | `workflows/` |
+| CLI Tools | JIRA/Confluence 인터페이스 | `tools/pm/` |
 
-**Goal**: AI agent performs all operations via CLI (`git`, `gh`, `glab`, `pm`) - no browser, no context switching.
+**목표**: AI 에이전트가 CLI(`git`, `gh`, `glab`, `pm`)로 모든 작업을 수행하며 브라우저 전환을 최소화.
 
-## Quick Start
+## 빠른 시작
 
 ```bash
-# 1. Clone repository
+# 1. 레포 클론
 git clone https://github.com/your-org/agent-context.git
 cd agent-context
 
-# 2. Install dependencies
+# 2. 의존성 설치
 pip install pre-commit
 brew install gh glab jq yq
 
-# 3. Configure tools
+# 3. 도구 설정
 gh auth login      # GitHub authentication
 glab auth login    # GitLab authentication
 
-# 4. Setup pm CLI (JIRA/Confluence)
+# 4. pm CLI 설정 (JIRA/Confluence)
 export PATH="$PATH:$(pwd)/tools/pm/bin"
 pm config init     # Initialize project configuration
 
-# 5. Setup pre-commit hooks
+# 5. pre-commit 훅 설정
 pre-commit install
 
-# 6. Start working
+# 6. 작업 시작
 git checkout -b feat/TASK-123
 # ... make changes ...
 pre-commit run --all-files
@@ -51,39 +51,39 @@ git push origin feat/TASK-123
 gh pr create --title "TASK-123: description"
 ```
 
-## Project Structure
+## 프로젝트 구조
 
 ```
 agent-context/
-├── docs/                # Documentation
-│   ├── ARCHITECTURE.md  # Design philosophy
-│   ├── convention/      # Coding conventions
-│   └── rfc/             # Design proposals (RFC)
-├── skills/              # Generic skill templates (Thin)
-│   ├── analyze.md       # Understand situation
-│   ├── design.md        # Design approach
-│   ├── implement.md     # Perform work
-│   ├── test.md          # Verify quality
-│   └── review.md        # Check results
-├── workflows/           # Context-aware workflows (Thick)
-│   ├── solo/            # Individual developer
+├── docs/                # 문서
+│   ├── ARCHITECTURE.md  # 설계 철학
+│   ├── convention/      # 코딩 컨벤션
+│   └── rfc/             # 설계 제안(RFC)
+├── skills/              # 범용 스킬 템플릿(Thin)
+│   ├── analyze.md       # 상황 이해
+│   ├── design.md        # 설계 접근
+│   ├── implement.md     # 구현
+│   ├── test.md          # 품질 검증
+│   └── review.md        # 결과 확인
+├── workflows/           # 컨텍스트 기반 워크플로(Thick)
+│   ├── solo/            # 개인 개발
 │   │   ├── feature.md
 │   │   ├── bugfix.md
 │   │   └── hotfix.md
-│   ├── team/            # Squad coordination
+│   ├── team/            # 팀 협업
 │   │   ├── sprint.md
 │   │   └── release.md
-│   └── project/         # Organization level
+│   └── project/         # 조직 레벨
 │       ├── quarter.md
 │       └── roadmap.md
-├── tools/               # CLI tools
+├── tools/               # CLI 도구
 │   └── pm/              # JIRA/Confluence API
-└── tests/               # Tests
-    ├── skills/          # Skill verification tests
-    └── workflows/       # Workflow integration tests
+└── tests/               # 테스트
+    ├── skills/          # 스킬 검증 테스트
+    └── workflows/       # 워크플로 통합 테스트
 ```
 
-## Core Concept
+## 핵심 개념
 
 ### Engineering Coordinate System
 
@@ -99,26 +99,26 @@ SOLO (Dev)                  Plan --> Execute --> Review
 
 ### Thin Skill / Thick Workflow
 
-| Concept | Role | Analogy |
+| 개념 | 역할 | 비유 |
 |---------|------|---------|
-| **Skill** | Generic template | Interface, Abstract class |
-| **Workflow** | Context injection | DI Container, Implementation |
+| **Skill** | 범용 템플릿 | Interface, Abstract class |
+| **Workflow** | 컨텍스트 주입 | DI Container, Implementation |
 
-**Skills (Thin)**: 5 generic templates
-- Parameter-driven ("fill in the blanks")
-- Focus on HOW: methods, checklists
-- No context: no ticket IDs, project names
+**Skills (Thin)**: 5개 범용 템플릿
+- 입력 중심(빈칸 채우기)
+- HOW에 집중: 방법, 체크리스트
+- 컨텍스트 없음: 티켓 ID, 프로젝트명 배제
 
-**Workflows (Thick)**: Context-aware orchestration
-- Map current context to skill inputs
-- Focus on WHAT: what information goes where
-- Context-aware: tickets, tools, deadlines
+**Workflows (Thick)**: 컨텍스트 기반 오케스트레이션
+- 현재 컨텍스트를 스킬 입력으로 매핑
+- WHAT에 집중: 무엇을 어디에 넣는가
+- 컨텍스트 인지: 티켓, 도구, 데드라인
 
-## CLI Tools
+## CLI 도구
 
 ### Git Operations
 
-Use standard `git` commands for version control:
+버전 관리는 표준 `git` 명령을 사용:
 
 ```bash
 git checkout -b feat/TASK-123   # Create feature branch
@@ -158,27 +158,28 @@ pm jira issue transition        # Change issue status
 pm confluence page list         # List Confluence pages
 ```
 
-## Required Tools
+## 필수 도구
 
-| Tool | Purpose | Install |
+| 도구 | 목적 | 설치 |
 |------|---------|---------|
-| `git` | Version control | Pre-installed on most systems |
+| `git` | 버전 관리 | 대부분 사전 설치 |
 | `gh` | GitHub CLI | `brew install gh` |
 | `glab` | GitLab CLI | `brew install glab` |
-| `pre-commit` | Linting/formatting | `pip install pre-commit` |
-| `jq` | JSON processor | `brew install jq` |
-| `yq` | YAML processor | `brew install yq` |
+| `pre-commit` | 린팅/포맷팅 | `pip install pre-commit` |
+| `jq` | JSON 처리 | `brew install jq` |
+| `yq` | YAML 처리 | `brew install yq` |
 
-## Documentation
+## 문서
 
-| Document | Description |
+| 문서 | 설명 |
 |----------|-------------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design philosophy |
-| [docs/convention/](docs/convention/) | Coding conventions |
-| [docs/rfc/](docs/rfc/) | Design proposals (RFC) |
-| [skills/](skills/) | Generic skill templates |
-| [workflows/](workflows/) | Context-aware workflows |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 |
+| [docs/convention/](docs/convention/) | 코딩 컨벤션 |
+| [docs/rfc/](docs/rfc/) | 설계 제안(RFC) |
+| [docs/reference/](docs/reference/) | 외부 레퍼런스와 인용 |
+| [skills/](skills/) | 범용 스킬 템플릿 |
+| [workflows/](workflows/) | 컨텍스트 기반 워크플로 |
 
-## License
+## 라이선스
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License - 자세한 내용은 [LICENSE](LICENSE)를 참고.

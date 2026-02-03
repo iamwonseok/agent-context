@@ -1,17 +1,17 @@
 # RFC (Request for Comments)
 
-## Overview
+## 개요
 
-RFCs provide a structured way to document significant design decisions before implementation.
+RFC는 구현 전에 중요한 설계 결정을 구조적으로 기록하기 위한 문서다.
 
-**Key Philosophy:**
-- RFC drafts are **personal workspace** (not committed)
-- Discussions happen in the **Issue Tracker** (GitHub, GitLab, JIRA, etc.)
-- Only **implemented RFCs** are archived here for reference
+**핵심 철학:**
+- RFC 초안은 **개인 작업 공간**에 둔다(커밋하지 않음)
+- 논의는 **Issue Tracker**(GitHub, GitLab, JIRA 등)에서 진행한다
+- **구현된 RFC만** 참고용으로 이곳에 보관한다
 
 ---
 
-## RFC Lifecycle
+## RFC 라이프사이클
 
 ```
 Draft (.context/rfc/) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive (docs/rfc/)
@@ -22,11 +22,11 @@ Draft (.context/rfc/) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive
 
 ---
 
-## Workflow
+## 워크플로
 
-### 1. Draft RFC
+### 1. RFC 초안 작성
 
-Write RFC in personal workspace (not committed to git):
+개인 작업 공간에서 RFC를 작성한다(커밋하지 않음):
 
 ```bash
 # Find next number (check both .context/rfc/ and docs/rfc/)
@@ -40,13 +40,13 @@ cp docs/rfc/000-template.md ".context/rfc/${NEXT_NUM}-short-description.md"
 # Fill in all required sections
 ```
 
-**Location:** `.context/rfc/NNN-short-description.md` (gitignored)
+**위치:** `.context/rfc/NNN-short-description.md` (gitignored)
 
-### 2. Create an Issue
+### 2. Issue 생성
 
-Once the RFC draft is ready, create an issue for discussion.
+RFC 초안이 준비되면 논의를 위한 이슈를 생성한다.
 
-Select the tool based on `.project.yaml` (`roles.issue`, `roles.vcs`, `roles.review`).
+`.project.yaml`의 설정(`roles.issue`, `roles.vcs`, `roles.review`)에 따라 도구를 선택한다.
 
 ```bash
 # GitHub
@@ -70,21 +70,21 @@ pm jira issue create "RFC-NNN: Short Description" \
   --description "$(cat .context/rfc/NNN-short-description.md)"
 ```
 
-**Result:** Issue URL becomes the single source of truth
+**결과:** Issue URL이 단일 진실 소스가 된다
 
-### 3. Discuss & Decide
+### 3. 논의 및 결정
 
-- Gather feedback in issue comments
-- Update `.context/rfc/NNN-*.md` based on feedback
-- Edit issue description or add comments
-- Update RFC status:
+- 이슈 댓글로 피드백 수집
+- 피드백을 반영해 `.context/rfc/NNN-*.md` 수정
+- 이슈 설명을 수정하거나 댓글 추가
+- RFC 상태 업데이트:
   - `Proposed` (initial state)
   - `Accepted` (approved for implementation)
   - `Rejected` (not proceeding)
 
-### 4. Implement
+### 4. 구현
 
-If accepted, follow implementation plan:
+승인되면 구현 계획에 따라 진행한다:
 
 ```bash
 # Create feature branch
@@ -98,9 +98,9 @@ git commit -m "feat: implement RFC-NNN phase 1"
 # Status: Accepted -> Implemented
 ```
 
-### 5. Archive (Optional)
+### 5. 아카이브 (선택)
 
-After implementation completes, optionally archive RFC to `docs/rfc/` for reference:
+구현이 끝나면 필요에 따라 RFC를 `docs/rfc/`에 보관한다:
 
 ```bash
 # Copy implemented RFC to docs/rfc/ for permanent reference
@@ -113,53 +113,53 @@ git commit -m "docs: archive RFC-NNN (implemented)"
 # Update index below
 ```
 
-**Note:** Archiving is optional. The issue remains the primary reference.
+**Note:** 아카이브는 선택 사항이다. 이슈는 기본 참조 위치로 유지된다.
 
 ---
 
-## When to Write an RFC
+## RFC를 작성해야 하는 경우
 
-### Write RFC for:
-- Adding new major features or components
-- Changing existing architecture significantly
-- Introducing new workflows or conventions
-- Making decisions with long-term impact
+### RFC를 작성할 때
+- 새로운 주요 기능/컴포넌트 추가
+- 기존 아키텍처의 중요한 변경
+- 새로운 워크플로/컨벤션 도입
+- 장기적인 영향을 갖는 의사결정
 
-### Skip RFC for:
-- Bug fixes
-- Minor refactoring
-- Documentation updates
-- Simple feature additions
-
----
-
-## Conventions
-
-See [docs/convention/rfc.md](../convention/rfc.md) for naming, structure, and status rules.
+### RFC를 생략할 때
+- 버그 수정
+- 소규모 리팩터링
+- 문서 업데이트
+- 단순 기능 추가
 
 ---
 
-## Template
+## 컨벤션
 
-RFC template: `docs/rfc/000-template.md`
-
-Copy to `.context/rfc/` when creating new RFC.
+이름 규칙, 구조, 상태 규칙은 [docs/convention/rfc.md](../convention/rfc.md)를 참고한다.
 
 ---
 
-## Archived RFCs (Implemented)
+## 템플릿
 
-This section lists RFCs that have been implemented and archived for reference.
+RFC 템플릿: `docs/rfc/000-template.md`
+
+새 RFC를 만들 때 `.context/rfc/`로 복사한다.
+
+---
+
+## 아카이브된 RFC (구현 완료)
+
+이 섹션에는 구현 완료 후 아카이브된 RFC를 기록한다.
 
 | Number | Title | Issue | Implemented |
 |--------|-------|-------|-------------|
 | - | No archived RFCs yet | - | - |
 
-*(Add entries here when archiving implemented RFCs)*
+*(구현된 RFC를 아카이브할 때 여기에 추가)*
 
 ---
 
-## Related
+## 관련 문서
 
 - Convention: [docs/convention/rfc.md](../convention/rfc.md)
 - Design skill: [skills/design.md](../../skills/design.md)
