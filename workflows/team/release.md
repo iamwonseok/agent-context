@@ -43,10 +43,7 @@
 ## Release Phases
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   PREPARE   │ -> │   VERIFY    │ -> │   DEPLOY    │
-│  (Freeze)   │    │   (Test)    │    │  (Release)  │
-└─────────────┘    └─────────────┘    └─────────────┘
+PREPARE (Freeze) -> VERIFY (Test) -> DEPLOY (Release)
 ```
 
 ---

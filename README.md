@@ -55,64 +55,45 @@ gh pr create --title "TASK-123: description"
 
 ```
 agent-context/
-├── docs/                # 문서
-│   ├── ARCHITECTURE.md  # 설계 철학
-│   ├── convention/      # 코딩 컨벤션
-│   └── rfc/             # 설계 제안(RFC)
-├── skills/              # 범용 스킬 템플릿(Thin)
-│   ├── analyze.md       # 상황 이해
-│   ├── design.md        # 설계 접근
-│   ├── implement.md     # 구현
-│   ├── test.md          # 품질 검증
-│   └── review.md        # 결과 확인
-├── workflows/           # 컨텍스트 기반 워크플로(Thick)
-│   ├── solo/            # 개인 개발
-│   │   ├── feature.md
-│   │   ├── bugfix.md
-│   │   └── hotfix.md
-│   ├── team/            # 팀 협업
-│   │   ├── sprint.md
-│   │   └── release.md
-│   └── project/         # 조직 레벨
-│       ├── quarter.md
-│       └── roadmap.md
-├── tools/               # CLI 도구
-│   └── pm/              # JIRA/Confluence API
-└── tests/               # 테스트
-    ├── skills/          # 스킬 검증 테스트
-    └── workflows/       # 워크플로 통합 테스트
+|-- docs/                # 문서
+|   |-- ARCHITECTURE.md  # 설계 철학
+|   |-- convention/      # 코딩 컨벤션
+|   `-- rfc/             # 설계 제안(RFC)
+|-- skills/              # 범용 스킬 템플릿(Thin)
+|   |-- analyze.md       # 상황 이해
+|   |-- design.md        # 설계 접근
+|   |-- implement.md     # 구현
+|   |-- test.md          # 품질 검증
+|   `-- review.md        # 결과 확인
+|-- workflows/           # 컨텍스트 기반 워크플로(Thick)
+|   |-- solo/            # 개인 개발
+|   |   |-- feature.md
+|   |   |-- bugfix.md
+|   |   `-- hotfix.md
+|   |-- team/            # 팀 협업
+|   |   |-- sprint.md
+|   |   `-- release.md
+|   `-- project/         # 조직 레벨
+|       |-- quarter.md
+|       `-- roadmap.md
+|-- tools/               # CLI 도구
+|   `-- pm/              # JIRA/Confluence API
+`-- tests/               # 테스트
+    |-- skills/          # 스킬 검증 테스트
+    `-- workflows/       # 워크플로 통합 테스트
 ```
 
 ## 핵심 개념
 
-### Engineering Coordinate System
+핵심 개념(Thin Skill / Thick Workflow, Engineering Coordinate System, Context Injection Flow)은
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)에 단일 진실 소스로 정리되어 있습니다.
+개념 설명은 해당 문서를 기준으로 확인합니다.
 
-```
-Y-Axis (Layer)              X-Axis (Timeline)
----------------------------------------------------------
-PROJECT (Org)               Plan --> Execute --> Review
-    |
-TEAM (Squad)                Plan --> Execute --> Review
-    |
-SOLO (Dev)                  Plan --> Execute --> Review
-```
+## 워크플로 공통 정책
 
-### Thin Skill / Thick Workflow
-
-| 개념 | 역할 | 비유 |
-|---------|------|---------|
-| **Skill** | 범용 템플릿 | Interface, Abstract class |
-| **Workflow** | 컨텍스트 주입 | DI Container, Implementation |
-
-**Skills (Thin)**: 5개 범용 템플릿
-- 입력 중심(빈칸 채우기)
-- HOW에 집중: 방법, 체크리스트
-- 컨텍스트 없음: 티켓 ID, 프로젝트명 배제
-
-**Workflows (Thick)**: 컨텍스트 기반 오케스트레이션
-- 현재 컨텍스트를 스킬 입력으로 매핑
-- WHAT에 집중: 무엇을 어디에 넣는가
-- 컨텍스트 인지: 티켓, 도구, 데드라인
+워크플로 공통 정책(Global Defaults: 브랜치/PR 규칙)은
+[workflows/README.md#global-defaults](workflows/README.md#global-defaults)에 있습니다.
+처음 시작할 때 반드시 확인합니다.
 
 ## CLI 도구
 

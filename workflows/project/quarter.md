@@ -16,10 +16,7 @@
 ## Quarter Phases
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    PLAN     │ -> │   EXECUTE   │ -> │   REVIEW    │
-│  (Week 1)   │    │ (Weeks 2-12)│    │ (Week 13)   │
-└─────────────┘    └─────────────┘    └─────────────┘
+PLAN (Week 1) -> EXECUTE (Weeks 2-12) -> REVIEW (Week 13)
 ```
 
 ---

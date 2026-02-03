@@ -127,9 +127,9 @@
 ### Branch Strategy
 ```
 production (or release tag)
-    └── hotfix/incident-{id}
-            └── merge to production
-            └── cherry-pick to main
+    `-- hotfix/incident-{id}
+        |-- merge to production
+        `-- cherry-pick to main
 ```
 
 ### Approval Matrix

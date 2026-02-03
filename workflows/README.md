@@ -3,6 +3,7 @@
 > **"Workflow는 친절할수록(Context-Aware) 좋다"**
 
 Workflows are **thick orchestrators** that inject context into skills based on the current situation.
+Concepts and philosophy are maintained in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
 ## Global Defaults
 
@@ -32,36 +33,6 @@ Workflows are **thick orchestrators** that inject context into skills based on t
 
 ---
 
-## Philosophy
-
-| Concept | Role | Developer Analogy |
-|---------|------|-------------------|
-| **Skill** | Interface definition, Template | Function signature, Abstract class |
-| **Workflow** | Context injection, Mapping | DI Container, Implementation |
-
-### Design Principles
-
-1. **Context-aware**: Knows about tickets, tools, project specifics
-2. **Skill orchestration**: Calls skills with mapped inputs
-3. **Situation-specific**: Different workflows for different scenarios
-4. **Focused on WHAT**: What information goes where
-
----
-
-## Engineering Coordinate System
-
-```
-Y-Axis (Layer)          X-Axis (Timeline)
-─────────────────────────────────────────────
-PROJECT (Org)           PLAN → EXECUTE → REVIEW
-    ↑
-TEAM (Squad)            PLAN → EXECUTE → REVIEW
-    ↑
-SOLO (Dev)              PLAN → EXECUTE → REVIEW
-```
-
----
-
 ## Available Workflows
 
 ### Solo (Individual Developer)
@@ -85,30 +56,6 @@ SOLO (Dev)              PLAN → EXECUTE → REVIEW
 |----------|---------|----------|
 | [project/quarter.md](project/quarter.md) | Quarter start | 3 months |
 | [project/roadmap.md](project/roadmap.md) | Annual planning | Ongoing |
-
----
-
-## Context Injection Flow
-
-```
-Context (Jira, Logs, Code)
-       │
-       │ Read
-       ▼
-Workflow (Orchestrator)
-  - Context Mapping: Skill Input ← Source
-  - Tool Rules: Git branch, commit format
-       │
-       │ Inject Input
-       ▼
-Skill (Template)
-  - Input: problem, scope, constraints
-  - Output: Artifact
-       │
-       │ Generate
-       ▼
-Output (PR, Doc, Report)
-```
 
 ---
 
@@ -136,26 +83,6 @@ Output (PR, Doc, Report)
 | **feature.md** | Full design with alternatives |
 | **bugfix.md** | Minimal (skip if simple fix) |
 | **hotfix.md** | Skip entirely |
-
----
-
-## Layer Interactions
-
-```
-PROJECT (quarter.md, roadmap.md)
-    │
-    │ Defines OKRs, Initiatives
-    ▼
-TEAM (sprint.md, release.md)
-    │
-    │ Breaks into Tickets, Coordinates
-    ▼
-SOLO (feature.md, bugfix.md, hotfix.md)
-    │
-    │ Implements, Tests, Reviews
-    ▼
-Merged Code + Artifacts
-```
 
 ---
 

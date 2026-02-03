@@ -1,53 +1,53 @@
-# Design Philosophy
+# 설계 철학
 
-Why we built this system the way we did.
+이 시스템을 이렇게 설계한 이유와 원칙.
 
-## Core Principles
+## 핵심 원칙
 
-### 1. Simplicity Over Completeness
+### 1. 완전성보다 단순성
 
 > "Avoid over-engineering. Only make changes that are directly requested or clearly necessary."
 > -- Cursor Best Practices
 
-**We believe:**
-- Simple solutions that work > Complex solutions that might work better
-- 100 lines of code that everyone understands > 1000 lines that only the author understands
-- Warning users > Blocking users
-- Progressive enhancement > Big bang implementation
+**우리가 믿는 것:**
+- 단순하게 동작하는 해법 > 복잡하지만 더 좋아 보이는 해법
+- 모두가 이해하는 100줄 > 작성자만 이해하는 1000줄
+- 사용자 경고 > 사용자 차단
+- 점진적 강화 > 한 번에 전체 적용
 
-**In practice:**
-- Start with warnings, add enforcement later
-- Implement the minimum viable feature first
-- Add complexity only when pain is proven
+**실천 방식:**
+- 경고부터 시작하고, 필요 시에만 강제
+- 최소 기능부터 구현
+- 실제로 문제가 반복될 때만 복잡도 추가
 
-### 2. User Autonomy
+### 2. 사용자 자율성
 
 > "Let the agent find context. Keep it simple: if you know the exact file, tag it. If not, the agent will find it."
 > -- Cursor Best Practices
 
-**We believe:**
-- Users and agents should have freedom to make decisions
-- Hard blocking should be reserved for truly critical cases
-- Override options (`--force`) should exist for edge cases
-- Trust users to learn from warnings
+**우리가 믿는 것:**
+- 사용자와 에이전트는 의사결정의 자유가 있어야 한다
+- 하드 차단은 정말 치명적인 경우에만 사용한다
+- 예외 상황을 위한 `--force` 옵션을 제공한다
+- 경고를 통해 사용자가 학습하도록 신뢰한다
 
-**In practice:**
-- Prefer `[!!]` (warn) over hard blocking
-- Provide `--force` flags for soft enforcement
-- Show what's recommended, don't mandate it
-- Let users skip steps in emergencies (hotfix)
+**실천 방식:**
+- 하드 차단 대신 `[!!]` 경고를 우선 사용한다
+- 소프트 강제에는 `--force`를 제공한다
+- 권장 사항을 보여주되 강제하지 않는다
+- 긴급 상황(hotfix)에서는 단계 생략을 허용한다
 
-### 3. Feedback Over Enforcement
+### 3. 강제보다 피드백
 
 > "After completing a task that involves tool use, provide a quick summary of the work you've done."
 > -- Claude 4.x Best Practices
 
-**We believe:**
-- Clear feedback teaches better than hard blocks
-- Users should understand WHY something is recommended
-- Show progress and status, let users decide next steps
+**우리가 믿는 것:**
+- 하드 차단보다 명확한 피드백이 더 잘 가르친다
+- 사용자는 WHY(왜 필요한가)를 이해해야 한다
+- 진행 상황과 상태를 보여주고 다음 행동은 사용자가 결정한다
 
-**In practice:**
+**실천 방식:**
 ```bash
 # Good: Informative warning
 [!!] No verification found
@@ -58,48 +58,48 @@ Continue anyway? [y/N]
 [NG] Cannot submit. Run verify first.
 ```
 
-### 4. Composability
+### 4. 조합 가능성
 
 > "Ralph is an autonomous AI agent loop that runs repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context."
 > -- Ralph Project
 
-**We believe:**
-- Small, focused skills > Large, monolithic workflows
-- Skills should be independently usable
-- Workflows = Skill composition
-- Each skill should have clear inputs/outputs
+**우리가 믿는 것:**
+- 작은 스킬 조합 > 거대한 단일 워크플로
+- 스킬은 독립적으로 사용 가능해야 한다
+- 워크플로는 스킬 조합이다
+- 각 스킬은 입력/출력이 명확해야 한다
 
-**In practice:**
-- Skills are self-contained (each `{skill}.md` has everything needed)
-- Workflows reference skills, don't duplicate them
-- New workflows = New skill combinations
+**실천 방식:**
+- 스킬은 자기완결적이어야 한다 (`{skill}.md` 하나로 충분)
+- 워크플로는 스킬을 참조하고 중복 작성하지 않는다
+- 새 워크플로는 새 스킬 조합이다
 
-### 5. State Through Artifacts, Not Databases
+### 5. 상태는 데이터베이스가 아니라 산출물로
 
 > "Memory persists via git history, progress.txt, and prd.json."
 > -- Ralph Project
 
-**We believe:**
-- Git is the source of truth
-- Files (YAML, Markdown) are better than complex state machines
-- Human-readable > Machine-optimized
-- Audit trail through commits
+**우리가 믿는 것:**
+- Git이 단일 진실 소스이다
+- 복잡한 상태 머신보다 파일(YAML, Markdown)이 낫다
+- 기계 최적화보다 사람이 읽기 쉬워야 한다
+- 커밋이 감사 추적을 제공한다
 
-**In practice:**
-- `.context/` directory for work-in-progress state
-- `summary.yaml` instead of database
-- Git commits as state transitions
-- Everything can be inspected with `cat` and `grep`
+**실천 방식:**
+- 작업 중 상태는 `.context/`에 둔다
+- 데이터베이스 대신 `summary.yaml`을 사용한다
+- Git 커밋을 상태 전환으로 본다
+- 모든 것은 파일 기반으로 확인 가능해야 한다
 
 ---
 
-## Architecture Patterns
+## 아키텍처 패턴
 
 ### Engineering Coordinate System
 
 > **"Skill은 멍청할수록(Generic) 좋고, Workflow는 친절할수록(Context-Aware) 좋다"**
 
-Work is organized along two axes:
+일은 두 개의 축으로 정리한다:
 
 ```
 Y-Axis (Layer)              X-Axis (Timeline)
@@ -111,148 +111,148 @@ TEAM (Squad)                Plan --> Execute --> Review
 SOLO (Dev)                  Plan --> Execute --> Review
 ```
 
-**Layer (Y-axis):** Who is doing the work
-- **Solo**: Individual developer (feature, bugfix, hotfix)
-- **Team**: Squad coordination (sprint, release)
-- **Project**: Organization level (quarter, roadmap)
+**Layer (Y-axis):** 누가 일을 하는가
+- **Solo**: 개인 개발 (feature, bugfix, hotfix)
+- **Team**: 팀 단위 조정 (sprint, release)
+- **Project**: 조직 단위 계획 (quarter, roadmap)
 
-**Timeline (X-axis):** Plan-Execute-Review loop at every layer
+**Timeline (X-axis):** 각 레이어의 Plan-Execute-Review 루프
 
-### Thin Skill / Thick Workflow Pattern
+### Thin Skill / Thick Workflow 패턴
 
-| Concept | Role | Developer Analogy |
+| 개념 | 역할 | 개발자 비유 |
 |---------|------|-------------------|
-| **Skill** | Interface/Template | Function signature, Abstract class |
-| **Workflow** | Context Injection | DI Container, Implementation |
+| **Skill** | 인터페이스/템플릿 | 함수 시그니처, 추상 클래스 |
+| **Workflow** | 컨텍스트 주입 | DI 컨테이너, 구현체 |
 
 **Skills (Thin):**
-- Parameter-driven templates ("fill in the blanks")
-- Focus on HOW: methods, checklists, principles
-- No context: no ticket IDs, project names, specifics
-- Generic and reusable
+- 입력 중심 템플릿 (빈칸 채우기)
+- HOW에 집중: 방법, 체크리스트, 원칙
+- 컨텍스트 없음: 티켓 ID, 프로젝트명 배제
+- 범용/재사용 가능
 
 **Workflows (Thick):**
-- Map current context to skill inputs
-- Focus on WHAT: what information goes where
-- Context-aware: knows about tickets, tools, deadlines
-- Situation-specific
+- 현재 컨텍스트를 스킬 입력으로 매핑
+- WHAT에 집중: 무엇을 어디에 넣는가
+- 컨텍스트 인지: 티켓, 도구, 데드라인
+- 상황 특화
 
-### Context Injection Flow
-
-```
-Context (Jira, Logs, Code)
-       |
-       | Read
-       v
-Workflow (Orchestrator)
-  - Context Mapping: Skill Input <-- Source
-  - Tool Rules: Git branch, commit format
-       |
-       | Inject
-       v
-Skill (Template)
-  - Input: problem, scope, constraints
-  - Output: Artifact
-       |
-       | Generate
-       v
-Output (PR, Doc, Report)
-```
-
-### Structure
+### 컨텍스트 주입 흐름 (Context Injection Flow)
 
 ```
-skills/                     # Thin Templates (5)
-    analyze.md              # Understand the problem
-    design.md               # Define the solution
-    implement.md            # Execute the solution
-    test.md                 # Verify implementation
-    review.md               # Validate quality
+컨텍스트 (Jira, Logs, Code)
+       |
+       | 읽기
+       v
+워크플로 (오케스트레이터)
+  - 컨텍스트 매핑: 스킬 입력 <-- 소스
+  - 도구 규칙: Git branch, commit format
+       |
+       | 주입
+       v
+스킬 (템플릿)
+  - 입력: problem, scope, constraints
+  - 출력: 산출물
+       |
+       | 생성
+       v
+산출물 (PR, Doc, Report)
+```
 
-workflows/                  # Thick Context Injection
-    solo/                   # Individual PER loop
+### 구조
+
+```
+skills/                     # Thin 템플릿 (5)
+    analyze.md              # 문제 이해
+    design.md               # 해결안 정의
+    implement.md            # 구현
+    test.md                 # 검증
+    review.md               # 품질 확인
+
+workflows/                  # Thick 컨텍스트 주입
+    solo/                   # 개인 PER 루프
         feature.md
         bugfix.md
         hotfix.md
-    team/                   # Team PER loop
+    team/                   # 팀 PER 루프
         sprint.md
         release.md
-    project/                # Org PER loop
+    project/                # 조직 PER 루프
         quarter.md
         roadmap.md
 ```
 
-### Platform Abstraction
+### 플랫폼 추상화
 
-Abstract interfaces hide implementation details:
+추상 인터페이스로 구현 상세를 숨긴다:
 
 ```
-        Unified Interface (pm CLI)
+        통합 인터페이스 (pm CLI)
                |
-        Provider Layer (provider.sh)
+        Provider 레이어 (provider.sh)
                |
     +----------+----------+----------+
     |          |          |          |
   JIRA      GitLab     GitHub   Confluence
 ```
 
-**In this project:**
-- `tools/pm/lib/provider.sh` - Provider selection logic
-- `tools/pm/lib/jira.sh` - JIRA implementation
-- `tools/pm/lib/gitlab.sh` - GitLab implementation
-- `tools/pm/lib/github.sh` - GitHub implementation
+**이 프로젝트에서:**
+- `tools/pm/lib/provider.sh` - Provider 선택 로직
+- `tools/pm/lib/jira.sh` - JIRA 구현
+- `tools/pm/lib/gitlab.sh` - GitLab 구현
+- `tools/pm/lib/github.sh` - GitHub 구현
 
 ---
 
-## What We Avoid
+## 피하는 것
 
-### Over-Engineering Patterns
+### 과도한 설계 패턴
 
-| Pattern | Problem | Our Approach |
+| 패턴 | 문제 | 접근 방식 |
 |---------|---------|--------------|
-| Complex State Machines | Hard to debug, maintain | Simple flags + warnings |
-| Hard Blocking | Frustrates users, blocks emergencies | Soft enforcement + `--force` |
-| Deep Nesting | Cognitive overhead | Flat structure, 2 levels max |
-| Custom DSLs | Learning curve | Standard YAML + Markdown |
-| Implicit Dependencies | Hidden failures | Explicit skill references |
+| 복잡한 상태 머신 | 디버깅/유지보수 어려움 | 단순 플래그 + 경고 |
+| 하드 차단 | 사용자 불만, 긴급 대응 불가 | 소프트 강제 + `--force` |
+| 깊은 중첩 | 인지 부하 증가 | 2단계 이하의 평면 구조 |
+| 커스텀 DSL | 학습 비용 | 표준 YAML + Markdown |
+| 암묵적 의존성 | 실패 원인 추적 어려움 | 스킬 참조를 명시 |
 
-### The 12-State Trap
+### 12-State 함정
 
-We considered a 12-state finite state machine:
+12단계 유한 상태 머신을 고려했다:
 ```
 NOT_STARTED -> IN_PROGRESS -> CHECKING -> CHECK_FAILED -> 
 CHECK_PASSED -> COMMITTED -> VERIFYING -> VERIFY_FAILED -> 
 VERIFIED -> RETRO_PENDING -> RETRO_DONE -> SUBMITTED
 ```
 
-**Why we rejected it:**
-1. ~800 lines of code to maintain
-2. Every command needs state validation wrapper
-3. Debugging state transitions is painful
-4. Users can't work around edge cases
-5. Violates autonomy principle
+**왜 거부했는가:**
+1. 유지보수 코드가 약 800줄 이상
+2. 모든 명령에 상태 검증 래퍼 필요
+3. 상태 전환 디버깅이 고통스러움
+4. 예외 상황을 사용자가 우회하기 어려움
+5. 자율성 원칙에 위배
 
-**What we do instead:**
-- Simple status checks at key points
-- Warnings with recommended actions
-- Progressive enforcement (Phase 1: warn, Phase 2: soft, Phase 3: hard)
-- `--force` escape hatches
+**대신 하는 일:**
+- 핵심 지점에서의 간단한 상태 체크
+- 권장 행동을 포함한 경고
+- 점진적 강제 (Phase 1: warn, Phase 2: soft, Phase 3: hard)
+- `--force` 우회 경로 제공
 
-### The Gate Trap
+### 게이트 함정
 
-We considered mandatory gates:
+강제 게이트를 고려했다:
 ```bash
 $ agent dev commit "feat: add feature"
 [NG] Must run 'agent dev check' first
 ```
 
-**Why we softened it:**
-1. Experienced users know when to skip
-2. Emergencies (hotfix) need flexibility
-3. Trust builds better habits than force
-4. Pre-commit hooks already catch most issues
+**왜 완화했는가:**
+1. 숙련자는 언제 건너뛰어야 하는지 알고 있다
+2. 긴급 상황(hotfix)에는 유연성이 필요하다
+3. 강제보다 신뢰가 더 좋은 습관을 만든다
+4. pre-commit 훅이 이미 대부분을 잡는다
 
-**What we do instead:**
+**대신 하는 일:**
 ```bash
 $ agent dev commit "feat: add feature"
 [!!] 'agent dev check' not run yet
@@ -262,46 +262,46 @@ Continue anyway? [y/N]
 
 ---
 
-## Implementation Guidelines
+## 구현 가이드
 
-### Adding New Features
+### 신규 기능 추가
 
-1. **Start with documentation** - Write the skill template first
-2. **Implement minimal version** - Warning only, no blocking
-3. **Gather feedback** - Use it in real projects
-4. **Add enforcement gradually** - Phase 1 -> 2 -> 3
-5. **Keep escape hatches** - Always have `--force` option
+1. **문서부터 시작** - 스킬 템플릿을 먼저 작성
+2. **최소 버전 구현** - 경고만, 차단은 하지 않음
+3. **피드백 수집** - 실제 프로젝트에서 사용
+4. **점진적 강제** - Phase 1 -> 2 -> 3
+5. **우회 경로 유지** - 항상 `--force` 옵션 유지
 
-### Code Complexity Budget
+### 코드 복잡도 예산
 
-| Component | Max Lines | Max Files |
+| 컴포넌트 | 최대 라인 | 최대 파일 수 |
 |-----------|-----------|-----------|
-| Single skill | 200 | 1 ({skill}.md) |
-| Workflow | 100 | 1 ({workflow}.md) |
-| CLI command | 100 | 1 (function in lib/) |
-| Helper library | 300 | 1 |
+| 단일 스킬 | 200 | 1 ({skill}.md) |
+| 워크플로 | 100 | 1 ({workflow}.md) |
+| CLI 명령 | 100 | 1 (lib/ 내 함수) |
+| 헬퍼 라이브러리 | 300 | 1 |
 
-If exceeding these limits, split into smaller components.
+한도를 넘으면 더 작은 컴포넌트로 분리한다.
 
-### When to Add Complexity
+### 복잡도를 추가할 때
 
-Add complexity ONLY when:
-- [ ] The simple solution has failed multiple times
-- [ ] Users are consistently making the same mistake
-- [ ] The pain is documented with real examples
-- [ ] Simpler alternatives have been tried
+아래 조건을 만족할 때만 복잡도를 추가한다:
+- [ ] 단순한 해법이 여러 번 실패했다
+- [ ] 사용자가 동일한 실수를 반복한다
+- [ ] 실제 사례로 문제가 문서화되었다
+- [ ] 더 단순한 대안이 이미 검토되었다
 
-Do NOT add complexity for:
-- Theoretical edge cases
-- "What if" scenarios
-- Premature optimization
-- Feature completeness
+아래의 이유로는 복잡도를 추가하지 않는다:
+- 이론적 엣지 케이스
+- "만약에" 시나리오
+- 과도한 최적화
+- 기능 완결성만을 위한 추가
 
 ---
 
-## References
+## 참고 자료
 
-### Industry Best Practices
+### 업계 베스트 프랙티스
 
 1. **Cursor Agent Best Practices**
    - "Start simple. Add rules only when you notice the agent making the same mistake repeatedly."
@@ -328,7 +328,7 @@ Do NOT add complexity for:
    - Simplicity in design
    - https://opencode.ai/
 
-### Key Quotes
+### 핵심 인용
 
 > "The developers who get the most from agents share a few traits: They write specific prompts. They iterate on their setup. They review carefully."
 > -- Cursor Team
@@ -341,48 +341,48 @@ Do NOT add complexity for:
 
 ---
 
-## Decision Log
+## 결정 사항 로그
 
-### 2026-01-23: Simplified Intent Verification
+### 2026-01-23: 의도 검증 단순화
 
-**Context:** Planned 12-state FSM with 800+ lines of code for intent verification.
+**배경:** 의도 검증을 위해 800줄 이상인 12단계 FSM을 계획했다.
 
-**Decision:** Replaced with simple warning system (~200 lines).
+**결정:** 단순 경고 시스템으로 대체 (~200줄).
 
-**Rationale:**
-1. Best practices recommend simplicity
-2. Ralph proves simple bash loops work
-3. Users need flexibility, not enforcement
-4. Progressive rollout allows learning
+**근거:**
+1. 베스트 프랙티스는 단순성을 권장한다
+2. Ralph는 단순한 bash 루프가 충분함을 증명한다
+3. 사용자는 강제보다 유연성이 필요하다
+4. 점진적 롤아웃이 학습을 가능하게 한다
 
-**Trade-offs:**
-- Less strict enforcement (acceptable)
-- Relies on user discipline (mitigated by warnings)
-- May need hardening later (can add incrementally)
+**트레이드오프:**
+- 강제력이 약해짐 (수용 가능)
+- 사용자 규율에 의존 (경고로 보완)
+- 추후 강화 필요 가능성 (점진적 추가)
 
-### 2026-01-23: Repository Structure Change
+### 2026-01-23: 레포 구조 변경
 
-**Context:** Original structure had `.agent/` as subdirectory with intent to use as submodule.
+**배경:** `.agent/`를 서브모듈로 사용하려는 구조였다.
 
-**Problem:**
-1. Submodule approach made `.agent/` read-only in user projects
-2. Users couldn't fix bugs or customize without forking
-3. Development documents (plan/, design/) mixed with deployable code
-4. Confusion about which files belong where
+**문제:**
+1. 서브모듈 방식으로 `.agent/`가 사용자 프로젝트에서 읽기 전용이 됨
+2. 포크 없이 버그 수정이나 커스터마이징이 어려움
+3. 개발 문서(plan/, design/)가 배포 코드와 섞임
+4. 파일 위치에 대한 혼란
 
-**Decision:** Flatten structure - repository root = deployable unit.
+**결정:** 구조를 평탄화하고 레포 루트를 배포 단위로 사용.
 
-**New Structure:**
+**새 구조:**
 ```
 agent-context/              # This repo = what gets deployed
-├── skills/                 # Generic skill templates
-├── workflows/              # Context-aware workflow definitions
-├── tools/                  # CLI tools (agent, lint, pm, worktree)
-├── docs/                   # Documentation and style guides
-└── tests/                  # Workflow integration tests
+|-- skills/                 # Generic skill templates
+|-- workflows/              # Context-aware workflow definitions
+|-- tools/                  # CLI tools (agent, lint, pm, worktree)
+|-- docs/                   # Documentation and style guides
+`-- tests/                  # Workflow integration tests
 ```
 
-**Deployment Model (Hybrid):**
+**배포 모델 (Hybrid):**
 ```
 # Priority order for agent context resolution:
 1. .agent/                  # Project local (highest priority)
@@ -391,29 +391,29 @@ agent-context/              # This repo = what gets deployed
 4. ~/.agent                 # Global default
 ```
 
-**Rationale:**
-1. Global install (`~/.agent`) allows modifications
-2. Local install (`.agent/`) allows project-specific versions
-3. Docker-based testing for isolated environments
-4. Simpler mental model: repo = deployable unit
+**근거:**
+1. 글로벌 설치(`~/.agent`)는 수정 가능
+2. 로컬 설치(`.agent/`)는 프로젝트별 버전 관리 가능
+3. Docker 기반 테스트로 격리 가능
+4. 간단한 멘탈 모델: 레포 = 배포 단위
 
-**Trade-offs:**
-- Requires migration (one-time effort)
-- More flexible but slightly more complex path resolution
+**트레이드오프:**
+- 1회성 마이그레이션 필요
+- 유연하지만 경로 해석이 약간 복잡해짐
 
 ---
 
-## Language Policy
+## 언어 정책
 
-### Policy Matrix
+### 정책 매트릭스
 
-| File Type | Language | Emoji | Unicode | Rationale |
+| 파일 유형 | 언어 | 이모지 | 유니코드 | 이유 |
 |-----------|----------|:-----:|:-------:|-----------|
-| Executable (`*.sh`, `*.py`) | English only | Forbidden | Forbidden | Code must be universally readable |
-| Code comments | English only | Forbidden | Forbidden | Comments are part of code |
-| Markdown (`*.md`) | Korean/English | Forbidden | Restricted | Documentation for humans |
+| 실행 파일 (`*.sh`, `*.py`) | English only | Forbidden | Forbidden | 코드는 보편적으로 읽혀야 한다 |
+| 코드 주석 | English only | Forbidden | Forbidden | 주석은 코드의 일부이다 |
+| Markdown (`*.md`) | Korean-first (except `skills/`, `workflows/`) | Forbidden | Restricted | 문서는 사람이 읽는 대상이다 |
 
-### Unicode in Markdown
+### Markdown 내 Unicode
 
 **Allowed:**
 - Arrows: `->`, `-->`, `<--`
@@ -425,11 +425,11 @@ agent-context/              # This repo = what gets deployed
 - Checkmark symbols: Use `[x]` instead of checkmarks
 - Star symbols: Use numbers or `-` instead
 
-### Enforcement
+### 강제
 
-Automated via `tests/workflows/verify.sh`:
-- Verifies each workflow triggers the correct skill sequence
-- Generates and validates sequence logs
+`tests/workflows/verify.sh`에서 자동 검증한다:
+- 각 워크플로가 올바른 스킬 시퀀스를 트리거하는지 확인
+- 시퀀스 로그를 생성하고 검증
 
 ---
 

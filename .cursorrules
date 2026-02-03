@@ -8,6 +8,10 @@ For design philosophy (Thin Skill / Thick Workflow), see [docs/ARCHITECTURE.md](
 
 ---
 
+## Index Map
+
+`docs/ARCHITECTURE.md` (SSOT), `workflows/README.md` (global defaults), `skills/README.md` (skills), `docs/convention/` (conventions), `tools/` (CLI).
+
 ## Rationale
 
 - Prefer retrieval-led reasoning over pre-training-led reasoning.
@@ -16,7 +20,7 @@ For design philosophy (Thin Skill / Thick Workflow), see [docs/ARCHITECTURE.md](
 
 ## .cursorrules Policy
 
-- English only. No emoji or decorative Unicode.
+- English only. Emoji is forbidden. Decorative Unicode is forbidden.
 - Keep rules minimal and non-overlapping; link to `docs/` for details.
 - Update rules only when repeated failures are observed.
 
@@ -50,8 +54,8 @@ Follow the convention for each file type:
 | Markdown (`*.md`) | Korean-first (except `skills/`, `workflows/`) | Forbidden | Restricted |
 
 **Unicode in Markdown:**
-- Allowed: `->`, `-->`, `|`, `+`, `-`, standard markdown tables
-- Forbidden: Emoji, checkmark symbols, star symbols
+- Allowed (for diagrams only): `->`, `-->`, `<--`, `|`, `+`, `-`, standard markdown tables
+- Forbidden: Emoji, checkmark symbols, star symbols, box-drawing characters, special arrow glyphs
 
 ---
 

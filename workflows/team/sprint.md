@@ -16,10 +16,7 @@
 ## Sprint Phases
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    PLAN     │ -> │   EXECUTE   │ -> │   REVIEW    │
-│  (Day 1)    │    │ (Days 2-N)  │    │  (Last Day) │
-└─────────────┘    └─────────────┘    └─────────────┘
+PLAN (Day 1) -> EXECUTE (Days 2-N) -> REVIEW (Last Day)
 ```
 
 ---

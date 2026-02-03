@@ -16,10 +16,7 @@
 ## Roadmap Phases
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   VISION    │ -> │   STRATEGY  │ -> │   ROADMAP   │
-│  (Why)      │    │   (What)    │    │   (When)    │
-└─────────────┘    └─────────────┘    └─────────────┘
+VISION (Why) -> STRATEGY (What) -> ROADMAP (When)
 ```
 
 ---
@@ -91,14 +88,12 @@
 
 ### Roadmap View
 
-**Timeline: Now → Next → Later**
+**Timeline: Now -> Next -> Later**
 
 ```
 NOW (Q1)           NEXT (Q2-Q3)        LATER (Q4+)
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│ {initiative} │   │ {initiative} │   │ {initiative} │
-│ {initiative} │   │ {initiative} │   │ {initiative} │
-└──────────────┘   └──────────────┘   └──────────────┘
+{initiative}       {initiative}        {initiative}
+{initiative}       {initiative}        {initiative}
 Committed          Planned             Exploratory
 ```
 
@@ -117,9 +112,8 @@ Committed          Planned             Exploratory
 ### Dependency Map
 
 ```
-Initiative A ──depends on──> External API v2
-     │
-     └──enables──> Initiative B
+Initiative A -- depends on --> External API v2
+Initiative A -- enables --> Initiative B
 ```
 
 ---
