@@ -156,6 +156,7 @@ load_config() {
 
         # Git workflow (optional)
         GIT_MERGE_STRATEGY=$(yaml_get "$CONFIG_FILE" '.git.merge.strategy')
+        GIT_MERGE_DELETE_MERGED_BRANCH=$(yaml_get "$CONFIG_FILE" '.git.merge.delete_merged_branch')
         GIT_PUSH_REQUIRE_PRECOMMIT_PASS=$(yaml_get "$CONFIG_FILE" '.git.push.require_precommit_pass')
     fi
 
@@ -169,6 +170,7 @@ load_config() {
 
     # Git workflow defaults
     GIT_MERGE_STRATEGY="${GIT_MERGE_STRATEGY:-}"
+    GIT_MERGE_DELETE_MERGED_BRANCH="${GIT_MERGE_DELETE_MERGED_BRANCH:-}"
     GIT_PUSH_REQUIRE_PRECOMMIT_PASS="${GIT_PUSH_REQUIRE_PRECOMMIT_PASS:-}"
 
     # Auth: Environment > Project .secrets > Global ~/.secrets
@@ -215,7 +217,7 @@ load_config() {
     export GITLAB_BASE_URL GITLAB_PROJECT GITLAB_TOKEN
     export GITHUB_REPO GITHUB_TOKEN
     export BRANCH_FEATURE_PREFIX BRANCH_BUGFIX_PREFIX BRANCH_HOTFIX_PREFIX
-    export GIT_MERGE_STRATEGY GIT_PUSH_REQUIRE_PRECOMMIT_PASS
+    export GIT_MERGE_STRATEGY GIT_MERGE_DELETE_MERGED_BRANCH GIT_PUSH_REQUIRE_PRECOMMIT_PASS
 }
 
 # Check if Jira is configured
@@ -360,6 +362,8 @@ git:
   merge:
     # Strategy options: ff-only | squash | rebase | merge-commit
     strategy: ff-only
+    # If true, delete the source branch after it is merged.
+    delete_merged_branch: true
   push:
     # If true, do not push unless pre-commit checks pass.
     require_precommit_pass: true

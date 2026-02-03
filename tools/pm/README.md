@@ -64,6 +64,8 @@ git:
   merge:
     # Strategy options: ff-only | squash | rebase | merge-commit
     strategy: ff-only
+    # If true, delete the source branch after it is merged.
+    delete_merged_branch: true
   push:
     # If true, do not push unless pre-commit checks pass.
     require_precommit_pass: true
