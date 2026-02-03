@@ -136,11 +136,11 @@ repos:
   # ===================
   - repo: local
     hooks:
-      - id: check-no-emoji-markdown
-        name: Check no emoji in Markdown
-        entry: python3 tools/lint/check_no_emoji_md.py
+      - id: check-no-emoji-text
+        name: Check no emoji in text files
+        entry: python3 tools/lint/check_no_emoji_text.py
         language: system
-        files: \.md$
+        types: [text]
 
       - id: block-push-on-precommit-fail
         name: Block push when pre-commit fails
