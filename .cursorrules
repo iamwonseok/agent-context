@@ -95,8 +95,10 @@ Read the appropriate workflow file:
    - `test:` test changes
 
 ### Before Finishing
-1. Push changes: `git push origin <branch>`
-2. Create PR/MR (don't merge directly to main)
+1. Follow `.project.yaml` git workflow settings if present (e.g., `git.merge.strategy: ff-only`).
+2. Do not push if `pre-commit run --all-files` fails (recommended: install a pre-push hook).
+3. Push changes: `git push origin <branch>`
+4. Create PR/MR (don't merge directly to main)
 
 ---
 

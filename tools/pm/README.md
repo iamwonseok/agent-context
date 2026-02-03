@@ -55,6 +55,20 @@ confluence:
   email: your-email@example.com
 ```
 
+### Optional: Git Workflow Policy
+
+You can optionally define your team's Git workflow policy in `.project.yaml`:
+
+```yaml
+git:
+  merge:
+    # Strategy options: ff-only | squash | rebase | merge-commit
+    strategy: ff-only
+  push:
+    # If true, do not push unless pre-commit checks pass.
+    require_precommit_pass: true
+```
+
 ### 2. Configure API Tokens
 
 **Option A: Environment Variables (Recommended)**

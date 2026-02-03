@@ -2,9 +2,10 @@
 # https://pre-commit.com
 #
 # Install: pip install pre-commit && pre-commit install
+# Install pre-push hook (recommended): pre-commit install --hook-type pre-push
 # Run all: pre-commit run --all-files
 ---
-default_stages: [pre-commit]
+default_stages: [pre-commit, pre-push]
 
 repos:
   # ===================
@@ -140,6 +141,13 @@ repos:
         entry: python3 tools/lint/check_no_emoji_md.py
         language: system
         files: \.md$
+
+      - id: block-push-on-precommit-fail
+        name: Block push when pre-commit fails
+        entry: bash -c 'pre-commit run --all-files'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
 
 ci:
   autofix_commit_msg: "[pre-commit.ci] auto fixes"

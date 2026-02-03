@@ -356,6 +356,17 @@ branch:
   hotfix_prefix: hotfix/
 
 # ============================================================
+# Git Workflow (project-specific)
+# ============================================================
+git:
+  merge:
+    # Strategy options: ff-only | squash | rebase | merge-commit
+    strategy: ff-only
+  push:
+    # If true, do not push unless pre-commit checks pass.
+    require_precommit_pass: true
+
+# ============================================================
 # Authentication
 # ============================================================
 # Tokens are loaded from (in order):
