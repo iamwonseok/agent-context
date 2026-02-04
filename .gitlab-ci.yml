@@ -36,23 +36,46 @@ lint:
   stage: lint
   image: python:3.11-slim
   before_script:
-    - apt-get update
-    - apt-get install -y --no-install-recommends curl ca-certificates
     - |
+      # Shell executor runners may not have root access, so avoid apt-get here.
+      # Ensure hadolint exists for the pre-commit hadolint hook.
+      set -e
+      set -o pipefail
+
+      CI_BIN_DIR="${CI_PROJECT_DIR}/.ci/bin"
+      mkdir -p "${CI_BIN_DIR}"
+      export PATH="${CI_BIN_DIR}:${PATH}"
+
       if ! command -v hadolint >/dev/null 2>&1; then
-        HADO_VER="v2.14.0"
-        ARCH="$(dpkg --print-architecture)"
-        case "${ARCH}" in
-          amd64) BIN="hadolint-Linux-x86_64" ;;
-          arm64) BIN="hadolint-Linux-aarch64" ;;
-          *)
-            echo "[X] Unsupported architecture for hadolint: ${ARCH}" >&2
-            exit 1
-            ;;
-        esac
-        curl -fsSL -o /usr/local/bin/hadolint \
-          "https://github.com/hadolint/hadolint/releases/download/${HADO_VER}/${BIN}"
-        chmod +x /usr/local/bin/hadolint
+      	python3 - <<-'PY'
+      	import os
+      	import platform
+      	import stat
+      	import urllib.request
+
+      	ver = "v2.14.0"
+      	arch = platform.machine().lower()
+      	if arch in ("x86_64", "amd64"):
+      		bin_name = "hadolint-Linux-x86_64"
+      	elif arch in ("aarch64", "arm64"):
+      		bin_name = "hadolint-Linux-aarch64"
+      	else:
+      		raise SystemExit(f"[X] Unsupported architecture for hadolint: {arch}")
+
+      	dst_dir = os.path.join(os.environ["CI_PROJECT_DIR"], ".ci", "bin")
+      	os.makedirs(dst_dir, exist_ok=True)
+      	dst = os.path.join(dst_dir, "hadolint")
+      	url = f"https://github.com/hadolint/hadolint/releases/download/{ver}/{bin_name}"
+
+      	print(f"[*] Downloading hadolint: {url}")
+      	with urllib.request.urlopen(url) as r:
+      		data = r.read()
+      	with open(dst, "wb") as f:
+      		f.write(data)
+      	st = os.stat(dst)
+      	os.chmod(dst, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+      	print(f"[V] Installed hadolint to: {dst}")
+      	PY
       fi
     - pip install pre-commit
   script:
