@@ -142,6 +142,13 @@ repos:
         language: system
         types: [text]
 
+      - id: check-signed-commits
+        name: Check signed commits (signature payload required)
+        entry: bash tools/lint/check_signed_commits.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
       - id: block-push-on-precommit-fail
         name: Block push when pre-commit fails
         entry: bash -c 'pre-commit run --all-files'

@@ -180,4 +180,3 @@ Windows도 Docker를 사용할 수 있다.
 Windows 사용자를 위한 현실적인 안내 예시는 다음 중 하나다:
 - WSL2 + Docker Desktop 환경에서 `./demo/install.sh --os ubuntu --skip-e2e --only 6`
 - 또는 WSL2 환경에서 로컬 실행(필요 의존성 설치)
-
