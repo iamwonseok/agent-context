@@ -36,6 +36,24 @@ lint:
   stage: lint
   image: python:3.11-slim
   before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends curl ca-certificates
+    - |
+      if ! command -v hadolint >/dev/null 2>&1; then
+        HADO_VER="v2.14.0"
+        ARCH="$(dpkg --print-architecture)"
+        case "${ARCH}" in
+          amd64) BIN="hadolint-Linux-x86_64" ;;
+          arm64) BIN="hadolint-Linux-aarch64" ;;
+          *)
+            echo "[X] Unsupported architecture for hadolint: ${ARCH}" >&2
+            exit 1
+            ;;
+        esac
+        curl -fsSL -o /usr/local/bin/hadolint \
+          "https://github.com/hadolint/hadolint/releases/download/${HADO_VER}/${BIN}"
+        chmod +x /usr/local/bin/hadolint
+      fi
     - pip install pre-commit
   script:
     - pre-commit run --all-files --show-diff-on-failure
