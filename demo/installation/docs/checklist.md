@@ -59,6 +59,7 @@ Docker에서 `~/.secrets` 주입 기본 정책:
   - `--os ubuntu|ubi9` (둘 다 테스트)
   - `--run-id <id>` (재현/격리)
   - `--skip-e2e` (오프라인만)
+  - `--e2e-optional` (통합 테스트: 오프라인은 실행, E2E는 전제조건 충족 시에만 실행)
   - `--only <N>` (N 단계까지만)
 - `demo/installation/001-*.sh`, `002-*.sh`, ...: 단계별 실행 + 검증 스크립트
   - 각 스크립트는 최소 `run`과 `verify` 커맨드를 제공한다.
@@ -258,9 +259,30 @@ Docker에서 `~/.secrets` 주입 기본 정책:
   - 토큰 발급/보관/주입 문서 작성
   - 데모 실행 커맨드(ubuntu/ubi9) 예시 제공
   - 실패 케이스(401, 권한, space key, glab auth) 트러블슈팅 제공
+- **온보딩 문서 정합성(신규 사용자 경로)**
+  - **목표**
+    - 신규 사용자가 `README.md`만 읽고도 "오프라인 설치 검증"까지 막힘 없이 도달한다.
+    - E2E는 외부 인프라 의존임을 명확히 분리하고, 실패가 정상일 수 있음을 안내한다.
+  - **Run**
+    - `README.md`의 clone URL placeholder(`your-org`) 처리:
+      - 실제 저장소 URL로 교체하거나
+      - fork/org에 맞게 변경해야 함을 명시한다.
+    - 설치 방식의 권장 경로를 하나로 정리한다:
+      - 글로벌 설치(`~/.agent-context` + `agent-context init/install`) 또는
+      - 일회성 설치(`/tmp/agent-context` + `install.sh`) 중 하나를 "권장"으로 지정하고,
+        다른 방식은 "대안"으로 격하한다.
+    - 데모 실행 경로를 2가지로 명확히 분리한다:
+      - 오프라인 검증: `./demo/install.sh --skip-e2e --only 6`
+      - E2E: secrets/SSH/네트워크/권한 요구사항을 충족한 경우에만 수행
+    - 데모 기본값이 특정 인프라에 종속될 수 있음을 명시하고,
+      override 가능한 환경 변수를 문서에서 우선적으로 안내한다(예: `JIRA_BASE_URL`, `GITLAB_BASE_URL`, `JIRA_PROJECT_KEY`).
+    - `pm`/의존성 설치 안내의 OS 정합성을 점검한다:
+      - `yq`/`pip` 설치 안내가 macOS/Homebrew에만 묶이지 않도록 보완한다.
+      - (필요 시) `pm`의 에러 메시지/문서에서 Linux 설치 안내를 추가한다.
 - **Verify (PASS 조건)**
   - 문서만으로 최소 1회 실행이 가능
   - 토큰 노출 없이 안내 가능
+  - 신규 사용자가 오프라인 경로(`--skip-e2e --only 6`)로 "설치 + 정적 검증"까지 도달 가능
 - **PASS 후 다음 단계**
   - 개발 완료
 

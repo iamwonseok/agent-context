@@ -179,7 +179,7 @@ cmd_init() {
 	# Step 2: Create ~/.secrets directory
 	log_info "Setting up secrets directory..."
 	if [[ -d "${HOME}/.secrets" ]]; then
-		log_ok "~/.secrets already exists"
+		log_ok "${HOME}/.secrets already exists"
 	else
 		mkdir -p "${HOME}/.secrets"
 		chmod 700 "${HOME}/.secrets"

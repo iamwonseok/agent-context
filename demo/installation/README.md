@@ -2,11 +2,18 @@
 
 agent-context 설치 데모를 실행하는 러너입니다.
 
+이 러너는 **installation steps(001-006)** + **e2e steps(007-008)** 를 포함합니다. E2E의 실제 시나리오 실행은 `demo/scenario/`가 담당합니다.
+
 ## Quick Start
 
 ```bash
 # 1. 오프라인 모드 (E2E 테스트 제외)
 ./demo/install.sh --skip-e2e
+
+# 1.5 통합 모드 (오프라인 + E2E optional)
+# - 오프라인(설치/정적검증)을 항상 수행
+# - E2E 전제조건이 충족되면 E2E까지 수행, 아니면 E2E는 스킵
+./demo/install.sh --e2e-optional
 
 # 2. 특정 단계까지만 실행
 ./demo/install.sh --skip-e2e --only 6
@@ -33,6 +40,10 @@ export JIRA_EMAIL="your-email@example.com"
 | 008 | demo-run.sh | E2E 데모 실행 |
 | 009 | precommit.sh | Pre-commit 훅 실행 (best-effort) |
 | 010 | summary.sh | 결과 요약 리포트 |
+
+구분:
+- 001-006: installation steps (오프라인 가능)
+- 007-008: e2e steps (내부에서 `demo/scenario/` 실행)
 
 ## 사용법
 
@@ -101,6 +112,7 @@ Docker 실행 시 자동 마운트:
 | `--os OS` | Docker 실행 (ubuntu, ubi9) | - |
 | `--run-id ID` | 실행 ID | timestamp |
 | `--skip-e2e` | E2E 테스트 건너뛰기 | false |
+| `--e2e-optional` | 오프라인은 실행, E2E는 전제조건 충족 시에만 실행 | false |
 | `--only N` | Step N까지만 실행 | - |
 | `--secrets-mode MODE` | 시크릿 처리 방식 (mount, copy) | mount |
 | `--workdir DIR` | 작업 디렉토리 | /tmp/agent-context-demo-{run-id} |
@@ -138,6 +150,25 @@ Docker 실행 시 자동 마운트:
 | Variable | Description |
 |----------|-------------|
 | `WORKDIR` | 작업 디렉토리 (Docker에서 호스트와 공유) |
+
+---
+
+## E2E 필수 요청사항(관리자 문의)
+
+E2E는 실제 Jira/GitLab/Confluence에 리소스를 생성/수정합니다. 아래 항목이 준비되지 않으면 실패가 정상이며, 토큰 발급/권한 부여/SSH 키 등록은 조직의 시스템 관리자(또는 각 시스템 관리자)에게 문의해야 할 수 있습니다.
+
+필수(공통):
+- `JIRA_EMAIL` (Atlassian 계정 이메일)
+- `~/.secrets/atlassian-api-token` (Atlassian API token)
+
+GitLab 통합(E2E에서 Git 작업 포함 시):
+- `~/.secrets/gitlab-api-token` (GitLab personal access token, scope: `api` 권장)
+- `~/.ssh/id_ed25519`, `~/.ssh/id_ed25519.pub` (passphrase 없는 키, GitLab에 등록 필요)
+- (조직 정책에 따라) commit signing/보호 브랜치/MR 승인 규칙 충족 필요
+
+프로젝트/스페이스 정보(환경에 맞게 설정):
+- Jira 프로젝트 키(`JIRA_PROJECT_KEY` 또는 `DEMO_JIRA_PROJECT`)
+- Confluence space key(`CONFLUENCE_SPACE_KEY` 또는 `DEMO_CONFLUENCE_SPACE`)
 
 ## 검증 방법
 

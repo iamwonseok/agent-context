@@ -69,6 +69,7 @@ OS_TARGET=""
 # Respect externally provided RUN_ID and WORKDIR (e.g., from parallel runner)
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
 SKIP_E2E="${SKIP_E2E:-false}"
+E2E_OPTIONAL="${E2E_OPTIONAL:-false}"
 ONLY_STEP=""
 SECRETS_MODE="mount"
 DOCKER_MODE=false
@@ -91,6 +92,7 @@ OPTIONS:
     --os OS             Run in Docker: ubuntu, ubi9
     --run-id ID         Unique run identifier (default: timestamp)
     --skip-e2e          Skip E2E tests (online API calls)
+    --e2e-optional      Run offline steps, run E2E only if prerequisites are satisfied
     --only N            Run only up to step N (e.g., --only 5)
     --secrets-mode MODE How to handle secrets: mount (default), copy
     --workdir DIR       Working directory (default: /tmp/agent-context-demo-<run-id>)
@@ -119,6 +121,9 @@ EXAMPLES:
 
     # Run minimal profile, skip E2E
     $(basename "$0") --profile minimal --skip-e2e
+
+    # Integration mode: offline + optional E2E
+    $(basename "$0") --e2e-optional
 
     # Run only first 5 steps
     $(basename "$0") --only 5
@@ -169,6 +174,10 @@ while [[ $# -gt 0 ]]; do
 		--skip-e2e)
 			SKIP_E2E=true
 			;;
+		--e2e-optional)
+			E2E_OPTIONAL=true
+			SKIP_E2E=false
+			;;
 		--only)
 			ONLY_STEP="$2"
 			shift
@@ -212,6 +221,7 @@ export RUN_ID
 export WORKDIR
 export PROFILE
 export SKIP_E2E
+export E2E_OPTIONAL
 export SECRETS_MODE
 export FORCE
 export DOCKER_MODE
@@ -400,6 +410,7 @@ run_in_docker() {
 	local internal_cmd="/agent-context/demo/install.sh --profile ${PROFILE}"
 	[[ "${FORCE}" == "true" ]] && internal_cmd+=" --force"
 	[[ "${SKIP_E2E}" == "true" ]] && internal_cmd+=" --skip-e2e"
+	[[ "${E2E_OPTIONAL}" == "true" ]] && internal_cmd+=" --e2e-optional"
 	[[ -n "${ONLY_STEP}" ]] && internal_cmd+=" --only ${ONLY_STEP}"
 
 	# Run container
@@ -439,6 +450,13 @@ run_step() {
 	# Run step
 	log_info "Running step ${step_num}..."
 	if ! bash "${script}" run; then
+		# Optional E2E: if prerequisites are not satisfied, skip E2E steps.
+		if [[ "${E2E_OPTIONAL}" == "true" ]] && [[ "${SKIP_E2E}" != "true" ]] && [[ "${step_num}" == "007" ]]; then
+			log_warn "Step ${step_num} run failed (E2E optional). Skipping E2E steps."
+			export SKIP_E2E=true
+			export E2E_SKIPPED_REASON="prerequisites"
+			return 0
+		fi
 		log_error "Step ${step_num} run failed"
 		return 1
 	fi
@@ -449,6 +467,13 @@ run_step() {
 		# Step 009 (pre-commit) is best-effort
 		if [[ "${step_num}" == "009" ]]; then
 			log_warn "Step ${step_num} verification failed (best-effort, continuing)"
+			return 0
+		fi
+		# Optional E2E: if prerequisites are not satisfied, skip E2E steps.
+		if [[ "${E2E_OPTIONAL}" == "true" ]] && [[ "${SKIP_E2E}" != "true" ]] && [[ "${step_num}" == "007" ]]; then
+			log_warn "Step ${step_num} verification failed (E2E optional). Skipping E2E steps."
+			export SKIP_E2E=true
+			export E2E_SKIPPED_REASON="prerequisites"
 			return 0
 		fi
 		log_error "Step ${step_num} verification failed"
@@ -467,6 +492,7 @@ run_local() {
 	echo "  Profile:      ${PROFILE}"
 	echo "  Force:        ${FORCE}"
 	echo "  Skip E2E:     ${SKIP_E2E}"
+	echo "  E2E Optional: ${E2E_OPTIONAL}"
 	echo "  Secrets Mode: ${SECRETS_MODE}"
 	echo "  Working Dir:  ${WORKDIR}"
 	echo ""

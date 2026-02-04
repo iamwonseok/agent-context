@@ -30,12 +30,19 @@ demo/
 
 agent-context를 임의의 프로젝트에 설치하고 검증하는 데모.
 
+`demo/installation/`은 `demo/install.sh`가 실행하는 **러너 스텝 모음(001-010)** 이며, E2E 시나리오의 실제 실행은 `demo/scenario/`가 담당합니다.
+
 ```bash
 # 전체 실행
 ./demo/install.sh
 
 # E2E 제외 (오프라인)
 ./demo/install.sh --skip-e2e
+
+# 통합 모드 (오프라인 + E2E optional)
+# - 오프라인(설치/정적검증)을 항상 수행
+# - E2E 전제조건이 충족되면 E2E까지 수행, 아니면 E2E는 스킵
+./demo/install.sh --e2e-optional
 
 # Docker에서 실행
 ./demo/install.sh --os ubuntu
@@ -111,6 +118,23 @@ export JIRA_EMAIL="your-email@example.com"
 ## E2E Test Guide
 
 Agent-Context Demo E2E 테스트 실행 가이드.
+
+### 관리자 문의가 필요한 필수 전제조건
+
+E2E는 실제 Jira/GitLab/Confluence에 리소스를 생성/수정합니다. 아래 항목이 준비되지 않으면 실패가 정상이며, 발급/권한/등록은 조직의 시스템 관리자(또는 Jira/GitLab/Confluence 관리자)에게 문의해야 할 수 있습니다.
+
+필수(공통):
+- `JIRA_EMAIL` (Atlassian 계정 이메일)
+- `~/.secrets/atlassian-api-token` (Atlassian API token, 권한 600 권장)
+
+GitLab 통합(E2E에서 Git 작업 포함 시):
+- `~/.secrets/gitlab-api-token` (GitLab personal access token, scope: `api` 권장)
+- `~/.ssh/id_ed25519`, `~/.ssh/id_ed25519.pub` (passphrase 없는 키, GitLab SSH Keys에 등록 필요)
+- (조직 정책에 따라) commit signing/보호 브랜치/MR 승인 규칙 충족 필요
+
+프로젝트/스페이스 정보(환경에 맞게 설정):
+- Jira 프로젝트 키(`JIRA_PROJECT_KEY` 또는 `DEMO_JIRA_PROJECT`)
+- Confluence space key(`CONFLUENCE_SPACE_KEY` 또는 `DEMO_CONFLUENCE_SPACE`)
 
 ---
 
