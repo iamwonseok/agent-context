@@ -330,7 +330,7 @@ jira_user_search() {
     count=$(echo "$response" | jq 'length')
 
     if [[ "$count" == "0" ]]; then
-        echo "[WARN] No users found for: $query" >&2
+        echo "[!] No users found for: $query" >&2
         return 1
     fi
 
@@ -471,7 +471,7 @@ jira_bulk_create() {
         if [[ $line_num -eq 1 ]]; then
             # Validate header
             if [[ "$summary" != "summary" ]]; then
-                echo "[WARN] No header detected, processing as data"
+                echo "[!] No header detected, processing as data"
                 line_num=0
             else
                 continue
@@ -598,7 +598,7 @@ jira_bulk_create() {
         key=$(echo "$response" | jq -r '.key')
 
         if [[ -z "$key" ]] || [[ "$key" == "null" ]]; then
-            echo " [FAIL]"
+            echo " [X]"
             echo "  Error: $(echo "$response" | jq -r '.errors // .errorMessages // .' 2>/dev/null)"
             ((failed++))
             continue
@@ -627,7 +627,7 @@ jira_bulk_create() {
                 jira_api PUT "/issue/${key}" "$assign_payload" > /dev/null 2>&1
                 echo " -> $assignee_email"
             else
-                echo " -> [WARN] User not found: $assignee_email"
+                echo " -> [!] User not found: $assignee_email"
             fi
         else
             echo " (no assignee)"
@@ -892,7 +892,7 @@ jira_workflow_list() {
 
     echo "$response" | jq -r '.values[] | "[\(.id.name)] \(.description // "No description")"' 2>/dev/null || \
     echo "$response" | jq -r '.[] | "[\(.name)] \(.description // "No description")"' 2>/dev/null || \
-    echo "[WARN] Could not parse workflow response"
+    echo "[!] Could not parse workflow response"
 
     echo ""
 }

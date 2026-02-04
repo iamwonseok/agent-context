@@ -112,6 +112,47 @@ confluence_space_list() {
     echo "Total: $total spaces"
 }
 
+confluence_space_list_configured() {
+    local key="${1:-$CONFLUENCE_SPACE_KEY}"
+
+    if [[ -z "${key}" ]]; then
+        echo "[ERROR] Space key required (set CONFLUENCE_SPACE_KEY or use pm confluence space view KEY)" >&2
+        return 1
+    fi
+
+    if ! confluence_configured; then
+        echo "[ERROR] Confluence not configured" >&2
+        return 1
+    fi
+
+    local response
+    response=$(confluence_api GET "/space/${key}?expand=homepage")
+
+    echo "------------------------------------------------------------------------"
+    printf "%-12s | %-8s | %s\n" "Key" "Type" "Name"
+    echo "------------------------------------------------------------------------"
+
+    local out_key
+    local out_type
+    local out_name
+    out_key=$(echo "${response}" | jq -r '.key // ""')
+    out_type=$(echo "${response}" | jq -r '.type // ""')
+    out_name=$(echo "${response}" | jq -r '.name // ""')
+
+    if [[ -z "${out_key}" ]] || [[ "${out_key}" == "null" ]]; then
+        echo "[ERROR] Space not found or not accessible: ${key}" >&2
+        return 1
+    fi
+
+    if [[ ${#out_name} -gt 50 ]]; then
+        out_name="${out_name:0:47}..."
+    fi
+
+    printf "%-12s | %-8s | %s\n" "${out_key}" "${out_type}" "${out_name}"
+    echo "------------------------------------------------------------------------"
+    echo "Total: 1 space"
+}
+
 # List pages in a space
 confluence_page_list() {
     local space_key="${1:-$CONFLUENCE_SPACE_KEY}"
@@ -572,7 +613,7 @@ confluence_space_permissions() {
     else
         # Try alternative format
         echo "$response" | jq -r '.[] | "[\(.type)] \(.subjects // "N/A")"' 2>/dev/null || \
-        echo "[WARN] Could not parse permissions response"
+        echo "[!] Could not parse permissions response"
     fi
 }
 
@@ -587,7 +628,7 @@ confluence_space_delete() {
     fi
 
     if [[ "$force" != "--force" ]]; then
-        echo "[WARN] This will delete space '$key' and ALL its content!"
+        echo "[!] This will delete space '$key' and ALL its content!"
         echo "Use: pm confluence space delete $key --force"
         return 1
     fi

@@ -61,7 +61,7 @@ Follow the convention for each file type:
 
 ## Output Style
 
-- Log format: `[OK]` pass, `[NG]` fail, `[!!]` warn, `[>>]` info
+- Log: `[V]` pass, `[X]` fail, `[!]` warn, `[i]` info, `[-]` skip, `[*]` progress
 - No decorative Unicode in output
 
 ---
@@ -84,6 +84,10 @@ Read the appropriate workflow file:
 1. Check if related files need updates (docs, README, etc.)
 2. Run quality checks: `pre-commit run --all-files`
 3. Fix any failures before committing
+
+### After Implementing Code
+1. Add verification code that outputs `[V]`/`[X]` result
+2. Run and confirm output before commit
 
 ### Before Committing
 1. Review changes: `git diff --staged`

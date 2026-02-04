@@ -26,18 +26,18 @@ NNN-short-description.md
 
 ### Valid Examples
 
-- [OK] `001-context-management-system.md`
-- [OK] `002-parallel-task-execution.md`
-- [OK] `010-git-workflow-automation.md`
-- [OK] `042-ci-integration.md`
+- [V] `001-context-management-system.md`
+- [V] `002-parallel-task-execution.md`
+- [V] `010-git-workflow-automation.md`
+- [V] `042-ci-integration.md`
 
 ### Invalid Examples
 
-- [NG] `1-context.md` (not zero-padded)
-- [NG] `001_context_management.md` (underscore instead of hyphen)
-- [NG] `001-ContextManagement.md` (not lowercase)
-- [NG] `RFC-001-context.md` (prefix not allowed)
-- [NG] `001-context-mgmt.txt` (not .md extension)
+- [X] `1-context.md` (not zero-padded)
+- [X] `001_context_management.md` (underscore instead of hyphen)
+- [X] `001-ContextManagement.md` (not lowercase)
+- [X] `RFC-001-context.md` (prefix not allowed)
+- [X] `001-context-mgmt.txt` (not .md extension)
 
 ---
 

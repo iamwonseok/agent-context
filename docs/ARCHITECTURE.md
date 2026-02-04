@@ -32,7 +32,7 @@
 - 경고를 통해 사용자가 학습하도록 신뢰한다
 
 **실천 방식:**
-- 하드 차단 대신 `[!!]` 경고를 우선 사용한다
+- 하드 차단 대신 `[!]` 경고를 우선 사용한다
 - 소프트 강제에는 `--force`를 제공한다
 - 권장 사항을 보여주되 강제하지 않는다
 - 긴급 상황(hotfix)에서는 단계 생략을 허용한다
@@ -50,12 +50,12 @@
 **실천 방식:**
 ```bash
 # Good: Informative warning
-[!!] No verification found
-[>>] Run 'agent dev verify' to check requirements
+[!] No verification found
+[i] Run 'agent dev verify' to check requirements
 Continue anyway? [y/N]
 
 # Avoid: Hard block without context
-[NG] Cannot submit. Run verify first.
+[X] Cannot submit. Run verify first.
 ```
 
 ### 4. 조합 가능성
@@ -243,7 +243,7 @@ VERIFIED -> RETRO_PENDING -> RETRO_DONE -> SUBMITTED
 강제 게이트를 고려했다:
 ```bash
 $ agent dev commit "feat: add feature"
-[NG] Must run 'agent dev check' first
+[X] Must run 'agent dev check' first
 ```
 
 **왜 완화했는가:**
@@ -255,8 +255,8 @@ $ agent dev commit "feat: add feature"
 **대신 하는 일:**
 ```bash
 $ agent dev commit "feat: add feature"
-[!!] 'agent dev check' not run yet
-[>>] Run check to verify quality
+[!] 'agent dev check' not run yet
+[i] Run check to verify quality
 Continue anyway? [y/N]
 ```
 
@@ -328,6 +328,19 @@ Continue anyway? [y/N]
    - Simplicity in design
    - https://opencode.ai/
 
+6. **Unicode Technical Standard #51**
+   - Emoji 표준, ZWJ 시퀀스, 플랫폼별 표시 차이
+   - "Emoji are not typically typed on a keyboard"
+   - https://unicode.org/reports/tr51/
+
+7. **Apple Support - Use emoji and symbols on Mac**
+   - macOS에서 Character Viewer를 통한 이모지 입력 방법
+   - https://support.apple.com/guide/mac-help/use-emoji-and-symbols-on-mac-mchlp1560/mac
+
+8. **Microsoft Learn - Emoji**
+   - Windows에서 `Win + .`을 통한 이모지 입력 방법
+   - https://learn.microsoft.com/en-us/globalization/fonts-layout/emoji
+
 ### 핵심 인용
 
 > "The developers who get the most from agents share a few traits: They write specific prompts. They iterate on their setup. They review carefully."
@@ -338,6 +351,9 @@ Continue anyway? [y/N]
 
 > "Each iteration is a fresh instance with clean context. Memory persists via git history."
 > -- Ralph Project
+
+> "Emoji are not typically typed on a keyboard. Instead, they are generally picked from a palette."
+> -- Unicode UTS #51
 
 ---
 
@@ -413,6 +429,40 @@ agent-context/              # This repo = what gets deployed
 | 코드 주석 | English only | Forbidden | Forbidden | 주석은 코드의 일부이다 |
 | Markdown (`*.md`) | Korean-first (except `skills/`, `workflows/`) | Forbidden | Restricted | 문서는 사람이 읽는 대상이다 |
 
+### 왜 이모지/장식 유니코드를 하드 차단하는가
+
+이모지와 장식 유니코드는 일반 텍스트와 달리 **재현성과 호환성 문제**가 있어 하드 차단한다.
+
+**1. 플랫폼마다 표시가 다름**
+
+> "Emoji are pictographs ... typically presented in a colorful cartoon form."
+> "The shape of the character can vary significantly."
+> -- Unicode UTS #51, Section 2 Design Guidelines
+
+이모지는 단일 코드포인트가 아니라 ZWJ(Zero Width Joiner)와 Variation Selector를 포함하는 시퀀스일 수 있다.
+구현체가 해당 시퀀스를 지원하지 않으면 fallback으로 분해되어 표시된다.
+같은 이모지가 macOS, Windows, Linux, 브라우저, 터미널에서 각각 다르게 보일 수 있어 문서의 재현성을 해친다.
+
+**2. 키보드로 쉽게 입력할 수 없음**
+
+> "Emoji are not typically typed on a keyboard. Instead, they are generally picked from a palette."
+> -- Unicode UTS #51, Section 6 Input
+
+이모지는 일반 키보드로 타이핑하지 않고 OS별 팔레트/뷰어를 통해 입력한다:
+- **macOS**: `Fn-E` 또는 `Ctrl-Cmd-Space`로 Character Viewer 호출
+- **Windows**: `Win + .` (period)로 Emoji Picker 호출
+
+입력 방법이 OS마다 다르므로, 문서 예시나 템플릿을 작성할 때 **재현 가능한 키보드 입력만으로 작성할 수 없다**.
+기여자가 다양한 환경에서 동일하게 문서를 편집/검토하려면 ASCII + 표준 Markdown만 사용하는 것이 안전하다.
+
+**3. 검색/grep/diff 도구와의 호환성**
+
+이모지 시퀀스는 여러 코드포인트로 구성되어 일반 텍스트 검색 도구에서 예상치 못한 결과를 낼 수 있다.
+`grep`, `diff`, `git diff` 등에서 일관된 동작을 보장하려면 이모지를 배제하는 것이 실용적이다.
+
+**결론:** 이모지/장식 유니코드는 pre-commit에서 하드 차단(`[X]`)하며, 우회 경로를 제공하지 않는다.
+이 정책은 "경고 우선" 원칙의 예외이며, 재현성과 도구 호환성이라는 운영상 요구 때문이다.
+
 ### Markdown 내 Unicode
 
 **Allowed:**
@@ -427,7 +477,11 @@ agent-context/              # This repo = what gets deployed
 
 ### 강제
 
-`tests/workflows/verify.sh`에서 자동 검증한다:
+`pre-commit` 훅에서 이모지/장식 유니코드를 자동 검증한다:
+- `tools/lint/check_no_emoji_text.py`: 모든 텍스트 파일에서 이모지/장식 유니코드 검출 시 실패
+- 위반 시 `[X]` 출력과 함께 커밋 차단
+
+`tests/workflows/verify.sh`에서 워크플로-스킬 정합성을 검증한다:
 - 각 워크플로가 올바른 스킬 시퀀스를 트리거하는지 확인
 - 시퀀스 로그를 생성하고 검증
 

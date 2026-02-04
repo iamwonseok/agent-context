@@ -242,73 +242,67 @@ github_configured() {
 
 # Print configuration
 print_config() {
-    local config_format="legacy"
-    if [[ -f "$CONFIG_FILE" ]]; then
-        config_format=$(detect_config_format "$CONFIG_FILE")
-    fi
-
-    echo "=================================================="
     echo "Project Configuration"
-    echo "=================================================="
-    echo "Project Root: $PROJECT_ROOT"
-    echo "Config Format: $config_format"
-    echo ""
+    echo "========================================"
+    echo "PROJECT: ${PROJECT_ROOT}"
 
-    if [[ "$config_format" == "role-based" ]]; then
-        echo "[Roles]"
-        echo "  VCS:      ${ROLE_VCS:-(not set)}"
-        echo "  Issue:    ${ROLE_ISSUE:-(not set)}"
-        echo "  Review:   ${ROLE_REVIEW:-(not set)}"
-        echo "  Docs:     ${ROLE_DOCS:-(not set)}"
-        echo "  Planning: ${ROLE_PLANNING:-(not set)}"
-        echo "  Wiki:     ${ROLE_WIKI:-(not set)}"
-        echo ""
+    local email="${JIRA_EMAIL:-${CONFLUENCE_EMAIL:-}}"
+    if [[ -n "${email}" ]]; then
+        echo "E-MAIL: ${email}"
     fi
-
-    echo "[Platforms]"
     echo ""
-    echo "  [Jira]"
+
+    local has_jira=false
+    local has_confluence=false
+    local has_gitlab=false
+    local has_github=false
+
+    echo "[Summary]"
+
     if jira_configured; then
-        echo "    Base URL:    $JIRA_BASE_URL"
-        echo "    Project Key: $JIRA_PROJECT_KEY"
-        echo "    Email:       $JIRA_EMAIL"
-        echo "    Token:       (set)"
-    else
-        echo "    (not configured)"
+        echo "[V] Jira: ${JIRA_BASE_URL%/}/projects/${JIRA_PROJECT_KEY}"
+        has_jira=true
     fi
-    echo ""
-    echo "  [Confluence]"
-    if confluence_configured; then
-        echo "    Base URL:  $CONFLUENCE_BASE_URL"
-        echo "    Space Key: ${CONFLUENCE_SPACE_KEY:-(not set)}"
-        echo "    Email:     $CONFLUENCE_EMAIL"
-        echo "    Token:     (set)"
-    else
-        echo "    (not configured)"
+
+    # Confluence is optional: print only when space key is available and auth is set.
+    if confluence_configured && [[ -n "${CONFLUENCE_SPACE_KEY}" ]]; then
+        echo "[V] Confluence: ${CONFLUENCE_BASE_URL%/}/spaces/${CONFLUENCE_SPACE_KEY}"
+        has_confluence=true
     fi
-    echo ""
-    echo "  [GitLab]"
-    if gitlab_configured; then
-        echo "    Base URL: $GITLAB_BASE_URL"
-        echo "    Project:  $GITLAB_PROJECT"
-        echo "    Token:    (set)"
-    else
-        echo "    (not configured)"
+
+    # GitLab is optional: print only when base_url and project are available.
+    if [[ -n "${GITLAB_BASE_URL}" ]] && [[ -n "${GITLAB_PROJECT}" ]]; then
+        local gitlab_host="${GITLAB_BASE_URL}"
+        gitlab_host="${gitlab_host#https://}"
+        gitlab_host="${gitlab_host#http://}"
+        gitlab_host="${gitlab_host%%/*}"
+        echo "[V] GitLab: git@${gitlab_host}:${GITLAB_PROJECT}.git"
+        has_gitlab=true
     fi
-    echo ""
-    echo "  [GitHub]"
-    if github_configured; then
-        echo "    Repo:  $GITHUB_REPO"
-        echo "    Token: (set)"
-    else
-        echo "    (not configured)"
+
+    # GitHub is optional: print only when repo is available.
+    if [[ -n "${GITHUB_REPO}" ]]; then
+        echo "[V] GitHub: git@github.com:${GITHUB_REPO}.git"
+        has_github=true
     fi
+
     echo ""
-    echo "[Branch Prefixes]"
-    echo "  Feature: $BRANCH_FEATURE_PREFIX"
-    echo "  Bugfix:  $BRANCH_BUGFIX_PREFIX"
-    echo "  Hotfix:  $BRANCH_HOTFIX_PREFIX"
-    echo "=================================================="
+    echo "[Usages]"
+
+    # Summarize roles only for providers present in Summary.
+    # Default role fallbacks are already applied during load_config.
+    if [[ "${has_gitlab}" == "true" ]]; then
+        echo "GitLab: VCS, Wiki, Review"
+    fi
+    if [[ "${has_jira}" == "true" ]]; then
+        echo "Jira: Plan, Issue"
+    fi
+    if [[ "${has_confluence}" == "true" ]]; then
+        echo "Confluence: Docs"
+    fi
+    if [[ "${has_github}" == "true" ]]; then
+        echo "GitHub: VCS, Wiki, Review"
+    fi
 }
 
 # Create default config file (new role-based format)

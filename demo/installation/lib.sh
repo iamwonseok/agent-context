@@ -55,19 +55,19 @@ fi
 # Logging Functions
 # ============================================================
 log_info() {
-	echo -e "${BLUE}[>>]${NC} $1"
+	echo -e "${BLUE}[i]${NC} $1"
 }
 
 log_ok() {
-	echo -e "${GREEN}[OK]${NC} $1"
+	echo -e "${GREEN}[V]${NC} $1"
 }
 
 log_warn() {
-	echo -e "${YELLOW}[!!]${NC} $1" >&2
+	echo -e "${YELLOW}[!]${NC} $1" >&2
 }
 
 log_error() {
-	echo -e "${RED}[NG]${NC} $1" >&2
+	echo -e "${RED}[X]${NC} $1" >&2
 }
 
 log_step() {

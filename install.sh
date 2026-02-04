@@ -24,6 +24,7 @@ set -o pipefail
 
 # Script directory (agent-context source)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATES_DIR="${SCRIPT_DIR}/templates"
 
 # Colors
 if [[ -t 1 ]]; then
@@ -41,19 +42,295 @@ else
 fi
 
 log_info() {
-	echo -e "${BLUE}[>>]${NC} $1"
+	echo -e "${BLUE}[i]${NC} $1"
 }
 
 log_ok() {
-	echo -e "${GREEN}[OK]${NC} $1"
+	echo -e "${GREEN}[V]${NC} $1"
 }
 
 log_warn() {
-	echo -e "${YELLOW}[!!]${NC} $1" >&2
+	echo -e "${YELLOW}[!]${NC} $1" >&2
 }
 
 log_error() {
-	echo -e "${RED}[NG]${NC} $1" >&2
+	echo -e "${RED}[X]${NC} $1" >&2
+}
+
+escape_sed_replacement() {
+	local s="$1"
+	s=${s//\\/\\\\}
+	s=${s//&/\\&}
+	s=${s//|/\\|}
+	printf '%s' "${s}"
+}
+
+render_template() {
+	local template_file="$1"
+	local dst_file="$2"
+	shift 2
+
+	if [[ ! -f "${template_file}" ]]; then
+		log_error "Template not found: ${template_file}"
+		return 1
+	fi
+
+	# Store key/value args for reuse
+	local kv_args=("$@")
+
+	_get_kv_value() {
+		local search_key="$1"
+		local i=0
+		while [[ ${i} -lt ${#kv_args[@]} ]]; do
+			if [[ "${kv_args[${i}]}" == "${search_key}" ]]; then
+				echo "${kv_args[$((i + 1))]}"
+				return 0
+			fi
+			i=$((i + 2))
+		done
+		echo ""
+	}
+
+	# Handle simple conditional blocks:
+	#   {{#KEY}} ... {{/KEY}} included only if KEY value is non-empty.
+	local tmp_file
+	tmp_file=$(mktemp)
+	cp "${template_file}" "${tmp_file}"
+
+	local cond_keys=("CONFLUENCE_SPACE_KEY" "GITLAB_URL" "GITLAB_PROJECT" "GITHUB_REPO")
+	for cond_key in "${cond_keys[@]}"; do
+		local cond_val
+		cond_val=$(_get_kv_value "${cond_key}")
+
+		if [[ -z "${cond_val}" ]]; then
+			# Delete block
+			sed -i.bak "/{{#${cond_key}}}/,/{{\\/${cond_key}}}/d" "${tmp_file}"
+			rm -f "${tmp_file}.bak"
+		else
+			# Keep block, remove markers
+			sed -i.bak "s/{{#${cond_key}}}//g; s/{{\\/${cond_key}}}//g" "${tmp_file}"
+			rm -f "${tmp_file}.bak"
+		fi
+	done
+
+	local sed_args=()
+	local idx=0
+	while [[ ${idx} -lt ${#kv_args[@]} ]]; do
+		local key="${kv_args[${idx}]}"
+		local value="${kv_args[$((idx + 1))]}"
+		idx=$((idx + 2))
+
+		local escaped_value
+		escaped_value=$(escape_sed_replacement "${value}")
+		sed_args+=("-e" "s|{{${key}}}|${escaped_value}|g")
+	done
+
+	sed "${sed_args[@]}" "${tmp_file}" > "${dst_file}"
+	rm -f "${tmp_file}"
+
+	if grep -Eq '\{\{[A-Z0-9_]+\}\}' "${dst_file}"; then
+		log_error "Template rendering incomplete (unreplaced placeholders): ${dst_file}"
+		return 1
+	fi
+}
+
+normalize_jira_base_url() {
+	local url="$1"
+
+	# Jira Cloud base URL should NOT include /wiki
+	url=${url%/}
+	if [[ "${url}" == *"/wiki" ]]; then
+		url=${url%/wiki}
+	fi
+	printf '%s' "${url}"
+}
+
+normalize_confluence_base_url() {
+	local url="$1"
+
+	# Confluence Cloud base URL MUST include /wiki
+	url=${url%/}
+	if [[ "${url}" != *"/wiki" ]]; then
+		url="${url}/wiki"
+	fi
+	printf '%s' "${url}"
+}
+
+parse_gitlab_input() {
+	# Accepts one of:
+	# - https://gitlab.example.com/group/subgroup/repo(.git)
+	# - git@gitlab.example.com:group/subgroup/repo(.git)
+	# - gitlab.example.com/group/subgroup/repo(.git)
+	#
+	# Outputs (via echo): "<base_url>|<project_path>"
+	local input="$1"
+	input=${input%/}
+
+	local host=""
+	local path=""
+
+	# SSH style: git@host:namespace/project(.git)
+	if [[ "${input}" =~ ^git@([^:]+):(.+)$ ]]; then
+		host="${BASH_REMATCH[1]}"
+		path="${BASH_REMATCH[2]}"
+	else
+		# Strip scheme if present
+		local no_scheme="${input}"
+		no_scheme="${no_scheme#https://}"
+		no_scheme="${no_scheme#http://}"
+
+		# Split host/path
+		if [[ "${no_scheme}" == */* ]]; then
+			host="${no_scheme%%/*}"
+			path="${no_scheme#*/}"
+		else
+			host="${no_scheme}"
+			path=""
+		fi
+	fi
+
+	# Remove trailing .git
+	path="${path%.git}"
+
+	local base_url=""
+	if [[ -n "${host}" ]]; then
+		base_url="https://${host}"
+	fi
+
+	echo "${base_url}|${path}"
+}
+
+parse_remote_url() {
+	# Accepts one of:
+	# - https://host/namespace/.../repo(.git)
+	# - http://host/namespace/.../repo(.git)
+	# - ssh://git@host/namespace/.../repo(.git)
+	# - git@host:namespace/.../repo(.git)
+	# - host/namespace/.../repo(.git)
+	#
+	# Outputs: "<host>|<path>" (path has no leading slash, no trailing .git)
+	local input="$1"
+	input=${input%/}
+
+	local host=""
+	local path=""
+
+	# scp-like SSH: user@host:path
+	if [[ "${input}" =~ ^[^@]+@([^:]+):(.+)$ ]]; then
+		host="${BASH_REMATCH[1]}"
+		path="${BASH_REMATCH[2]}"
+	else
+		# URL with scheme (https://, http://, ssh://)
+		if [[ "${input}" =~ ^[a-zA-Z][a-zA-Z0-9+.-]*://(.+)$ ]]; then
+			local rest="${BASH_REMATCH[1]}"
+
+			# Drop optional user@
+			rest="${rest#*:@}"
+			if [[ "${rest}" == */* ]]; then
+				host="${rest%%/*}"
+				path="${rest#*/}"
+			else
+				host="${rest}"
+				path=""
+			fi
+		else
+			# No scheme: host/path
+			if [[ "${input}" == */* ]]; then
+				host="${input%%/*}"
+				path="${input#*/}"
+			else
+				host="${input}"
+				path=""
+			fi
+		fi
+	fi
+
+	path="${path%.git}"
+	echo "${host}|${path}"
+}
+
+derive_platforms_from_git_remotes() {
+	# Try to derive GitLab/GitHub settings from target repo remotes.
+	# Outputs: "<gitlab_base>|<gitlab_project>|<github_repo>"
+	local target_dir="$1"
+
+	local gitlab_base=""
+	local gitlab_project=""
+	local github_repo=""
+
+	if ! command -v git &>/dev/null; then
+		echo "||"
+		return 0
+	fi
+
+	if ! git -C "${target_dir}" rev-parse --is-inside-work-tree &>/dev/null; then
+		echo "||"
+		return 0
+	fi
+
+	local remotes
+	remotes=$(git -C "${target_dir}" remote -v 2>/dev/null || true)
+
+	# Helper: pick best candidate url for a given host substring.
+	_pick_remote_url() {
+		local host_substr="$1"
+
+		# Prefer upstream, then origin, else first match.
+		local url=""
+		url=$(echo "${remotes}" | awk '$1=="upstream" && $3=="(fetch)" {print $2}' | head -1)
+		if [[ -n "${url}" ]] && [[ "${url}" == *"${host_substr}"* ]]; then
+			echo "${url}"
+			return 0
+		fi
+
+		url=$(echo "${remotes}" | awk '$1=="origin" && $3=="(fetch)" {print $2}' | head -1)
+		if [[ -n "${url}" ]] && [[ "${url}" == *"${host_substr}"* ]]; then
+			echo "${url}"
+			return 0
+		fi
+
+		url=$(echo "${remotes}" | awk '$3=="(fetch)" {print $2}' | grep -F "${host_substr}" | head -1)
+		echo "${url}"
+	}
+
+	# GitHub
+	local github_url=""
+	github_url=$(_pick_remote_url "github")
+	if [[ -n "${github_url}" ]]; then
+		local parsed
+		parsed=$(parse_remote_url "${github_url}")
+		local host="${parsed%%|*}"
+		local path="${parsed#*|}"
+
+		# For GitHub, repo is owner/repo (first 2 segments)
+		if [[ -n "${path}" ]]; then
+			local owner="${path%%/*}"
+			local rest="${path#*/}"
+			local repo="${rest%%/*}"
+			if [[ -n "${owner}" ]] && [[ -n "${repo}" ]] && [[ "${owner}" != "${repo}" ]]; then
+				github_repo="${owner}/${repo}"
+			fi
+		fi
+	fi
+
+	# GitLab
+	local gitlab_url=""
+	gitlab_url=$(_pick_remote_url "gitlab")
+	if [[ -n "${gitlab_url}" ]]; then
+		local parsed
+		parsed=$(parse_remote_url "${gitlab_url}")
+		local host="${parsed%%|*}"
+		local path="${parsed#*|}"
+
+		if [[ -n "${host}" ]]; then
+			gitlab_base="https://${host}"
+		fi
+		if [[ -n "${path}" ]]; then
+			gitlab_project="${path}"
+		fi
+	fi
+
+	echo "${gitlab_base}|${gitlab_project}|${github_repo}"
 }
 
 usage() {
@@ -92,6 +369,8 @@ CONFIGURATION OPTIONS:
     --jira-project KEY  Jira project key (e.g., PROJ)
     --jira-email EMAIL  Atlassian account email
     --gitlab-url URL    GitLab base URL (e.g., https://gitlab.example.com)
+    --confluence-space KEY  Confluence space key (e.g., DEV or ~user)
+    --github-repo REPO  GitHub repo (e.g., owner/repo)
 
 EXAMPLES:
     # Interactive install with full profile (default)
@@ -137,6 +416,8 @@ ARG_JIRA_URL=""
 ARG_JIRA_PROJECT=""
 ARG_JIRA_EMAIL=""
 ARG_GITLAB_URL=""
+ARG_CONFLUENCE_SPACE=""
+ARG_GITHUB_REPO=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -171,6 +452,14 @@ while [[ $# -gt 0 ]]; do
 			;;
 		--gitlab-url)
 			ARG_GITLAB_URL="$2"
+			shift
+			;;
+		--confluence-space)
+			ARG_CONFLUENCE_SPACE="$2"
+			shift
+			;;
+		--github-repo)
+			ARG_GITHUB_REPO="$2"
 			shift
 			;;
 		-h|--help)
@@ -275,34 +564,24 @@ CURSORRULES_MARKER_BEGIN="# BEGIN AGENT_CONTEXT INDEX MAP"
 CURSORRULES_MARKER_END="# END AGENT_CONTEXT INDEX MAP"
 
 generate_cursorrules_index_map() {
-	cat <<'EOF'
-# BEGIN AGENT_CONTEXT INDEX MAP
-# Agent-Context Index Map
-#
-# This block was added by agent-context installer.
-# For design philosophy, see .agent/workflows/README.md and docs/ARCHITECTURE.md.
-#
-# Index:
-#   .agent/skills/         - Generic skill templates (analyze, design, implement, test, review)
-#   .agent/workflows/      - Context-aware workflow definitions (solo, team, project)
-#   .agent/tools/pm/       - PM CLI (Jira/Confluence integration)
-#   .project.yaml          - Project configuration (platforms, roles, git workflow)
-#
-# END AGENT_CONTEXT INDEX MAP
+	local template_file="${TEMPLATES_DIR}/cursorrules.index_map.tmpl"
 
-EOF
+	if [[ -f "${template_file}" ]]; then
+		cat "${template_file}"
+		return 0
+	fi
+
+	log_error "Missing template: ${template_file}"
+	return 1
 }
 
 install_cursorrules() {
 	local target_file="${TARGET_DIR}/.cursorrules"
-	local source_file="${SCRIPT_DIR}/.cursorrules"
 
 	if [[ ! -f "${target_file}" ]]; then
-		# Case A: No existing .cursorrules - create new with index map
-		{
-			generate_cursorrules_index_map
-			cat "${source_file}"
-		} > "${target_file}"
+		# Case A: No existing .cursorrules - create new with index map only
+		# Note: Source .cursorrules is for agent-context development, not for installed projects
+		generate_cursorrules_index_map > "${target_file}"
 		log_ok "Created: .cursorrules (with index map)"
 	elif grep -q "${CURSORRULES_MARKER_BEGIN}" "${target_file}" 2>/dev/null; then
 		# Case C: Already has index map - skip or update
@@ -324,24 +603,15 @@ install_cursorrules() {
 		fi
 	else
 		# Case B: Existing .cursorrules without index map - merge
-		if [[ "${FORCE}" != "true" ]]; then
-			# Safe merge: prepend index map to existing content
-			local temp_file
-			temp_file=$(mktemp)
-			{
-				generate_cursorrules_index_map
-				cat "${target_file}"
-			} > "${temp_file}"
-			mv "${temp_file}" "${target_file}"
-			log_ok "Merged: .cursorrules (index map added, existing content preserved)"
-		else
-			# Force: overwrite completely
-			{
-				generate_cursorrules_index_map
-				cat "${source_file}"
-			} > "${target_file}"
-			log_ok "Replaced: .cursorrules (force mode)"
-		fi
+		# Safe merge: prepend index map to existing content
+		local temp_file
+		temp_file=$(mktemp)
+		{
+			generate_cursorrules_index_map
+			cat "${target_file}"
+		} > "${temp_file}"
+		mv "${temp_file}" "${target_file}"
+		log_ok "Merged: .cursorrules (index map added, existing content preserved)"
 	fi
 }
 
@@ -404,6 +674,9 @@ copy_dir "${SCRIPT_DIR}/skills" "${TARGET_DIR}/.agent/skills" ".agent/skills/"
 # Install .agent/workflows/
 copy_dir "${SCRIPT_DIR}/workflows" "${TARGET_DIR}/.agent/workflows" ".agent/workflows/"
 
+# Install .agent/docs/ (referenced by .cursorrules)
+copy_dir "${SCRIPT_DIR}/docs" "${TARGET_DIR}/.agent/docs" ".agent/docs/"
+
 # Install .agent/tools/pm/
 mkdir -p "${TARGET_DIR}/.agent/tools"
 copy_dir "${SCRIPT_DIR}/tools/pm" "${TARGET_DIR}/.agent/tools/pm" ".agent/tools/pm/"
@@ -426,11 +699,14 @@ if [[ ! -f "${TARGET_DIR}/.project.yaml" ]] || [[ "${FORCE}" == "true" ]]; then
 	jira_project="${ARG_JIRA_PROJECT}"
 	jira_email="${ARG_JIRA_EMAIL}"
 	gitlab_url="${ARG_GITLAB_URL}"
+	confluence_space_key="${ARG_CONFLUENCE_SPACE}"
+	github_repo="${ARG_GITHUB_REPO}"
 
 	# 2. Try environment variables
 	jira_url="${jira_url:-${JIRA_BASE_URL}}"
 	jira_email="${jira_email:-${JIRA_EMAIL}}"
 	gitlab_url="${gitlab_url:-${GITLAB_BASE_URL}}"
+	confluence_space_key="${confluence_space_key:-${CONFLUENCE_SPACE_KEY}}"
 
 	# 3. Try source .project.yaml
 	if [[ -f "${SCRIPT_DIR}/.project.yaml" ]]; then
@@ -443,6 +719,48 @@ if [[ ! -f "${TARGET_DIR}/.project.yaml" ]] || [[ "${FORCE}" == "true" ]]; then
 	[[ "${jira_url}" == "null" ]] && jira_url=""
 	[[ "${jira_email}" == "null" ]] && jira_email=""
 	[[ "${gitlab_url}" == "null" ]] && gitlab_url=""
+	[[ "${confluence_space_key}" == "null" ]] && confluence_space_key=""
+	[[ "${github_repo}" == "null" ]] && github_repo=""
+
+	# Normalize Jira/Confluence URLs
+	if [[ -n "${jira_url}" ]]; then
+		jira_url=$(normalize_jira_base_url "${jira_url}")
+	fi
+
+	confluence_url="${jira_url}"
+	if [[ -n "${confluence_url}" ]]; then
+		confluence_url=$(normalize_confluence_base_url "${confluence_url}")
+	fi
+
+	# GitLab input can be a base_url OR a remote URL (ssh/https). If it includes a path,
+	# try to auto-derive both base_url and namespace/project.
+	gitlab_project=""
+	if [[ -n "${gitlab_url}" ]] && [[ "${gitlab_url}" == *"/"* || "${gitlab_url}" == git@*:* ]]; then
+		parsed=$(parse_gitlab_input "${gitlab_url}")
+		parsed_base="${parsed%%|*}"
+		parsed_project="${parsed#*|}"
+
+		if [[ -n "${parsed_base}" ]]; then
+			gitlab_url="${parsed_base}"
+		fi
+		if [[ -n "${parsed_project}" ]]; then
+			gitlab_project="${parsed_project}"
+		fi
+	fi
+
+	# If platform settings are still missing, try to derive from git remotes.
+	# This helps in mixed SSH/HTTPS environments with multiple remotes (origin/upstream).
+	if [[ -z "${gitlab_project}" || -z "${github_repo}" ]]; then
+		derived=$(derive_platforms_from_git_remotes "${TARGET_DIR}")
+		derived_gitlab_base="${derived%%|*}"
+		rest="${derived#*|}"
+		derived_gitlab_project="${rest%%|*}"
+		derived_github_repo="${rest#*|}"
+
+		[[ -z "${gitlab_url}" ]] && gitlab_url="${derived_gitlab_base}"
+		[[ -z "${gitlab_project}" ]] && gitlab_project="${derived_gitlab_project}"
+		[[ -z "${github_repo}" ]] && github_repo="${derived_github_repo}"
+	fi
 
 	# 4. Interactive prompts if values still missing
 	if [[ "${INTERACTIVE}" == "true" ]] && [[ -t 0 ]]; then
@@ -486,6 +804,24 @@ if [[ ! -f "${TARGET_DIR}/.project.yaml" ]] || [[ "${FORCE}" == "true" ]]; then
 			echo "  GitLab URL: ${gitlab_url}"
 		fi
 
+		# Confluence Space Key (optional)
+		if [[ -z "${confluence_space_key}" ]]; then
+			echo -n "  Confluence Space Key (optional) [e.g., DEV or ~user]: "
+			read -r input_confluence_space_key
+			confluence_space_key="${input_confluence_space_key}"
+		else
+			echo "  Confluence Space Key: ${confluence_space_key}"
+		fi
+
+		# GitHub Repo (optional)
+		if [[ -z "${github_repo}" ]]; then
+			echo -n "  GitHub Repo (optional) [e.g., owner/repo]: "
+			read -r input_github_repo
+			github_repo="${input_github_repo}"
+		else
+			echo "  GitHub Repo: ${github_repo}"
+		fi
+
 		echo ""
 	fi
 
@@ -493,76 +829,26 @@ if [[ ! -f "${TARGET_DIR}/.project.yaml" ]] || [[ "${FORCE}" == "true" ]]; then
 	jira_url="${jira_url:-https://CHANGE_ME.atlassian.net}"
 	jira_project="${jira_project:-CHANGE_ME}"
 	jira_email="${jira_email:-CHANGE_ME@example.com}"
-	confluence_url="${jira_url}"  # Same as Jira for Atlassian Cloud
-	gitlab_url="${gitlab_url:-https://gitlab.CHANGE_ME.com}"
+	# Optional platforms: only emit blocks when values are provided or derivable.
+	confluence_url="${confluence_url:-}"
+	confluence_space_key="${confluence_space_key:-}"
+	gitlab_url="${gitlab_url:-}"
+	gitlab_project="${gitlab_project:-}"
+	github_repo="${github_repo:-}"
 
-	cat > "${TARGET_DIR}/.project.yaml" <<EOF
-# Project Configuration
-# Generated by agent-context install.sh
-#
-# IMPORTANT: Replace any "CHANGE_ME" values with your actual settings!
-
-# ============================================================
-# Role Assignment (which platform handles what)
-# ============================================================
-roles:
-  vcs: gitlab           # Version Control: github | gitlab
-  issue: jira           # Issue Tracking: jira | github | gitlab
-  review: gitlab        # Code Review: github | gitlab
-  docs: confluence      # Documentation: confluence | github | gitlab
-
-# ============================================================
-# Platform Configurations
-# ============================================================
-platforms:
-  jira:
-    base_url: ${jira_url}
-    project_key: ${jira_project}
-    email: ${jira_email}
-
-  confluence:
-    base_url: ${confluence_url}
-    space_key: CHANGE_ME          # Your Confluence space key
-
-  gitlab:
-    base_url: ${gitlab_url}
-    project: CHANGE_ME/project    # namespace/project
-
-  github:
-    repo: owner/repo
-
-# ============================================================
-# Branch Naming Convention
-# ============================================================
-branch:
-  feature_prefix: feat/
-  bugfix_prefix: fix/
-  hotfix_prefix: hotfix/
-
-# ============================================================
-# Git Workflow (project-specific)
-# ============================================================
-git:
-  merge:
-    # Strategy options: ff-only | squash | rebase | merge-commit
-    strategy: ff-only
-    # If true, delete the source branch after it is merged.
-    delete_merged_branch: true
-  push:
-    # If true, do not push unless pre-commit checks pass.
-    require_precommit_pass: true
-
-# ============================================================
-# Authentication
-# ============================================================
-# Tokens are loaded from (in order):
-#   1. Environment variables: JIRA_TOKEN, GITLAB_TOKEN
-#   2. Project secrets: .secrets/atlassian-api-token
-#   3. Global secrets: ~/.secrets/atlassian-api-token
-#
-# Get Atlassian API token from:
-#   https://id.atlassian.com/manage-profile/security/api-tokens
-EOF
+	if ! render_template \
+		"${TEMPLATES_DIR}/project.yaml.tmpl" \
+		"${TARGET_DIR}/.project.yaml" \
+		"JIRA_URL" "${jira_url}" \
+		"JIRA_PROJECT" "${jira_project}" \
+		"JIRA_EMAIL" "${jira_email}" \
+		"CONFLUENCE_URL" "${confluence_url}" \
+		"CONFLUENCE_SPACE_KEY" "${confluence_space_key}" \
+		"GITLAB_URL" "${gitlab_url}" \
+		"GITLAB_PROJECT" "${gitlab_project}" \
+		"GITHUB_REPO" "${github_repo}"; then
+		exit 1
+	fi
 
 	# Show what values were used and check for CHANGE_ME
 	has_change_me=false
@@ -646,16 +932,10 @@ else
 
 	if [[ ! -d "${TARGET_DIR}/.secrets" ]]; then
 		mkdir -p "${TARGET_DIR}/.secrets"
-		cat > "${TARGET_DIR}/.secrets/.gitkeep" <<'EOF'
-# This directory contains secret files (API tokens, etc.)
-# Files in this directory should NOT be committed to git.
-#
-# Recommended: Use global ~/.secrets instead
-#   mkdir -p ~/.secrets
-#   echo "your-token" > ~/.secrets/atlassian-api-token
-#   echo "your-token" > ~/.secrets/gitlab-api-token
-#   chmod 600 ~/.secrets/*
-EOF
+		copy_file \
+			"${TEMPLATES_DIR}/secrets.gitkeep" \
+			"${TARGET_DIR}/.secrets/.gitkeep" \
+			".secrets/.gitkeep"
 		log_ok "Created: .secrets/ directory (template)"
 	fi
 fi
@@ -678,6 +958,7 @@ echo "  |-- .project.yaml"
 echo "  |-- .agent/"
 echo "  |   |-- skills/"
 echo "  |   |-- workflows/"
+echo "  |   |-- docs/"
 echo "  |   |-- tools/pm/"
 echo "  |   \`-- templates/"
 if [[ "${PROFILE}" == "full" ]]; then

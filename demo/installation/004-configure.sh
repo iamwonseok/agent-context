@@ -11,10 +11,18 @@ source "$(dirname "$0")/lib.sh"
 STEP_NUM="004"
 STEP_NAME="Configure project"
 
-# Default test values
+# Default test values (use RUN_ID for isolation when available)
 : "${JIRA_BASE_URL:=https://fadutec.atlassian.net}"
 : "${JIRA_PROJECT_KEY:=SVI4}"
-: "${CONFLUENCE_SPACE_KEY:=~712020e8e25da88c5fcd91adb98f91b94e79cf}"
+: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${CONFLUENCE_SPACE_KEY:=~wonseok}"
+: "${GITLAB_BASE_URL:=https://gitlab.fadutec.dev}"
+# GITLAB_PROJECT: Use DEMO_REPO_NAME if set (from parallel runner), otherwise default
+if [[ -n "${DEMO_REPO_NAME:-}" ]]; then
+	: "${GITLAB_PROJECT:=${DEMO_GITLAB_GROUP:-soc-ip/agentic-ai}/${DEMO_REPO_NAME}}"
+else
+	: "${GITLAB_PROJECT:=soc-ip/agentic-ai/demo-agent-context-install}"
+fi
 
 step_run() {
 	log_step "${STEP_NUM}" "${STEP_NAME}"
@@ -31,6 +39,10 @@ step_run() {
 	log_info "  Jira URL: ${JIRA_BASE_URL}"
 	log_info "  Jira Project: ${JIRA_PROJECT_KEY}"
 	log_info "  Jira Email: ${JIRA_EMAIL:-<not set>}"
+	log_info "  Confluence URL: ${CONFLUENCE_BASE_URL}"
+	log_info "  Confluence Space: ${CONFLUENCE_SPACE_KEY}"
+	log_info "  GitLab URL: ${GITLAB_BASE_URL}"
+	log_info "  GitLab Project: ${GITLAB_PROJECT}"
 
 	# Check if yq is available
 	if ! command -v yq &>/dev/null; then
@@ -49,6 +61,15 @@ step_run() {
 		if [[ -n "${CONFLUENCE_SPACE_KEY}" ]]; then
 			sed -i.bak "s|space_key: CHANGE_ME|space_key: ${CONFLUENCE_SPACE_KEY}|g" "${project_yaml}"
 		fi
+		if [[ -n "${CONFLUENCE_BASE_URL}" ]]; then
+			sed -i.bak "s|base_url: https://CHANGE_ME.atlassian.net/wiki|base_url: ${CONFLUENCE_BASE_URL}|g" "${project_yaml}" || true
+		fi
+		if [[ -n "${GITLAB_BASE_URL}" ]]; then
+			sed -i.bak "s|base_url: https://gitlab.example.com|base_url: ${GITLAB_BASE_URL}|g" "${project_yaml}" || true
+		fi
+		if [[ -n "${GITLAB_PROJECT}" ]]; then
+			sed -i.bak "s|project: namespace/project|project: ${GITLAB_PROJECT}|g" "${project_yaml}" || true
+		fi
 
 		# Clean up backup files
 		rm -f "${project_yaml}.bak"
@@ -56,7 +77,6 @@ step_run() {
 		# Use yq for proper YAML editing
 		if [[ -n "${JIRA_BASE_URL}" ]]; then
 			yq -i ".platforms.jira.base_url = \"${JIRA_BASE_URL}\"" "${project_yaml}"
-			yq -i ".platforms.confluence.base_url = \"${JIRA_BASE_URL}\"" "${project_yaml}"
 		fi
 		if [[ -n "${JIRA_PROJECT_KEY}" ]]; then
 			yq -i ".platforms.jira.project_key = \"${JIRA_PROJECT_KEY}\"" "${project_yaml}"
@@ -64,8 +84,17 @@ step_run() {
 		if [[ -n "${JIRA_EMAIL}" ]]; then
 			yq -i ".platforms.jira.email = \"${JIRA_EMAIL}\"" "${project_yaml}"
 		fi
+		if [[ -n "${CONFLUENCE_BASE_URL}" ]]; then
+			yq -i ".platforms.confluence.base_url = \"${CONFLUENCE_BASE_URL}\"" "${project_yaml}"
+		fi
 		if [[ -n "${CONFLUENCE_SPACE_KEY}" ]]; then
 			yq -i ".platforms.confluence.space_key = \"${CONFLUENCE_SPACE_KEY}\"" "${project_yaml}"
+		fi
+		if [[ -n "${GITLAB_BASE_URL}" ]]; then
+			yq -i ".platforms.gitlab.base_url = \"${GITLAB_BASE_URL}\"" "${project_yaml}"
+		fi
+		if [[ -n "${GITLAB_PROJECT}" ]]; then
+			yq -i ".platforms.gitlab.project = \"${GITLAB_PROJECT}\"" "${project_yaml}"
 		fi
 	fi
 
@@ -77,6 +106,10 @@ step_run() {
 		echo "  Jira URL: $(yq '.platforms.jira.base_url' "${project_yaml}")"
 		echo "  Jira Project: $(yq '.platforms.jira.project_key' "${project_yaml}")"
 		echo "  Jira Email: $(yq '.platforms.jira.email' "${project_yaml}")"
+		echo "  Confluence URL: $(yq '.platforms.confluence.base_url' "${project_yaml}")"
+		echo "  Confluence Space: $(yq '.platforms.confluence.space_key' "${project_yaml}")"
+		echo "  GitLab URL: $(yq '.platforms.gitlab.base_url' "${project_yaml}")"
+		echo "  GitLab Project: $(yq '.platforms.gitlab.project' "${project_yaml}")"
 	else
 		grep -E "base_url:|project_key:|email:" "${project_yaml}" | head -5
 	fi

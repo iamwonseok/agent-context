@@ -115,7 +115,7 @@ def main(argv: list[str]) -> int:
     if not all_findings:
         return 0
 
-    print("[NG] Markdown contains forbidden emoji/symbols:", file=sys.stderr)
+    print("[X] Markdown contains forbidden emoji/symbols:", file=sys.stderr)
     for f in all_findings[:50]:
         print(
             f"{f.path}:{f.line}:{f.col}: {f.codepoint} {f.char_repr}",

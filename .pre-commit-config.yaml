@@ -149,6 +149,21 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+  # ===================
+  # Kernel/C Hooks (Optional - Disabled by Default)
+  # ===================
+  # Enable for Linux kernel development projects:
+  #   1. Set CHECKPATCH_PATH to your checkpatch.pl location
+  #   2. Remove 'stages: [manual]' to enable automatic checking
+  - repo: local
+    hooks:
+      - id: checkpatch
+        name: checkpatch (kernel style)
+        entry: bash tools/lint/checkpatch-wrapper.sh
+        language: system
+        types: [c]
+        stages: [manual]
+
 ci:
   autofix_commit_msg: "[pre-commit.ci] auto fixes"
   autofix_prs: true

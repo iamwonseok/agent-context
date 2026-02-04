@@ -44,6 +44,8 @@ step_run() {
 
 	# Set environment for demo
 	export DEMO_OUTPUT_DIR="${output_dir}"
+	: "${SKIP_CLEANUP:=true}"
+	export SKIP_CLEANUP
 
 	if bash "${demo_script}" run; then
 		log_ok "Demo E2E completed successfully"

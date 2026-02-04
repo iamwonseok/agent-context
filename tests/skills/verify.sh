@@ -21,13 +21,13 @@ PASSED=0
 FAILED=0
 
 test_pass() {
-    echo -e "  ${GREEN}[OK]${NC} $1"
+    echo -e "  ${GREEN}[V]${NC} $1"
     ((TOTAL++)) || true
     ((PASSED++)) || true
 }
 
 test_fail() {
-    echo -e "  ${RED}[NG]${NC} $1"
+    echo -e "  ${RED}[X]${NC} $1"
     ((TOTAL++)) || true
     ((FAILED++)) || true
 }

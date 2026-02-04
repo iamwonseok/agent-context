@@ -100,16 +100,27 @@ step_run() {
 			log_warn "GitLab token not found: ~/.secrets/gitlab-api-token"
 		fi
 	else
-		log_warn "Secrets directory not found: ~/.secrets"
-		log_info "  Create: mkdir -p ~/.secrets && chmod 700 ~/.secrets"
-		((failed++)) || true
+		# Secrets directory missing: fail only if E2E is required
+		if [[ "${SKIP_E2E}" == "true" ]]; then
+			log_warn "Secrets directory not found: ~/.secrets (ignored with --skip-e2e)"
+			log_info "  Create: mkdir -p ~/.secrets && chmod 700 ~/.secrets"
+		else
+			log_error "Secrets directory not found: ~/.secrets"
+			log_info "  Create: mkdir -p ~/.secrets && chmod 700 ~/.secrets"
+			((failed++)) || true
+		fi
 	fi
 
 	# Check JIRA_EMAIL
 	if [[ -n "${JIRA_EMAIL}" ]]; then
 		log_ok "JIRA_EMAIL is set: ${JIRA_EMAIL}"
 	else
-		log_warn "JIRA_EMAIL is not set"
+		# JIRA_EMAIL missing: fail only if E2E is required
+		if [[ "${SKIP_E2E}" == "true" ]]; then
+			log_warn "JIRA_EMAIL is not set (ignored with --skip-e2e)"
+		else
+			log_warn "JIRA_EMAIL is not set"
+		fi
 		log_info "  Set: export JIRA_EMAIL='your-email@example.com'"
 	fi
 
@@ -140,16 +151,17 @@ step_verify() {
 		fi
 	fi
 
-	# ~/.secrets must exist
-	if [[ ! -d "${HOME}/.secrets" ]]; then
-		log_error "Secrets directory not found"
-		((failed++)) || true
-	else
-		log_ok "Secrets directory exists"
-	fi
-
-	# Atlassian token must exist for E2E
+	# ~/.secrets and tokens: required only for E2E
 	if [[ "${SKIP_E2E}" != "true" ]]; then
+		# ~/.secrets must exist for E2E
+		if [[ ! -d "${HOME}/.secrets" ]]; then
+			log_error "Secrets directory required for E2E tests"
+			((failed++)) || true
+		else
+			log_ok "Secrets directory exists"
+		fi
+
+		# Atlassian token must exist for E2E
 		if [[ ! -f "${HOME}/.secrets/atlassian-api-token" ]]; then
 			log_error "Atlassian token required for E2E tests"
 			((failed++)) || true
@@ -157,11 +169,19 @@ step_verify() {
 			log_ok "Atlassian token available"
 		fi
 
+		# JIRA_EMAIL must be set for E2E
 		if [[ -z "${JIRA_EMAIL}" ]]; then
 			log_error "JIRA_EMAIL required for E2E tests"
 			((failed++)) || true
 		else
 			log_ok "JIRA_EMAIL is set"
+		fi
+	else
+		# Offline mode: secrets are optional (warn only)
+		if [[ ! -d "${HOME}/.secrets" ]]; then
+			log_warn "Secrets directory not found (--skip-e2e mode)"
+		else
+			log_ok "Secrets directory exists"
 		fi
 	fi
 

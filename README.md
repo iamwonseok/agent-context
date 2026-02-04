@@ -20,124 +20,294 @@
 
 **목표**: AI 에이전트가 CLI(`git`, `gh`, `glab`, `pm`)로 모든 작업을 수행하며 브라우저 전환을 최소화.
 
-## 빠른 시작
+---
+
+## 사용자 빠른 시작
+
+### Step 1: 의존성 설치
+
+**macOS (Homebrew):**
+```bash
+brew install git curl jq yq gh glab
+pip install pre-commit
+```
+
+**Ubuntu/Debian/WSL:**
+```bash
+sudo apt-get update
+sudo apt-get install -y git curl jq
+# yq (YAML processor)
+sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo chmod +x /usr/local/bin/yq
+# gh (GitHub CLI)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt-get update && sudo apt-get install -y gh
+pip install pre-commit
+```
+
+### Step 2: agent-context 클론 (글로벌 설치)
 
 ```bash
-# 1. 레포 클론
+git clone https://github.com/your-org/agent-context.git ~/.agent-context
+```
+
+### Step 3: 글로벌 환경 초기화
+
+```bash
+~/.agent-context/agent-context.sh init
+```
+
+**출력 예시:**
+```
+Agent-Context Global Initialization
+
+[i] Checking dependencies...
+[V] Found: bash
+[V] Found: git
+[V] Found: curl
+[V] Found: jq
+[i] Checking optional commands...
+[V] Found: yq
+[V] Found: glab
+[V] Found: pre-commit
+[i] Setting up secrets directory...
+[V] Created: ~/.secrets (mode 700)
+
+API Token Setup Guide
+
+  Atlassian (Jira/Confluence):
+    1. Visit: https://id.atlassian.com/manage-profile/security/api-tokens
+    2. Click 'Create API token'
+    3. Save token:
+       echo 'your-token' > ~/.secrets/atlassian-api-token
+       chmod 600 ~/.secrets/atlassian-api-token
+
+[i] Configuring shell environment...
+[i] The following will be added to /Users/you/.zshrc:
+  ----------------------------------------
+  # BEGIN AGENT_CONTEXT
+  alias agent-context="~/.agent-context/agent-context.sh"
+  [[ -f ~/.secrets/atlassian-api-token ]] && export ATLASSIAN_API_TOKEN="$(cat ~/.secrets/atlassian-api-token)"
+  # END AGENT_CONTEXT
+  ----------------------------------------
+
+  Proceed? [y/N]: y
+[V] Added shell configuration to /Users/you/.zshrc
+```
+
+### Step 4: 쉘 재시작
+
+```bash
+source ~/.zshrc   # zsh 사용자
+# source ~/.bashrc  # bash 사용자 (Linux)
+# source ~/.bash_profile  # bash 사용자 (macOS)
+```
+
+### Step 5: API 토큰 설정
+
+```bash
+# Atlassian API 토큰 저장
+echo 'your-atlassian-api-token' > ~/.secrets/atlassian-api-token
+chmod 600 ~/.secrets/atlassian-api-token
+
+# (선택) GitLab API 토큰
+echo 'your-gitlab-token' > ~/.secrets/gitlab-api-token
+chmod 600 ~/.secrets/gitlab-api-token
+```
+
+### Step 6: 프로젝트에 설치
+
+```bash
+cd /path/to/your-project
+agent-context install
+```
+
+**출력 및 입력 예시:**
+```
+============================================================
+Agent-Context Installation
+============================================================
+
+Source:   /Users/you/.agent-context
+Target:   /path/to/your-project
+Profile:  full
+Force:    false
+
+[i] Installing core files...
+[V] Created: .cursorrules (with index map)
+[V] Installed: .agent/skills/
+[V] Installed: .agent/workflows/
+[V] Installed: .agent/docs/
+[V] Installed: .agent/tools/pm/
+[i] Configuring .project.yaml...
+
+[i] Configure your platform settings (press Enter to skip):
+
+  Jira URL [https://your-domain.atlassian.net]: https://mycompany.atlassian.net
+  Jira Project Key [e.g., PROJ]: DEMO
+  Atlassian Email [your-email@example.com]: developer@mycompany.com
+  GitLab URL (optional) [https://gitlab.example.com]: https://gitlab.mycompany.com
+  Confluence Space Key (optional) [e.g., DEV or ~user]: DEV
+  GitHub Repo (optional) [e.g., owner/repo]:
+
+[V] Created: .project.yaml (fully configured)
+[i]   Jira: https://mycompany.atlassian.net (DEMO)
+[i]   Email: developer@mycompany.com
+[i]   GitLab: https://gitlab.mycompany.com
+[i] Installing configuration files (full profile)...
+[V] Installed: .editorconfig
+[V] Installed: .pre-commit-config.yaml
+[V] Updated: .gitignore (agent-context entries appended)
+[V] Found global secrets: ~/.secrets
+[V]   - Atlassian API token found
+
+============================================================
+Installation Complete
+============================================================
+
+[V] Agent-context installed successfully!
+```
+
+### Step 7: 설정 확인
+
+```bash
+cat .project.yaml
+```
+
+**출력 예시:**
+```yaml
+roles:
+  vcs: gitlab
+  issue: jira
+  review: gitlab
+  docs: confluence
+
+platforms:
+  jira:
+    base_url: https://mycompany.atlassian.net
+    project_key: DEMO
+    email: developer@mycompany.com
+
+  confluence:
+    base_url: https://mycompany.atlassian.net/wiki
+    space_key: DEV
+
+  gitlab:
+    base_url: https://gitlab.mycompany.com
+
+branch:
+  feature_prefix: feat/
+  bugfix_prefix: fix/
+  hotfix_prefix: hotfix/
+```
+
+### Step 8: 연결 테스트
+
+```bash
+agent-context pm config show
+agent-context pm jira me
+```
+
+**출력 예시:**
+```
+[i] Configuration loaded from: .project.yaml
+[V] Jira: https://mycompany.atlassian.net (DEMO)
+[V] Email: developer@mycompany.com
+[V] Token: ~/.secrets/atlassian-api-token
+
+{
+  "displayName": "Developer Name",
+  "emailAddress": "developer@mycompany.com",
+  "accountId": "..."
+}
+```
+
+---
+
+### 주요 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `agent-context init` | 글로벌 환경 초기화 |
+| `agent-context install` | 현재 프로젝트에 설치 (대화형) |
+| `agent-context install --force` | 기존 파일 덮어쓰기 |
+| `agent-context install --profile minimal` | 최소 설치 (core만) |
+| `agent-context install --non-interactive` | 비대화형 설치 |
+| `agent-context pm <cmd>` | 프로젝트 PM CLI 실행 |
+
+### 비대화형 설치 (CI/스크립트용)
+
+```bash
+agent-context install --non-interactive --force \
+    --jira-url https://mycompany.atlassian.net \
+    --jira-project DEMO \
+    --jira-email developer@mycompany.com \
+    --gitlab-url https://gitlab.mycompany.com
+```
+
+상세 가이드: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+
+---
+
+## 개발자 빠른 시작
+
+agent-context 자체를 개발하거나 기여합니다.
+
+```bash
+# 1. 저장소 클론
 git clone https://github.com/your-org/agent-context.git
 cd agent-context
 
 # 2. 의존성 설치
 pip install pre-commit
-brew install gh glab jq yq
+brew install gh glab jq yq shellcheck shfmt
 
-# 3. 도구 설정
-gh auth login      # GitHub authentication
-glab auth login    # GitLab authentication
-
-# 4. pm CLI 설정 (JIRA/Confluence)
-export PATH="$PATH:$(pwd)/tools/pm/bin"
-pm config init     # Initialize project configuration
-
-# 5. pre-commit 훅 설정
+# 3. pre-commit 훅 설정
 pre-commit install
 
-# 6. 작업 시작
-git checkout -b feat/TASK-123
+# 4. 피처 브랜치에서 작업
+git checkout -b feat/my-feature
 # ... make changes ...
 pre-commit run --all-files
 git commit -m "feat: add new feature"
-git push origin feat/TASK-123
-gh pr create --title "TASK-123: description"
+
+# 5. 데모로 검증 (선택)
+./demo/install.sh --skip-e2e --only 6
 ```
+
+상세 가이드: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
+---
 
 ## 프로젝트 구조
 
 ```
 agent-context/
-|-- docs/                # 문서
-|   |-- ARCHITECTURE.md  # 설계 철학
-|   |-- convention/      # 코딩 컨벤션
-|   `-- rfc/             # 설계 제안(RFC)
-|-- skills/              # 범용 스킬 템플릿(Thin)
-|   |-- analyze.md       # 상황 이해
-|   |-- design.md        # 설계 접근
-|   |-- implement.md     # 구현
-|   |-- test.md          # 품질 검증
-|   `-- review.md        # 결과 확인
-|-- workflows/           # 컨텍스트 기반 워크플로(Thick)
-|   |-- solo/            # 개인 개발
-|   |   |-- feature.md
-|   |   |-- bugfix.md
-|   |   `-- hotfix.md
-|   |-- team/            # 팀 협업
-|   |   |-- sprint.md
-|   |   `-- release.md
-|   `-- project/         # 조직 레벨
-|       |-- quarter.md
-|       `-- roadmap.md
-|-- tools/               # CLI 도구
-|   `-- pm/              # JIRA/Confluence API
-`-- tests/               # 테스트
-    |-- skills/          # 스킬 검증 테스트
-    `-- workflows/       # 워크플로 통합 테스트
+├── docs/               # 문서
+│   ├── ARCHITECTURE.md # 설계 철학 (SSOT)
+│   ├── USER_GUIDE.md   # 사용자 가이드
+│   ├── CONTRIBUTING.md # 기여자 가이드
+│   └── convention/     # 코딩 컨벤션
+├── skills/             # 범용 스킬 템플릿 (Thin)
+├── workflows/          # 컨텍스트 기반 워크플로 (Thick)
+│   ├── solo/           # 개인 개발
+│   ├── team/           # 팀 협업
+│   └── project/        # 조직 레벨
+├── tools/pm/           # JIRA/Confluence CLI
+├── templates/          # 설치 시 복사되는 템플릿
+├── demo/               # 데모 및 E2E 테스트
+└── tests/              # 테스트
 ```
 
-## 핵심 개념
+## CLI 도구 요약
 
-핵심 개념(Thin Skill / Thick Workflow, Engineering Coordinate System, Context Injection Flow)은
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)에 단일 진실 소스로 정리되어 있습니다.
-개념 설명은 해당 문서를 기준으로 확인합니다.
-
-## 워크플로 공통 정책
-
-워크플로 공통 정책(Global Defaults: 브랜치/PR 규칙)은
-[workflows/README.md#global-defaults](workflows/README.md#global-defaults)에 있습니다.
-처음 시작할 때 반드시 확인합니다.
-
-## CLI 도구
-
-### Git Operations
-
-버전 관리는 표준 `git` 명령을 사용:
-
-```bash
-git checkout -b feat/TASK-123   # Create feature branch
-git add .                       # Stage changes
-git commit -m "feat: message"   # Commit changes
-git push origin feat/TASK-123   # Push to remote
-```
-
-### GitHub CLI (gh)
-
-```bash
-gh auth login                   # Authenticate
-gh pr create                    # Create pull request
-gh pr list                      # List pull requests
-gh pr view 123                  # View PR details
-gh pr merge 123                 # Merge PR
-```
-
-### GitLab CLI (glab)
-
-```bash
-glab auth login                 # Authenticate
-glab mr create                  # Create merge request
-glab mr list                    # List merge requests
-glab mr view 123                # View MR details
-glab mr merge 123               # Merge MR
-```
-
-### pm (JIRA/Confluence)
-
-```bash
-pm config init                  # Initialize configuration
-pm jira issue list              # List JIRA issues
-pm jira issue view TASK-123     # View issue details
-pm jira issue create "Title"    # Create new issue
-pm jira issue transition        # Change issue status
-pm confluence page list         # List Confluence pages
-```
+| 도구 | 용도 | 주요 명령 |
+|------|------|----------|
+| `git` | 버전 관리 | `checkout`, `commit`, `push` |
+| `gh` | GitHub | `pr create`, `pr merge` |
+| `glab` | GitLab | `mr create`, `mr merge` |
+| `pm` | JIRA/Confluence | `jira issue`, `confluence page` |
 
 ## 필수 도구
 
@@ -152,14 +322,14 @@ pm confluence page list         # List Confluence pages
 
 ## 문서
 
-| 문서 | 설명 |
-|----------|-------------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 |
-| [docs/convention/](docs/convention/) | 코딩 컨벤션 |
-| [docs/rfc/](docs/rfc/) | 설계 제안(RFC) |
-| [docs/reference/](docs/reference/) | 외부 레퍼런스와 인용 |
-| [skills/](skills/) | 범용 스킬 템플릿 |
-| [workflows/](workflows/) | 컨텍스트 기반 워크플로 |
+| 문서 | 설명 | 대상 |
+|------|------|------|
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | 설치 및 사용법 | 사용자 |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | 개발 및 기여 | 개발자 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 | 모두 |
+| [docs/convention/](docs/convention/) | 코딩 컨벤션 | 개발자 |
+| [workflows/README.md](workflows/README.md) | 워크플로 공통 정책 | 모두 |
+| [demo/README.md](demo/README.md) | 데모 가이드 | 개발자 |
 
 ## 라이선스
 

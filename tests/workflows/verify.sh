@@ -59,7 +59,7 @@ test_workflow() {
     local workflow_file="${WORKFLOWS_DIR}/${workflow_path}.md"
 
     if [[ ! -f "$workflow_file" ]]; then
-        echo -e "  ${RED}[NG]${NC} File not found: ${workflow_path}.md"
+        echo -e "  ${RED}[X]${NC} File not found: ${workflow_path}.md"
         return 1
     fi
 
@@ -84,10 +84,10 @@ test_workflow() {
     done
 
     if [[ -z "$missing" ]]; then
-        echo -e "  ${GREEN}[OK]${NC} ${workflow_path}: ${actual_skills}"
+        echo -e "  ${GREEN}[V]${NC} ${workflow_path}: ${actual_skills}"
         return 0
     else
-        echo -e "  ${RED}[NG]${NC} ${workflow_path}: missing${missing}"
+        echo -e "  ${RED}[X]${NC} ${workflow_path}: missing${missing}"
         return 1
     fi
 }

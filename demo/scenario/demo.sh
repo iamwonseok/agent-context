@@ -26,11 +26,9 @@ if [[ -f "${LIB_DIR}/gitlab_flow.sh" ]]; then
 fi
 
 # Configuration
-# RUN_ID: unique identifier for this demo run (used to distinguish test runs)
-DEMO_RUN_ID="${DEMO_RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 DEMO_REPO_NAME="${DEMO_REPO_NAME:-project-opentitan}"
-DEMO_EPIC_SUMMARY="${DEMO_EPIC_SUMMARY:-[${DEMO_RUN_ID}] project-opentitan bring-up}"
-DEMO_JIRA_PROJECT="${DEMO_JIRA_PROJECT:-SVI}"
+DEMO_EPIC_SUMMARY="${DEMO_EPIC_SUMMARY:-[${DEMO_REPO_NAME}] project-opentitan bring-up}"
+DEMO_JIRA_PROJECT="${DEMO_JIRA_PROJECT:-SVI4}"
 DEMO_JIRA_BASE_URL="${DEMO_JIRA_BASE_URL:-https://fadutec.atlassian.net}"
 DEMO_CONFLUENCE_BASE_URL="${DEMO_CONFLUENCE_BASE_URL:-https://fadutec.atlassian.net/wiki}"
 DEMO_GITLAB_BASE_URL="${DEMO_GITLAB_BASE_URL:-https://gitlab.fadutec.dev}"
@@ -64,19 +62,19 @@ fi
 
 # Logging functions (all output to stderr to avoid polluting stdout return values)
 log_info() {
-	echo -e "${BLUE}[>>]${NC} $1" >&2
+	echo -e "${BLUE}[i]${NC} $1" >&2
 }
 
 log_ok() {
-	echo -e "${GREEN}[OK]${NC} $1" >&2
+	echo -e "${GREEN}[V]${NC} $1" >&2
 }
 
 log_warn() {
-	echo -e "${YELLOW}[!!]${NC} $1" >&2
+	echo -e "${YELLOW}[!]${NC} $1" >&2
 }
 
 log_error() {
-	echo -e "${RED}[NG]${NC} $1" >&2
+	echo -e "${RED}[X]${NC} $1" >&2
 }
 
 log_phase() {
@@ -85,6 +83,39 @@ log_phase() {
 	echo -e "${BLUE}$1${NC}"
 	echo "============================================================"
 	echo ""
+}
+
+# Verify command execution + [V]/[X] output
+# Usage: verify_cmd "description" command args...
+# On failure: prints [X] and exits immediately
+verify_cmd() {
+	local desc="$1"
+	shift
+	echo -n "<verify> ${desc} ... " >&2
+	if "$@" >/dev/null 2>&1; then
+		echo "[V]" >&2
+		return 0
+	else
+		echo "[X]" >&2
+		log_error "Verification failed: ${desc}"
+		exit 1
+	fi
+}
+
+# Verify with custom check command (for cases where check differs from action)
+# Usage: verify_check "description" check_command check_args...
+verify_check() {
+	local desc="$1"
+	shift
+	echo -n "<verify> ${desc} ... " >&2
+	if "$@" >/dev/null 2>&1; then
+		echo "[V]" >&2
+		return 0
+	else
+		echo "[X]" >&2
+		log_error "Verification failed: ${desc}"
+		exit 1
+	fi
 }
 
 build_epic_description() {
@@ -306,10 +337,14 @@ sample_prepare() {
 }
 
 sample_results() {
-	local run_id="${1:-${DEMO_RUN_ID}}"
+	local run_id="${1:-${DEMO_REPO_NAME}}"
 	local sample_root="${SCRIPT_DIR}/sample/opentitan"
 	local results_root="${sample_root}/results"
-	local run_export_dir="${SCRIPT_DIR}/export/runs/${run_id}"
+	local export_root="${SCRIPT_DIR}/export"
+	if [[ -n "${DEMO_OUTPUT_DIR:-}" ]]; then
+		export_root="${DEMO_OUTPUT_DIR}/export"
+	fi
+	local run_export_dir="${export_root}/runs/${run_id}"
 	local jira_export_dir="${run_export_dir}/jira"
 	local index_file="${jira_export_dir}/index.md"
 
@@ -326,7 +361,7 @@ sample_results() {
 	local issue_keys=()
 	while IFS= read -r line; do
 		local key
-		key=$(echo "${line}" | grep -oE '[A-Z]+-[0-9]+' | head -1 || true)
+		key=$(echo "${line}" | grep -oE '[A-Z0-9]+-[0-9]+' | head -1 || true)
 		if [[ -n "${key}" ]]; then
 			issue_keys+=("${key}")
 		fi
@@ -446,15 +481,15 @@ sample_compare() {
 
 	local failed=false
 	if [[ "${results_jira_count}" -ne "${prepare_jira_count}" ]]; then
-		log_warn "[NG] Jira file count mismatch: prepare=${prepare_jira_count}, results=${results_jira_count}"
+		log_warn "[X] Jira file count mismatch: prepare=${prepare_jira_count}, results=${results_jira_count}"
 		failed=true
 	fi
 	if [[ "${results_gitlab_md_count}" -ne "${prepare_gitlab_md_count}" ]]; then
-		log_warn "[NG] GitLab md count mismatch: prepare=${prepare_gitlab_md_count}, results=${results_gitlab_md_count}"
+		log_warn "[X] GitLab md count mismatch: prepare=${prepare_gitlab_md_count}, results=${results_gitlab_md_count}"
 		failed=true
 	fi
 	if [[ "${results_gitlab_c_count}" -ne "${prepare_gitlab_c_count}" ]]; then
-		log_warn "[NG] GitLab c count mismatch: prepare=${prepare_gitlab_c_count}, results=${results_gitlab_c_count}"
+		log_warn "[X] GitLab c count mismatch: prepare=${prepare_gitlab_c_count}, results=${results_gitlab_c_count}"
 		failed=true
 	fi
 
@@ -609,6 +644,125 @@ jira_ws_api() {
 	fi
 }
 
+# Cleanup existing demo Confluence pages
+confluence_cleanup_demo_pages() {
+	if [[ "${DRY_RUN}" == "true" ]]; then
+		log_info "[DRY-RUN] Would delete demo Confluence pages"
+		return 0
+	fi
+
+	if [[ -z "${DEMO_CONFLUENCE_SPACE}" ]]; then
+		log_info "Skipping Confluence cleanup (space not configured)"
+		return 0
+	fi
+
+	: "${RECREATE_PAGES:=true}"
+	if [[ "${RECREATE_PAGES}" != "true" ]]; then
+		log_info "Skipping Confluence page cleanup (RECREATE_PAGES=false)"
+		return 0
+	fi
+
+	log_info "Cleaning up existing demo Confluence pages (pattern: demo-agent-context-install)..."
+
+	# Load auth
+	if ! jira_ws_load_auth; then
+		log_warn "Skipping Confluence cleanup (auth not configured)"
+		return 0
+	fi
+
+	# Search for pages with demo pattern
+	local search_resp
+	local encoded_space="${DEMO_CONFLUENCE_SPACE/\~/%7E}"
+	search_resp=$(curl -s -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+		"${DEMO_CONFLUENCE_BASE_URL}/rest/api/content?spaceKey=${encoded_space}&limit=100" 2>/dev/null || echo "{}")
+
+	local page_ids
+	page_ids=$(echo "${search_resp}" | jq -r '.results[] | select(.title | contains("demo-agent-context-install")) | .id' 2>/dev/null || echo "")
+
+	if [[ -z "${page_ids}" ]]; then
+		log_info "No existing demo Confluence pages found"
+		return 0
+	fi
+
+	local count=0
+	while IFS= read -r page_id; do
+		[[ -z "${page_id}" ]] && continue
+		local page_title
+		page_title=$(echo "${search_resp}" | jq -r ".results[] | select(.id == \"${page_id}\") | .title" 2>/dev/null || echo "unknown")
+		log_warn "Deleting page: ${page_title} (id: ${page_id})"
+
+		# Delete page (moves to trash)
+		if curl -s -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+			-X DELETE "${DEMO_CONFLUENCE_BASE_URL}/rest/api/content/${page_id}" 2>/dev/null; then
+			# Permanently delete from trash
+			curl -s -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+				-X DELETE "${DEMO_CONFLUENCE_BASE_URL}/rest/api/content/${page_id}?status=trashed" 2>/dev/null || true
+			log_ok "Deleted: ${page_title}"
+			((count++))
+		else
+			log_warn "Could not delete: ${page_title}"
+		fi
+	done <<< "${page_ids}"
+
+	log_ok "Deleted ${count} demo Confluence pages"
+	return 0
+}
+
+# Cleanup existing demo Jira issues
+jira_cleanup_demo_issues() {
+	if [[ "${DRY_RUN}" == "true" ]]; then
+		log_info "[DRY-RUN] Would delete demo Jira issues"
+		return 0
+	fi
+
+	if ! jira_ws_load_auth; then
+		log_warn "Skipping issue cleanup (Jira not configured)"
+		return 0
+	fi
+
+	: "${RECREATE_ISSUES:=true}"
+	if [[ "${RECREATE_ISSUES}" != "true" ]]; then
+		log_info "Skipping Jira issue cleanup (RECREATE_ISSUES=false)"
+		return 0
+	fi
+
+	log_info "Cleaning up existing demo Jira issues (pattern: demo-agent-context-install)..."
+
+	# Search for issues with demo pattern in summary
+	local jql="project = ${JIRA_PROJECT_KEY} AND summary ~ \"demo-agent-context-install\" ORDER BY created DESC"
+	local encoded_jql
+	encoded_jql=$(url_encode "${jql}")
+
+	local search_resp
+	search_resp=$(jira_ws_api GET "/rest/api/3/search?jql=${encoded_jql}&maxResults=100&fields=key,summary" || echo "")
+
+	local issue_keys
+	issue_keys=$(echo "${search_resp}" | jq -r '.issues[].key' 2>/dev/null || echo "")
+
+	if [[ -z "${issue_keys}" ]]; then
+		log_info "No existing demo issues found"
+		return 0
+	fi
+
+	local count=0
+	while IFS= read -r issue_key; do
+		[[ -z "${issue_key}" ]] && continue
+		local summary
+		summary=$(echo "${search_resp}" | jq -r ".issues[] | select(.key == \"${issue_key}\") | .fields.summary" 2>/dev/null || echo "")
+		log_warn "Deleting issue: ${issue_key} - ${summary:0:50}..."
+
+		if jira_ws_api DELETE "/rest/api/3/issue/${issue_key}" 2>/dev/null; then
+			log_ok "Deleted: ${issue_key}"
+			((count++))
+		else
+			log_warn "Could not delete: ${issue_key}"
+		fi
+	done <<< "${issue_keys}"
+
+	log_ok "Deleted ${count} demo issues"
+	return 0
+}
+
 jira_create_board_best_effort() {
 	log_info "Ensuring Jira board exists for project ${DEMO_JIRA_PROJECT} (${DEMO_BOARD_TYPE})..."
 
@@ -622,25 +776,59 @@ jira_create_board_best_effort() {
 		return 0
 	fi
 
-	local board_name="[${DEMO_RUN_ID}] project-opentitan board"
-	local encoded_name
-	encoded_name=$(url_encode "${board_name}")
+	local board_name="${DEMO_REPO_NAME} board"
 
-	local list_resp
-	list_resp=$(jira_ws_api GET "/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}&name=${encoded_name}" || echo "")
+	# Delete existing board with EXACT same name if RECREATE_BOARD=true (default: true for clean test)
+	# NOTE: Only delete the exact board name to avoid race conditions in parallel runs
+	: "${RECREATE_BOARD:=true}"
+	if [[ "${RECREATE_BOARD}" == "true" ]]; then
+		log_info "Cleaning up existing board: ${board_name}..."
 
-	local existing_id
-	existing_id=$(echo "${list_resp}" | jq -r '.values[0].id // empty' 2>/dev/null || echo "")
+		# List all boards in project and find exact match
+		local all_boards
+		all_boards=$(jira_ws_api GET "/rest/agile/1.0/board?projectKeyOrId=${JIRA_PROJECT_KEY}&maxResults=100" || echo "")
 
-	if [[ -n "${existing_id}" ]]; then
-		log_ok "Jira board already exists: ${board_name} (id: ${existing_id})"
-		DEMO_JIRA_BOARD_ID="${existing_id}"
-		return 0
+		# Find and delete only the board with exact name match
+		local board_ids
+		board_ids=$(echo "${all_boards}" | jq -r --arg name "${board_name}" '.values[] | select(.name == $name) | .id' 2>/dev/null || echo "")
+
+		if [[ -n "${board_ids}" ]]; then
+			while IFS= read -r bid; do
+				[[ -z "${bid}" ]] && continue
+				local bname
+				bname=$(echo "${all_boards}" | jq -r ".values[] | select(.id == ${bid}) | .name" 2>/dev/null || echo "unknown")
+				log_warn "Found existing board: ${bname} (id: ${bid})"
+
+				# Get the filter ID from the board before deleting
+				local board_config
+				board_config=$(jira_ws_api GET "/rest/agile/1.0/board/${bid}/configuration" || echo "")
+				local filter_id
+				filter_id=$(echo "${board_config}" | jq -r '.filter.id // empty' 2>/dev/null || echo "")
+
+				# Delete the board
+				if jira_ws_api DELETE "/rest/agile/1.0/board/${bid}" 2>/dev/null; then
+					log_ok "Deleted board: ${bid}"
+				else
+					log_warn "Could not delete board ${bid}"
+				fi
+
+				# Delete the associated filter
+				if [[ -n "${filter_id}" ]]; then
+					if jira_ws_api DELETE "/rest/api/3/filter/${filter_id}" 2>/dev/null; then
+						log_ok "Deleted filter: ${filter_id}"
+					else
+						log_warn "Could not delete filter ${filter_id}"
+					fi
+				fi
+			done <<< "${board_ids}"
+		else
+			log_info "No existing board found with name: ${board_name}"
+		fi
 	fi
 
 	# Create filter first (required by Jira Agile board create API)
-	local filter_name="[${DEMO_RUN_ID}] project-opentitan board filter"
-	local filter_jql="project = ${JIRA_PROJECT_KEY} AND summary ~ \"${DEMO_RUN_ID}\" ORDER BY Rank ASC"
+	local filter_name="${DEMO_REPO_NAME} board filter"
+	local filter_jql="project = ${JIRA_PROJECT_KEY} AND summary ~ \"${DEMO_REPO_NAME}\" ORDER BY Rank ASC"
 	local filter_payload
 	filter_payload=$(jq -n \
 		--arg name "${filter_name}" \
@@ -654,9 +842,9 @@ jira_create_board_best_effort() {
 	filter_id=$(echo "${filter_resp}" | jq -r '.id // empty' 2>/dev/null || echo "")
 
 	if [[ -z "${filter_id}" ]]; then
-		log_warn "Failed to create Jira filter (skipping board creation)"
+		log_error "Failed to create Jira filter"
 		echo "${filter_resp}" >&2
-		return 0
+		return 1
 	fi
 
 	local board_payload
@@ -674,14 +862,31 @@ jira_create_board_best_effort() {
 	board_id=$(echo "${board_resp}" | jq -r '.id // empty' 2>/dev/null || echo "")
 
 	if [[ -z "${board_id}" ]]; then
-		log_warn "Failed to create Jira board"
+		log_error "Failed to create Jira board"
 		echo "${board_resp}" >&2
-		return 0
+		return 1
 	fi
 
 	DEMO_JIRA_BOARD_ID="${board_id}"
 	log_ok "Created Jira board: ${board_name} (id: ${board_id})"
-	return 0
+
+	# Verify board exists (with retry for eventual consistency)
+	echo -n "<verify> Jira board ${board_id} exists ... " >&2
+	local verify_resp
+	local verify_attempts=0
+	local max_verify_attempts=3
+	while [[ ${verify_attempts} -lt ${max_verify_attempts} ]]; do
+		((verify_attempts++)) || true
+		sleep 1  # Give Jira time to propagate
+		if verify_resp=$(jira_ws_api GET "/rest/agile/1.0/board/${board_id}" 2>/dev/null) && \
+		   echo "${verify_resp}" | jq -e '.id' >/dev/null 2>&1; then
+			echo "[V]" >&2
+			return 0
+		fi
+	done
+	echo "[X]" >&2
+	log_error "Board verification failed: ${board_id} not found after ${max_verify_attempts} attempts"
+	return 1
 }
 
 # Show usage
@@ -858,12 +1063,71 @@ setup_gitlab_repo() {
 		repo_path="${DEMO_REPO_NAME}"
 	fi
 
-	repo_info=$(glab repo view "${repo_path}" --output json 2>/dev/null || true)
+	# Delete existing demo repos if RECREATE_REPO=true (default: true for clean test)
+	# Pattern: match repos starting with "demo-agent-context-install" regardless of RUN_ID
+	: "${RECREATE_REPO:=true}"
+	if [[ "${RECREATE_REPO}" == "true" ]] && [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
+		log_info "Cleaning up existing demo repos (pattern: demo-agent-context-install*)..."
 
-	if echo "${repo_info}" | jq -e '.id' >/dev/null 2>&1; then
-		clone_url=$(echo "${repo_info}" | jq -r '.ssh_url_to_repo // .http_url_to_repo')
-		log_ok "Using existing repository: ${repo_path}"
-	else
+		# Get group ID first
+		local group_ref="${DEMO_GITLAB_GROUP//\//%2F}"
+		local group_info
+		group_info=$(glab api "groups/${group_ref}" 2>/dev/null || echo "")
+		local group_id
+		group_id=$(echo "${group_info}" | jq -r '.id // empty' 2>/dev/null || echo "")
+
+		if [[ -n "${group_id}" ]]; then
+			# List projects in group matching demo pattern
+			local projects
+			projects=$(glab api "groups/${group_id}/projects?search=demo-agent-context-install&per_page=100" 2>/dev/null || echo "[]")
+
+			# Delete each matching project
+			local proj_ids
+			proj_ids=$(echo "${projects}" | jq -r '.[].id' 2>/dev/null || echo "")
+
+			if [[ -n "${proj_ids}" ]]; then
+				while IFS= read -r pid; do
+					[[ -z "${pid}" ]] && continue
+					local pname
+					pname=$(echo "${projects}" | jq -r ".[] | select(.id == ${pid}) | .path_with_namespace" 2>/dev/null || echo "unknown")
+					log_warn "Found demo repo: ${pname} (id: ${pid})"
+					# Use permanently_remove=true to bypass pending deletion state (no redirect)
+					if glab api "projects/${pid}" -X DELETE -f "permanently_remove=true" 2>/dev/null; then
+						log_ok "Permanently deleted repo: ${pname}"
+					else
+						log_warn "Could not delete repo ${pname}"
+					fi
+				done <<< "${proj_ids}"
+				# Brief wait for API consistency
+				sleep 2
+			else
+				log_info "No existing demo repos found"
+			fi
+		fi
+	fi
+
+	# Now check/create the specific repo for this run
+	if [[ "${repo_path}" == */* ]]; then
+		local repo_ref="${repo_path//\//%2F}"
+		if repo_info=$(glab api "projects/${repo_ref}" 2>/dev/null); then
+			# Check if repo is scheduled for deletion
+			local marked_for_deletion
+			marked_for_deletion=$(echo "${repo_info}" | jq -r '.marked_for_deletion_on // empty')
+			if [[ -n "${marked_for_deletion}" ]] && [[ "${marked_for_deletion}" != "null" ]]; then
+				log_error "Repository ${repo_path} is scheduled for deletion (${marked_for_deletion})"
+				log_error "Cannot use a repo pending deletion. Please wait for deletion to complete or use a different name."
+				return 1
+			fi
+			clone_url=$(echo "${repo_info}" | jq -r '.ssh_url_to_repo // .sshUrlToRepo // .http_url_to_repo // .httpUrlToRepo // empty' 2>/dev/null || echo "")
+			GITLAB_PROJECT_ID=$(echo "${repo_info}" | jq -r '.id')
+			export GITLAB_PROJECT_ID
+			log_ok "Using existing repository: ${repo_path} (id: ${GITLAB_PROJECT_ID})"
+		else
+			repo_info=""
+		fi
+	fi
+
+	if [[ -z "${repo_info}" ]]; then
 		# Use GitLab API directly when group is specified (glab repo create --group has issues)
 		if [[ -n "${DEMO_GITLAB_GROUP}" ]]; then
 			local group_ref="${DEMO_GITLAB_GROUP//\//%2F}"
@@ -885,9 +1149,30 @@ setup_gitlab_repo() {
 				2>&1)
 
 			if echo "${result}" | jq -e '.id' >/dev/null 2>&1; then
-				clone_url=$(echo "${result}" | jq -r '.ssh_url_to_repo // .http_url_to_repo')
+				clone_url=$(echo "${result}" | jq -r '.ssh_url_to_repo // .sshUrlToRepo // .http_url_to_repo // .httpUrlToRepo // empty' 2>/dev/null || echo "")
 				CREATED_GITLAB_REPO="${repo_path}"
-				log_ok "Repository created: ${repo_path}"
+				# Store project ID for subsequent API calls (avoids redirect issues)
+				GITLAB_PROJECT_ID=$(echo "${result}" | jq -r '.id')
+				export GITLAB_PROJECT_ID
+				log_ok "Repository created: ${repo_path} (id: ${GITLAB_PROJECT_ID})"
+
+				# Verify repository exists and is not scheduled for deletion
+				echo -n "<verify> GitLab project ${GITLAB_PROJECT_ID} exists ... " >&2
+				local verify_resp
+				if verify_resp=$(glab api "projects/${GITLAB_PROJECT_ID}" 2>/dev/null); then
+					local marked_for_deletion
+					marked_for_deletion=$(echo "${verify_resp}" | jq -r '.marked_for_deletion_on // empty')
+					if [[ -n "${marked_for_deletion}" ]] && [[ "${marked_for_deletion}" != "null" ]]; then
+						echo "[X]" >&2
+						log_error "Repository is scheduled for deletion: ${marked_for_deletion}"
+						return 1
+					fi
+					echo "[V]" >&2
+				else
+					echo "[X]" >&2
+					log_error "Repository verification failed: ${GITLAB_PROJECT_ID} not found"
+					return 1
+				fi
 			else
 				log_error "Failed to create repository via API"
 				echo "${result}" >&2
@@ -909,13 +1194,17 @@ setup_gitlab_repo() {
 
 	# Get clone URL if not already set
 	if [[ -z "${clone_url}" ]]; then
-		clone_url=$(glab repo view "${repo_path}" --output json 2>/dev/null | jq -r '.ssh_url_to_repo // .http_url_to_repo' || echo "")
+		if [[ "${repo_path}" == */* ]]; then
+			local repo_ref="${repo_path//\//%2F}"
+			clone_url=$(glab api "projects/${repo_ref}" 2>/dev/null | \
+				jq -r '.ssh_url_to_repo // .sshUrlToRepo // .http_url_to_repo // .httpUrlToRepo // empty' 2>/dev/null || echo "")
+		fi
 	fi
 
 	DEMO_WORKSPACE="/tmp/${DEMO_REPO_NAME}"
 	rm -rf "${DEMO_WORKSPACE}" 2>/dev/null || true
 
-	if [[ -n "${clone_url}" ]]; then
+	if [[ -n "${clone_url}" ]] && [[ "${clone_url}" != "null" ]]; then
 		log_info "Cloning repository..."
 		if git clone "${clone_url}" "${DEMO_WORKSPACE}" 2>&1; then
 			log_ok "Cloned to: ${DEMO_WORKSPACE}"
@@ -943,7 +1232,7 @@ setup_project_config() {
 
 	# Determine workspace directory
 	if [[ -z "${DEMO_WORKSPACE}" ]]; then
-		DEMO_WORKSPACE="/tmp/demo-${DEMO_RUN_ID}"
+		DEMO_WORKSPACE="/tmp/demo-${DEMO_REPO_NAME}"
 		rm -rf "${DEMO_WORKSPACE}" 2>/dev/null || true
 		mkdir -p "${DEMO_WORKSPACE}"
 		log_info "Created demo workspace: ${DEMO_WORKSPACE}"
@@ -1027,10 +1316,10 @@ phase_project() {
 	local epic_description
 	epic_description=$(build_epic_description)
 	epic_result=$(pm_ws jira issue create "${DEMO_EPIC_SUMMARY}" --type Epic \
-		--description "${epic_description}")
+		--description "${epic_description}" 2>&1)
 
 	local epic_key
-	epic_key=$(echo "${epic_result}" | grep -oE '[A-Z]+-[0-9]+' | head -1)
+	epic_key=$(echo "${epic_result}" | grep -oE '[A-Z0-9]+-[0-9]+' | head -1)
 
 	if [[ -z "${epic_key}" ]]; then
 		log_error "Failed to create Epic"
@@ -1041,6 +1330,9 @@ phase_project() {
 	CREATED_JIRA_ISSUES+=("${epic_key}")
 	log_ok "Created Epic: ${epic_key}"
 
+	# Verify Epic was created
+	verify_check "Jira issue ${epic_key} exists" pm_ws jira issue view "${epic_key}"
+
 	# Create child tasks
 	log_info "Creating child tasks..."
 
@@ -1050,9 +1342,9 @@ phase_project() {
 		"fw"
 	)
 	local task_summaries=(
-		"[${DEMO_RUN_ID}] Repo bootstrap and project charter"
-		"[${DEMO_RUN_ID}] HW bring-up plan (pinmux/clock/reset)"
-		"[${DEMO_RUN_ID}] FW bring-up stub (UART hello)"
+		"[${DEMO_REPO_NAME}] Repo bootstrap and project charter"
+		"[${DEMO_REPO_NAME}] HW bring-up plan (pinmux/clock/reset)"
+		"[${DEMO_REPO_NAME}] FW bring-up stub (UART hello)"
 	)
 
 	for i in "${!task_ids[@]}"; do
@@ -1069,8 +1361,11 @@ phase_project() {
 		if [[ -n "${task_key}" ]]; then
 			CREATED_JIRA_ISSUES+=("${task_key}")
 			log_ok "Created Task: ${task_key} - ${task_summary}"
+			# Verify task was created
+			verify_check "Jira issue ${task_key} exists" pm_ws jira issue view "${task_key}"
 		else
-			log_warn "Failed to create task with epic link: ${task_summary}"
+			log_error "Failed to create task: ${task_summary}"
+			return 1
 		fi
 	done
 
@@ -1080,9 +1375,9 @@ phase_project() {
 
 		local repo_url="${DEMO_GITLAB_BASE_URL}/${DEMO_GITLAB_GROUP}/${DEMO_REPO_NAME}"
 		local epic_url="${DEMO_JIRA_BASE_URL}/browse/${epic_key}"
-		local charter_title="[${DEMO_RUN_ID}] Project Charter - project-opentitan"
+		local charter_title="[${DEMO_REPO_NAME}] Project Charter - project-opentitan"
 		local page_content="<h1>Project Charter</h1>"
-		page_content+="<p>Run ID: ${DEMO_RUN_ID}</p>"
+		page_content+="<p>Run ID: ${DEMO_REPO_NAME}</p>"
 		page_content+="<p>Repository: <a href=\"${repo_url}\">${repo_url}</a></p>"
 		page_content+="<h2>Scope</h2><ul>"
 		page_content+="<li>Reference project: project-opentitan</li>"
@@ -1161,7 +1456,7 @@ phase_gitlab_flow() {
 	if [[ "${DRY_RUN}" == "true" ]]; then
 		log_info "[DRY-RUN] Would run GitLab flow for ${demo_task}"
 		log_info "[DRY-RUN] - Create GitLab issue"
-		log_info "[DRY-RUN] - Create branch feat/${demo_task}-${DEMO_RUN_ID}-*"
+		log_info "[DRY-RUN] - Create branch feat/${demo_task}-${DEMO_REPO_NAME}-*"
 		log_info "[DRY-RUN] - Commit worklog file"
 		log_info "[DRY-RUN] - Create and merge MR"
 		return 0
@@ -1170,7 +1465,7 @@ phase_gitlab_flow() {
 	log_info "Running GitLab flow for task: ${demo_task}"
 	log_info "Summary: ${task_summary}"
 
-	# Run full GitLab flow
+	# Run full GitLab flow (required for E2E)
 	if gitlab_full_flow "${demo_task}" "${task_summary}" "feat" "${HITL_ENABLED}"; then
 		log_ok "GitLab flow completed for ${demo_task}"
 
@@ -1183,8 +1478,8 @@ phase_gitlab_flow() {
 		pm_ws jira issue transition "${demo_task}" "Done" || true
 		log_ok "${demo_task} marked as Done"
 	else
-		log_warn "GitLab flow incomplete for ${demo_task}"
-		log_info "Task will remain in current state until MR is merged"
+		log_error "GitLab flow failed for ${demo_task}"
+		return 1
 	fi
 
 	# Human-in-the-Loop pause point
@@ -1233,15 +1528,15 @@ phase_team_solo() {
 
 		# Create hotfix ticket
 		local hotfix_result
-		local hotfix_summary="[${DEMO_RUN_ID}][HOTFIX] UART clock mismatch blocks bring-up"
+		local hotfix_summary="[${DEMO_REPO_NAME}][HOTFIX] UART clock mismatch blocks bring-up"
 		local hotfix_description
 		hotfix_description=$(build_hotfix_description)
 		hotfix_result=$(pm_ws jira issue create "${hotfix_summary}" \
 			--type Task \
-			--description "${hotfix_description}")
+			--description "${hotfix_description}" 2>&1)
 
 		local hotfix_key
-		hotfix_key=$(echo "${hotfix_result}" | grep -oE '[A-Z]+-[0-9]+' | head -1)
+		hotfix_key=$(echo "${hotfix_result}" | grep -oE '[A-Z0-9]+-[0-9]+' | head -1)
 
 		if [[ -z "${hotfix_key}" ]]; then
 			log_error "Failed to create hotfix ticket"
@@ -1257,7 +1552,7 @@ phase_team_solo() {
 		# Handle hotfix using library function
 		(cd "${DEMO_WORKSPACE}" && jira_handle_hotfix "${current_task}" "${hotfix_key}")
 
-		# GitLab MR Gate: Hotfix must go through MR before Done
+		# GitLab MR Gate: Hotfix must go through MR before Done (required for E2E)
 		local hotfix_mr_merged=false
 		if [[ "${SKIP_GITLAB}" != "true" ]] && [[ -n "${DEMO_WORKSPACE}" ]]; then
 			log_info "Running GitLab flow for hotfix ${hotfix_key}..."
@@ -1267,7 +1562,8 @@ phase_team_solo() {
 				HOTFIX_MR_URL="${GITLAB_LAST_MR_URL:-}"
 				log_ok "Hotfix MR merged: ${HOTFIX_MR_URL}"
 			else
-				log_warn "Hotfix MR not merged - Jira Done transition blocked"
+				log_error "Hotfix GitLab flow failed for ${hotfix_key}"
+				return 1
 			fi
 		else
 			# Skip GitLab, allow transition
@@ -1304,15 +1600,15 @@ phase_team_solo() {
 
 		# Create hotfix ticket
 		local hotfix_result
-		local hotfix_summary="[${DEMO_RUN_ID}][HOTFIX] UART clock mismatch blocks bring-up"
+		local hotfix_summary="[${DEMO_REPO_NAME}][HOTFIX] UART clock mismatch blocks bring-up"
 		local hotfix_description
 		hotfix_description=$(build_hotfix_description)
 		hotfix_result=$(pm_ws jira issue create "${hotfix_summary}" \
 			--type Task \
-			--description "${hotfix_description}")
+			--description "${hotfix_description}" 2>&1)
 
 		local hotfix_key
-		hotfix_key=$(echo "${hotfix_result}" | grep -oE '[A-Z]+-[0-9]+' | head -1)
+		hotfix_key=$(echo "${hotfix_result}" | grep -oE '[A-Z0-9]+-[0-9]+' | head -1)
 
 		if [[ -z "${hotfix_key}" ]]; then
 			log_error "Failed to create hotfix ticket"
@@ -1339,7 +1635,7 @@ phase_team_solo() {
 		log_info "Starting hotfix work on ${hotfix_key}..."
 		pm_ws jira issue transition "${hotfix_key}" "In Progress" || true
 
-		# GitLab MR Gate: Hotfix must go through MR before Done
+		# GitLab MR Gate: Hotfix must go through MR before Done (required for E2E)
 		local hotfix_mr_merged=false
 		if [[ "${SKIP_GITLAB}" != "true" ]] && [[ -n "${DEMO_WORKSPACE}" ]]; then
 			log_info "Running GitLab flow for hotfix ${hotfix_key}..."
@@ -1349,7 +1645,8 @@ phase_team_solo() {
 				HOTFIX_MR_URL="${GITLAB_LAST_MR_URL:-}"
 				log_ok "Hotfix MR merged: ${HOTFIX_MR_URL}"
 			else
-				log_warn "Hotfix MR not merged - Jira Done transition blocked"
+				log_error "Hotfix GitLab flow failed for ${hotfix_key}"
+				return 1
 			fi
 		else
 			# Skip GitLab, allow transition
@@ -1412,7 +1709,7 @@ phase_dev_initiative() {
 	log_info "Current user: ${current_user_email}"
 
 	# Create developer initiative task
-	local dev_summary="[${DEMO_RUN_ID}] Developer Initiative: Automate bring-up checklist"
+	local dev_summary="[${DEMO_REPO_NAME}] Developer Initiative: Automate bring-up checklist"
 	local dev_description
 	dev_description=$(build_dev_initiative_description)
 
@@ -1421,10 +1718,10 @@ phase_dev_initiative() {
 	local task_result
 	task_result=$(pm_ws jira issue create "${dev_summary}" \
 		--type Task \
-		--description "${dev_description}")
+		--description "${dev_description}" 2>&1)
 
 	local dev_task_key
-	dev_task_key=$(echo "${task_result}" | grep -oE '[A-Z]+-[0-9]+' | head -1)
+	dev_task_key=$(echo "${task_result}" | grep -oE '[A-Z0-9]+-[0-9]+' | head -1)
 
 	if [[ -z "${dev_task_key}" ]]; then
 		log_error "Failed to create developer initiative task"
@@ -1443,7 +1740,7 @@ phase_dev_initiative() {
 	log_info "Starting work on ${dev_task_key}..."
 	pm_ws jira issue transition "${dev_task_key}" "In Progress" || true
 
-	# Run GitLab flow
+	# Run GitLab flow (required for E2E)
 	local dev_mr_merged=false
 	if [[ "${SKIP_GITLAB}" != "true" ]] && [[ -n "${DEMO_WORKSPACE}" ]]; then
 		log_info "Running GitLab flow for developer initiative..."
@@ -1453,7 +1750,8 @@ phase_dev_initiative() {
 			DEV_INITIATIVE_MR_URL="${GITLAB_LAST_MR_URL:-}"
 			log_ok "Developer initiative MR merged: ${DEV_INITIATIVE_MR_URL}"
 		else
-			log_warn "Developer initiative MR not merged"
+			log_error "Developer initiative GitLab flow failed for ${dev_task_key}"
+			return 1
 		fi
 	else
 		dev_mr_merged=true
@@ -1509,7 +1807,10 @@ phase_reporting() {
 	log_info "Exporting Jira issues..."
 
 	local export_root="${SCRIPT_DIR}/export"
-	local run_export_dir="${export_root}/runs/${DEMO_RUN_ID}"
+	if [[ -n "${DEMO_OUTPUT_DIR:-}" ]]; then
+		export_root="${DEMO_OUTPUT_DIR}/export"
+	fi
+	local run_export_dir="${export_root}/runs/${DEMO_REPO_NAME}"
 	local latest_dir="${export_root}/latest"
 	mkdir -p "${run_export_dir}"
 
@@ -1574,7 +1875,7 @@ phase_reporting() {
 	cat > "${report_file}" <<EOF
 # AITL Demo Report
 
-Run ID: ${DEMO_RUN_ID}
+Run ID: ${DEMO_REPO_NAME}
 Generated: ${demo_end_time}
 
 ## Executive Summary
@@ -1697,7 +1998,7 @@ $(if [[ "${SKIP_GITLAB}" != "true" ]]; then echo "- Completed full GitLab flow w
 
 | Setting | Value |
 |---------|-------|
-| Run ID | ${DEMO_RUN_ID} |
+| Run ID | ${DEMO_REPO_NAME} |
 | Jira Project | ${DEMO_JIRA_PROJECT} |
 | Confluence Space | ${DEMO_CONFLUENCE_SPACE:-N/A} |
 | GitLab Group | ${DEMO_GITLAB_GROUP:-N/A} |
@@ -1730,7 +2031,7 @@ EOF
 	cat > "${dashboard_file}" <<EOF
 # AITL Demo Dashboard
 
-> Quick overview of demo results - Run ID: ${DEMO_RUN_ID}
+> Quick overview of demo results - Run ID: ${DEMO_REPO_NAME}
 
 ## Status: COMPLETED
 
@@ -1766,9 +2067,9 @@ EOF
 	if [[ -n "${DEMO_CONFLUENCE_SPACE}" ]]; then
 		log_info "Creating Confluence Run Report page..."
 
-		local report_title="[${DEMO_RUN_ID}] Run Report - project-opentitan"
+		local report_title="[${DEMO_REPO_NAME}] Run Report - project-opentitan"
 		local report_content="<h1>Run Report</h1>"
-		report_content+="<p>Run ID: ${DEMO_RUN_ID}</p>"
+		report_content+="<p>Run ID: ${DEMO_REPO_NAME}</p>"
 		report_content+="<p>Generated: ${demo_end_time}</p>"
 		report_content+="<h2>Metrics</h2><ul>"
 		report_content+="<li>Total Issues: ${total_issues}</li>"
@@ -1877,7 +2178,7 @@ cleanup() {
 # Run full demo
 run_demo() {
 	log_phase "AITL Grand Scenario Demo"
-	echo "Run ID: ${DEMO_RUN_ID}"
+	echo "Run ID: ${DEMO_REPO_NAME}"
 	echo "Repository: ${DEMO_REPO_NAME}"
 	echo "Jira Project: ${DEMO_JIRA_PROJECT}"
 	echo "Confluence Space: ${DEMO_CONFLUENCE_SPACE:-not configured}"
@@ -1888,23 +2189,38 @@ run_demo() {
 	# Step 1: Check prerequisites
 	check_dependencies || exit 1
 
-	# Step 2: Setup workspace (GitLab repo or local /tmp)
-	log_phase "Step 2: Environment Setup"
+	# Step 2: Cleanup existing demo resources (if RECREATE_*=true)
+	log_phase "Step 2: Cleanup Existing Demo Resources"
+	jira_cleanup_demo_issues || true
+	confluence_cleanup_demo_pages || true
+
+	# Step 3: Setup workspace (GitLab repo)
+	log_phase "Step 3: Environment Setup"
 	if [[ "${SKIP_GITLAB}" != "true" ]]; then
-		setup_gitlab_repo || log_warn "GitLab setup skipped"
+		if ! setup_gitlab_repo; then
+			log_error "GitLab setup failed. Cannot proceed without repository."
+			log_info "  Hint: Check if repo is scheduled for deletion, or use a different --repo name"
+			exit 1
+		fi
+	else
+		log_warn "GitLab skipped (SKIP_GITLAB=true). DEMO_WORKSPACE must be set manually."
+		if [[ -z "${DEMO_WORKSPACE}" ]] || [[ ! -d "${DEMO_WORKSPACE}" ]]; then
+			log_error "DEMO_WORKSPACE is not set or does not exist: ${DEMO_WORKSPACE:-<empty>}"
+			exit 1
+		fi
 	fi
 
-	# Step 3: Install + configure workspace (creates workspace .project.yaml)
-	log_phase "Step 3: Install agent-context to workspace"
+	# Step 4: Install + configure workspace (creates workspace .project.yaml)
+	log_phase "Step 4: Install agent-context to workspace"
 	setup_project_config || exit 1
 
-	# Step 4: Validate configuration (Jira)
-	log_phase "Step 4: Validating Configuration"
+	# Step 5: Validate configuration (Jira)
+	log_phase "Step 5: Validating Configuration"
 	validate_jira_config || exit 1
 
-	# Step 5: Create Jira board (best-effort)
-	log_phase "Step 5: Jira Board Setup"
-	jira_create_board_best_effort || true
+	# Step 6: Create Jira board (required for E2E)
+	log_phase "Step 6: Jira Board Setup"
+	jira_create_board_best_effort || exit 1
 
 	# Phase 1: Project Layer
 	phase_project || exit 1
@@ -1931,8 +2247,8 @@ run_demo() {
 	echo ""
 	echo "Summary:"
 	echo "  - Issues created: ${#CREATED_JIRA_ISSUES[@]}"
-	echo "  - Report: ${SCRIPT_DIR}/export/latest/DEMO_REPORT.md"
-	echo "  - Dashboard: ${SCRIPT_DIR}/export/latest/DASHBOARD.md"
+	echo "  - Report: ${export_root}/latest/DEMO_REPORT.md"
+	echo "  - Dashboard: ${export_root}/latest/DASHBOARD.md"
 	echo ""
 
 	# Offer cleanup
@@ -1955,9 +2271,9 @@ main() {
 	while [[ $# -gt 0 ]]; do
 		case "$1" in
 		--run-id)
-			DEMO_RUN_ID="$2"
+			DEMO_REPO_NAME="$2"
 			# Force update dependent variables with new run ID
-			DEMO_EPIC_SUMMARY="[${DEMO_RUN_ID}] project-opentitan bring-up"
+			DEMO_EPIC_SUMMARY="[${DEMO_REPO_NAME}] project-opentitan bring-up"
 			shift
 			;;
 			--repo)
@@ -2037,7 +2353,7 @@ main() {
 		board)
 			log_phase "Jira Board Setup"
 			validate_jira_config || exit 1
-			jira_create_board_best_effort || true
+			jira_create_board_best_effort || exit 1
 			;;
 		cleanup)
 			cleanup
@@ -2046,7 +2362,7 @@ main() {
 			sample_prepare
 			;;
 		sample-results)
-			sample_results "${DEMO_RUN_ID}"
+			sample_results "${DEMO_REPO_NAME}"
 			;;
 		sample-compare)
 			sample_compare

@@ -448,13 +448,19 @@ cmd_confluence() {
                 list)
                     shift
                     local limit=25
+                    local list_all=false
                     while [[ $# -gt 0 ]]; do
                         case "$1" in
                             -n|--limit) limit="$2"; shift ;;
+                            --all) list_all=true ;;
                         esac
                         shift
                     done
-                    confluence_space_list "$limit"
+                    if [[ "${list_all}" == "true" ]]; then
+                        confluence_space_list "$limit"
+                    else
+                        confluence_space_list_configured "$CONFLUENCE_SPACE_KEY"
+                    fi
                     ;;
                 view)
                     shift

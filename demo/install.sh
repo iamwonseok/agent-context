@@ -11,9 +11,11 @@
 set -e
 set -o pipefail
 
-# Script directory
+# Script directory (demo/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALLATION_DIR="${SCRIPT_DIR}/demo/installation"
+# Agent-context repository root
+AGENT_CONTEXT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+INSTALLATION_DIR="${SCRIPT_DIR}/installation"
 
 # ============================================================
 # Colors
@@ -37,19 +39,19 @@ else
 fi
 
 log_info() {
-	echo -e "${BLUE}[>>]${NC} $1"
+	echo -e "${BLUE}[i]${NC} $1"
 }
 
 log_ok() {
-	echo -e "${GREEN}[OK]${NC} $1"
+	echo -e "${GREEN}[V]${NC} $1"
 }
 
 log_warn() {
-	echo -e "${YELLOW}[!!]${NC} $1" >&2
+	echo -e "${YELLOW}[!]${NC} $1" >&2
 }
 
 log_error() {
-	echo -e "${RED}[NG]${NC} $1" >&2
+	echo -e "${RED}[X]${NC} $1" >&2
 }
 
 log_header() {
@@ -64,12 +66,14 @@ log_header() {
 PROFILE="full"
 FORCE=false
 OS_TARGET=""
-RUN_ID="$(date +%Y%m%d_%H%M%S)"
-SKIP_E2E=false
+# Respect externally provided RUN_ID and WORKDIR (e.g., from parallel runner)
+RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
+SKIP_E2E="${SKIP_E2E:-false}"
 ONLY_STEP=""
 SECRETS_MODE="mount"
 DOCKER_MODE=false
-WORKDIR=""
+# WORKDIR: respect environment variable, will set default later based on OS
+WORKDIR="${WORKDIR:-}"
 
 # ============================================================
 # Usage
@@ -194,8 +198,12 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-# Set default workdir
-: "${WORKDIR:=/tmp/agent-context-demo-${RUN_ID}}"
+# Set default workdir (include OS suffix if in Docker mode)
+if [[ "${DOCKER_MODE}" == "true" ]] && [[ -n "${OS_TARGET}" ]]; then
+	: "${WORKDIR:=/tmp/agent-context-demo-${RUN_ID}-${OS_TARGET}}"
+else
+	: "${WORKDIR:=/tmp/agent-context-demo-${RUN_ID}}"
+fi
 
 # ============================================================
 # Export Environment
@@ -214,13 +222,37 @@ export DOCKER_MODE
 export JIRA_BASE_URL
 export JIRA_PROJECT_KEY
 
+# Default Confluence settings for demo
+: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${CONFLUENCE_SPACE_KEY:=~wonseok}"
+export CONFLUENCE_BASE_URL
+export CONFLUENCE_SPACE_KEY
+
+# Default GitLab settings for demo
+: "${GITLAB_BASE_URL:=https://gitlab.fadutec.dev}"
+export GITLAB_BASE_URL
+
+# Default demo scenario settings (Step 008) - align with JIRA_PROJECT_KEY
+: "${DEMO_JIRA_PROJECT:=${JIRA_PROJECT_KEY}}"
+: "${DEMO_CONFLUENCE_SPACE:=${CONFLUENCE_SPACE_KEY}}"
+: "${DEMO_GITLAB_GROUP:=soc-ip/agentic-ai}"
+: "${SKIP_CLEANUP:=true}"
+: "${HITL_ENABLED:=false}"
+export DEMO_JIRA_PROJECT
+export DEMO_CONFLUENCE_SPACE
+export DEMO_GITLAB_GROUP
+export SKIP_CLEANUP
+export HITL_ENABLED
+
 # ============================================================
 # Docker Mode
 # ============================================================
 run_in_docker() {
 	local os="$1"
-	local dockerfile="${SCRIPT_DIR}/demo/docker/${os}/Dockerfile"
+	local dockerfile="${SCRIPT_DIR}/docker/${os}/Dockerfile"
 	local image_name="agent-context-demo-${os}:${RUN_ID}"
+	local build_log_file="${WORKDIR}/docker-build.log"
+	local run_log_file="${WORKDIR}/docker-run.log"
 
 	if [[ ! -f "${dockerfile}" ]]; then
 		log_error "Dockerfile not found: ${dockerfile}"
@@ -229,10 +261,36 @@ run_in_docker() {
 
 	log_header "Running in Docker (${os})"
 
-	# Build Docker image
+	# Ensure host workdir exists so we can persist logs and artifacts
+	mkdir -p "${WORKDIR}"
+
+	# Build Docker image (always clean: --no-cache, try --pull with fallback)
 	log_info "Building Docker image: ${image_name}"
-	if ! docker build -t "${image_name}" -f "${dockerfile}" "${SCRIPT_DIR}/demo/docker/${os}"; then
-		log_error "Docker build failed"
+	log_info "Build log: ${build_log_file}"
+	log_info "Using --no-cache for clean build..."
+
+	# Try with --pull first (to get latest base image), fallback without if credentials fail
+	local build_success=false
+	if docker build --pull --no-cache --progress=plain \
+		-t "${image_name}" \
+		-f "${dockerfile}" \
+		"${SCRIPT_DIR}/docker/${os}" 2>&1 | tee "${build_log_file}"; then
+		build_success=true
+	else
+		# Check if failure was due to credentials/keychain issue
+		if grep -q "keychain\|credentials\|unauthorized" "${build_log_file}" 2>/dev/null; then
+			log_warn "Credential issue detected, retrying without --pull..."
+			if docker build --no-cache --progress=plain \
+				-t "${image_name}" \
+				-f "${dockerfile}" \
+				"${SCRIPT_DIR}/docker/${os}" 2>&1 | tee -a "${build_log_file}"; then
+				build_success=true
+			fi
+		fi
+	fi
+
+	if [[ "${build_success}" != "true" ]]; then
+		log_error "Docker build failed (see: ${build_log_file})"
 		exit 1
 	fi
 	log_ok "Docker image built"
@@ -244,6 +302,7 @@ run_in_docker() {
 		"-e" "PROFILE=${PROFILE}"
 		"-e" "SKIP_E2E=${SKIP_E2E}"
 		"-e" "FORCE=${FORCE}"
+		"-e" "WORKDIR=${WORKDIR}"
 		"-e" "JIRA_BASE_URL=${JIRA_BASE_URL}"
 		"-e" "JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}"
 	)
@@ -252,6 +311,66 @@ run_in_docker() {
 	if [[ -n "${JIRA_EMAIL}" ]]; then
 		docker_args+=("-e" "JIRA_EMAIL=${JIRA_EMAIL}")
 	fi
+
+	# Add Git user config (for git commit inside container)
+	if [[ -n "${GIT_USER_NAME:-}" ]]; then
+		docker_args+=("-e" "GIT_USER_NAME=${GIT_USER_NAME}")
+	fi
+	if [[ -n "${GIT_USER_EMAIL:-}" ]]; then
+		docker_args+=("-e" "GIT_USER_EMAIL=${GIT_USER_EMAIL}")
+	fi
+
+	# Forward optional platform settings when provided
+	if [[ -n "${CONFLUENCE_BASE_URL:-}" ]]; then
+		docker_args+=("-e" "CONFLUENCE_BASE_URL=${CONFLUENCE_BASE_URL}")
+	fi
+	if [[ -n "${CONFLUENCE_SPACE_KEY:-}" ]]; then
+		docker_args+=("-e" "CONFLUENCE_SPACE_KEY=${CONFLUENCE_SPACE_KEY}")
+	fi
+	if [[ -n "${GITLAB_BASE_URL:-}" ]]; then
+		docker_args+=("-e" "GITLAB_BASE_URL=${GITLAB_BASE_URL}")
+	fi
+	if [[ -n "${GITLAB_PROJECT:-}" ]]; then
+		docker_args+=("-e" "GITLAB_PROJECT=${GITLAB_PROJECT}")
+	fi
+
+	# Forward demo scenario settings (Step 008)
+	local demo_repo_name="${DEMO_REPO_NAME:-demo-agent-context-install-${os}}"
+	docker_args+=("-e" "DEMO_REPO_NAME=${demo_repo_name}")
+
+	# Forward Jira/Confluence/GitLab demo settings (defaults are set above)
+	docker_args+=("-e" "DEMO_JIRA_PROJECT=${DEMO_JIRA_PROJECT}")
+	docker_args+=("-e" "DEMO_CONFLUENCE_SPACE=${DEMO_CONFLUENCE_SPACE}")
+	docker_args+=("-e" "DEMO_GITLAB_GROUP=${DEMO_GITLAB_GROUP}")
+
+	# Forward cleanup/recreate settings
+	if [[ -n "${RECREATE_REPO:-}" ]]; then
+		docker_args+=("-e" "RECREATE_REPO=${RECREATE_REPO}")
+	fi
+	if [[ -n "${RECREATE_BOARD:-}" ]]; then
+		docker_args+=("-e" "RECREATE_BOARD=${RECREATE_BOARD}")
+	fi
+	if [[ -n "${RECREATE_ISSUES:-}" ]]; then
+		docker_args+=("-e" "RECREATE_ISSUES=${RECREATE_ISSUES}")
+	fi
+	if [[ -n "${RECREATE_PAGES:-}" ]]; then
+		docker_args+=("-e" "RECREATE_PAGES=${RECREATE_PAGES}")
+	fi
+	if [[ -n "${DEMO_JIRA_BASE_URL:-}" ]]; then
+		docker_args+=("-e" "DEMO_JIRA_BASE_URL=${DEMO_JIRA_BASE_URL}")
+	fi
+	if [[ -n "${DEMO_JIRA_EMAIL:-}" ]]; then
+		docker_args+=("-e" "DEMO_JIRA_EMAIL=${DEMO_JIRA_EMAIL}")
+	fi
+	if [[ -n "${DEMO_CONFLUENCE_BASE_URL:-}" ]]; then
+		docker_args+=("-e" "DEMO_CONFLUENCE_BASE_URL=${DEMO_CONFLUENCE_BASE_URL}")
+	fi
+	if [[ -n "${DEMO_GITLAB_BASE_URL:-}" ]]; then
+		docker_args+=("-e" "DEMO_GITLAB_BASE_URL=${DEMO_GITLAB_BASE_URL}")
+	fi
+	# Always pass SKIP_CLEANUP and HITL_ENABLED (defaults set above)
+	docker_args+=("-e" "SKIP_CLEANUP=${SKIP_CLEANUP}")
+	docker_args+=("-e" "HITL_ENABLED=${HITL_ENABLED}")
 
 	# Handle secrets
 	if [[ "${SECRETS_MODE}" == "mount" ]]; then
@@ -264,8 +383,18 @@ run_in_docker() {
 		fi
 	fi
 
-	# Mount agent-context source
-	docker_args+=("-v" "${SCRIPT_DIR}:/agent-context:ro")
+	# Persist WORKDIR on host for progress/log inspection
+	docker_args+=("-v" "${WORKDIR}:${WORKDIR}")
+	log_info "Mounting workdir: ${WORKDIR} (read-write)"
+
+	# Mount SSH keys if available (needed for GitLab SSH clone/push)
+	if [[ -d "${HOME}/.ssh" ]]; then
+		docker_args+=("-v" "${HOME}/.ssh:/root/.ssh:ro")
+		log_info "Mounting SSH: ~/.ssh -> /root/.ssh (read-only)"
+	fi
+
+	# Mount agent-context source (repository root)
+	docker_args+=("-v" "${AGENT_CONTEXT_ROOT}:/agent-context:ro")
 
 	# Build internal command
 	local internal_cmd="/agent-context/demo/install.sh --profile ${PROFILE}"
@@ -275,8 +404,12 @@ run_in_docker() {
 
 	# Run container
 	log_info "Running container..."
+	log_info "Run log: ${run_log_file}"
 	echo ""
-	docker run "${docker_args[@]}" "${image_name}" bash -c "${internal_cmd}"
+	if ! docker run "${docker_args[@]}" "${image_name}" bash -c "${internal_cmd}" 2>&1 | tee "${run_log_file}"; then
+		log_error "Docker run failed (see log: ${run_log_file})"
+		exit 1
+	fi
 }
 
 # ============================================================

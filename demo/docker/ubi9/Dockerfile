@@ -7,7 +7,7 @@
 # Run:
 #   docker run --rm -it -v ~/.secrets:/root/.secrets:ro agent-context-demo-ubi9
 
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM registry.access.redhat.com/ubi9/ubi:9.4
 
 LABEL maintainer="Agent Context Team"
 LABEL description="Agent-Context demo installation environment (UBI9/RHEL9)"
@@ -15,18 +15,23 @@ LABEL description="Agent-Context demo installation environment (UBI9/RHEL9)"
 # ============================================================
 # Install base dependencies
 # ============================================================
-RUN dnf install -y --nodocs \
+# hadolint ignore=DL3041
+RUN dnf install -y --nodocs --allowerasing \
     bash \
     ca-certificates \
     curl \
     git \
     jq \
+    openssh-clients \
     python3 \
     python3-pip \
     wget \
     tar \
     gzip \
     && dnf clean all
+
+# Use bash with pipefail for piped RUN commands
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # ============================================================
 # Install pandoc (manual install for RHEL)
@@ -46,14 +51,21 @@ RUN wget -qO /usr/local/bin/yq \
 # ============================================================
 # Install glab (GitLab CLI)
 # ============================================================
-ARG GLAB_VERSION=1.36.0
-RUN wget -qO- "https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads/glab_${GLAB_VERSION}_Linux_x86_64.tar.gz" \
-    | tar xz -C /usr/local/bin --strip-components=1 bin/glab \
-    && chmod +x /usr/local/bin/glab
+ARG GLAB_VERSION=1.81.0
+RUN arch="$(uname -m)" && \
+    case "${arch}" in \
+        x86_64|amd64) asset_arch="amd64" ;; \
+        aarch64|arm64) asset_arch="arm64" ;; \
+        *) echo "Unsupported arch: ${arch}" && exit 1 ;; \
+    esac && \
+    wget -qO- "https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads/glab_${GLAB_VERSION}_linux_${asset_arch}.tar.gz" \
+        | tar xz -C /usr/local/bin --strip-components=1 bin/glab && \
+    chmod +x /usr/local/bin/glab
 
 # ============================================================
 # Install pre-commit (optional, for best-effort checks)
 # ============================================================
+# hadolint ignore=DL3013
 RUN pip3 install --no-cache-dir pre-commit
 
 # ============================================================

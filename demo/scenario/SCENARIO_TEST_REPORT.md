@@ -49,20 +49,20 @@ Output:
 Step 1: Checking Prerequisites
 ============================================================
 
-[OK] glab found
-[OK] jq found
-[OK] yq found
-[OK] curl found
-[OK] pm CLI found
+[V] glab found
+[V] jq found
+[V] yq found
+[V] curl found
+[V] pm CLI found
 
-[>>] Checking credentials...
-[OK] Jira credentials found
-[!!] JIRA_EMAIL not set (required unless configured in .project.yaml)
-[>>]   Demo will try: git config user.email
-[>>]   Set with: export JIRA_EMAIL="your-email@example.com"
-[>>]   Or use:   --jira-email your-email@example.com
-[OK] GitLab authenticated
-[OK] All prerequisites met
+[i] Checking credentials...
+[V] Jira credentials found
+[!] JIRA_EMAIL not set (required unless configured in .project.yaml)
+[i]   Demo will try: git config user.email
+[i]   Set with: export JIRA_EMAIL="your-email@example.com"
+[i]   Or use:   --jira-email your-email@example.com
+[V] GitLab authenticated
+[V] All prerequisites met
 EXIT_CODE=0
 ```
 
@@ -111,30 +111,30 @@ Key outputs (representative):
 Run ID: 20260201-150245
 Repository: project-opentitan
 
-[OK] Using existing repository: soc-ip/agentic-ai/project-opentitan
-[OK] Local repo initialized and pushed: /tmp/project-opentitan
+[V] Using existing repository: soc-ip/agentic-ai/project-opentitan
+[V] Local repo initialized and pushed: /tmp/project-opentitan
 
-[OK] Jira connection verified (project: SVI)
-[OK] Created Jira board: [20260201-150245] project-opentitan board (id: 1172)
-[OK] Created Epic: SVI-201
-[OK] Created Task: SVI-202
-[OK] Created Task: SVI-203
-[OK] Created Task: SVI-204
+[V] Jira connection verified (project: SVI)
+[V] Created Jira board: [20260201-150245] project-opentitan board (id: 1172)
+[V] Created Epic: SVI-201
+[V] Created Task: SVI-202
+[V] Created Task: SVI-203
+[V] Created Task: SVI-204
 
-[OK] Created GitLab issue #1: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/issues/1
-[OK] Created MR !1: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/1
-[OK] SVI-202 marked as Done
+[V] Created GitLab issue #1: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/issues/1
+[V] Created MR !1: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/1
+[V] SVI-202 marked as Done
 
-[OK] Created Hotfix: SVI-205
-[OK] Created MR !2: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/2
-[OK] SVI-205 -> Done
+[V] Created Hotfix: SVI-205
+[V] Created MR !2: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/2
+[V] SVI-205 -> Done
 
-[OK] Created: SVI-206
-[OK] Created MR !3: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/3
-[OK] SVI-206 completed
+[V] Created: SVI-206
+[V] Created MR !3: https://gitlab.fadutec.dev/soc-ip/agentic-ai/project-opentitan/-/merge_requests/3
+[V] SVI-206 completed
 
-[OK] Report generated: /Users/wonseok/project-iamwonseok/agent-context/demo/export/runs/20260201-150245/DEMO_REPORT.md
-[OK] Dashboard generated: /Users/wonseok/project-iamwonseok/agent-context/demo/export/runs/20260201-150245/DASHBOARD.md
+[V] Report generated: /Users/wonseok/project-iamwonseok/agent-context/demo/export/runs/20260201-150245/DEMO_REPORT.md
+[V] Dashboard generated: /Users/wonseok/project-iamwonseok/agent-context/demo/export/runs/20260201-150245/DASHBOARD.md
 
 Demo Completed Successfully
 EXIT_CODE=0
@@ -184,9 +184,9 @@ Exit code: 0
 Output:
 
 ```text
-[OK] Sample prepare structure ready: demo/sample/opentitan/prepare
-[OK] Sample results generated: demo/sample/opentitan/results
-[OK] Sample structure matches prepare/ and results
+[V] Sample prepare structure ready: demo/sample/opentitan/prepare
+[V] Sample results generated: demo/sample/opentitan/results
+[V] Sample structure matches prepare/ and results
 ```
 
 ## Gaps / Follow-ups

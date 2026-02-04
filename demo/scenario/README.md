@@ -63,10 +63,12 @@ glab auth login --hostname your-gitlab-host
 brew install glab jq yq
 
 # Verify tools
-glab --version
+glab --version   # 1.81.0 or later recommended
 jq --version
 yq --version
 ```
+
+**Note**: Docker 이미지 (ubuntu/ubi9)에는 glab 1.81.0, openssh-client가 포함되어 있습니다.
 
 ### Step 1: Prepare Credentials
 
