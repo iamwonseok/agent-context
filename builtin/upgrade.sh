@@ -20,6 +20,7 @@ USAGE:
 OPTIONS:
     --apply         Apply changes (default: diff-only)
     --prune         Remove files no longer in source (requires --apply)
+    --rollback      Restore from last backup (undo --apply)
     --dry-run       Show what would change (same as default)
     -v, --verbose   Show detailed diff
     -q, --quiet     Show only summary
@@ -33,6 +34,11 @@ DESCRIPTION:
     Use --apply to actually make changes.
     Use --apply --prune to also remove obsolete files.
 
+BACKUP & ROLLBACK:
+    When --apply is used, a backup is created at .agent/.backup/
+    If something goes wrong, use --rollback to restore.
+    Only one generation of backup is kept (previous backup is overwritten).
+
 EXAMPLES:
     # Preview changes (default)
     agent-context upgrade
@@ -43,6 +49,9 @@ EXAMPLES:
     # Apply changes and remove obsolete files
     agent-context upgrade --apply --prune
 
+    # Restore from backup if something went wrong
+    agent-context upgrade --rollback
+
 EXIT CODES:
     0   Upgrade successful (or no changes needed)
     1   Upgrade failed
@@ -51,11 +60,95 @@ EOF
 }
 
 # ============================================================
+# Backup and Rollback Functions
+# ============================================================
+
+BACKUP_DIR_NAME=".backup"
+
+create_backup() {
+	local project_root="$1"
+	local agent_dir="${project_root}/.agent"
+	local backup_dir="${agent_dir}/${BACKUP_DIR_NAME}"
+
+	if [[ ! -d "${agent_dir}" ]]; then
+		log_error "No .agent directory to backup"
+		return 1
+	fi
+
+	# Remove old backup (only keep one generation)
+	if [[ -d "${backup_dir}" ]]; then
+		rm -rf "${backup_dir}"
+	fi
+
+	mkdir -p "${backup_dir}"
+
+	# Backup directories
+	local dirs_to_backup=("skills" "workflows" "docs" "tools")
+	for dir in "${dirs_to_backup[@]}"; do
+		if [[ -d "${agent_dir}/${dir}" ]]; then
+			cp -r "${agent_dir}/${dir}" "${backup_dir}/${dir}"
+		fi
+	done
+
+	# Create timestamp file
+	echo "backup_time=$(date -Iseconds)" > "${backup_dir}/.backup_info"
+	echo "backup_version=$(git -C "$(get_agent_context_dir)" rev-parse --short HEAD 2>/dev/null || echo 'unknown')" >> "${backup_dir}/.backup_info"
+
+	log_ok "Backup created: ${backup_dir}"
+	return 0
+}
+
+restore_backup() {
+	local project_root="$1"
+	local agent_dir="${project_root}/.agent"
+	local backup_dir="${agent_dir}/${BACKUP_DIR_NAME}"
+
+	if [[ ! -d "${backup_dir}" ]]; then
+		log_error "No backup found at ${backup_dir}"
+		return 1
+	fi
+
+	# Show backup info
+	if [[ -f "${backup_dir}/.backup_info" ]]; then
+		log_info "Restoring from backup:"
+		cat "${backup_dir}/.backup_info" | while read -r line; do
+			log_info "  ${line}"
+		done
+	fi
+
+	# Restore directories
+	local dirs_to_restore=("skills" "workflows" "docs" "tools")
+	local restored=0
+
+	for dir in "${dirs_to_restore[@]}"; do
+		if [[ -d "${backup_dir}/${dir}" ]]; then
+			# Remove current
+			if [[ -d "${agent_dir:?}/${dir}" ]]; then
+				rm -rf "${agent_dir:?}/${dir}"
+			fi
+			# Restore from backup
+			cp -r "${backup_dir}/${dir}" "${agent_dir}/${dir}"
+			log_ok "Restored: .agent/${dir}/"
+			restored=$((restored + 1))
+		fi
+	done
+
+	if [[ ${restored} -eq 0 ]]; then
+		log_warn "No directories restored (empty backup?)"
+		return 1
+	fi
+
+	log_ok "Rollback complete: ${restored} directories restored"
+	return 0
+}
+
+# ============================================================
 # Main Upgrade Function
 # ============================================================
 run_upgrade() {
 	local apply=false
 	local prune=false
+	local rollback=false
 	local dry_run=false
 	local verbose=false
 	local quiet=false
@@ -68,6 +161,9 @@ run_upgrade() {
 				;;
 			--prune)
 				prune=true
+				;;
+			--rollback)
+				rollback=true
 				;;
 			--dry-run)
 				dry_run=true
@@ -97,13 +193,21 @@ run_upgrade() {
 		return 1
 	fi
 
-	# Find project root
+	# Find project root first (needed for rollback too)
 	local project_root
 	project_root=$(find_project_root "${PWD}" 2>/dev/null || true)
 
 	if [[ -z "${project_root}" ]]; then
 		log_error "Not in a project directory"
 		return 1
+	fi
+
+	# Handle rollback
+	if [[ "${rollback}" == "true" ]]; then
+		log_header "Agent-Context Rollback"
+		log_info "Project: ${project_root}"
+		restore_backup "${project_root}"
+		return $?
 	fi
 
 	local ac_dir
@@ -125,6 +229,7 @@ run_upgrade() {
 	local added=0
 	local removed=0
 	local unchanged=0
+	local backup_created=false
 
 	# Compare and upgrade .agent/ contents
 	local agent_dirs=("skills" "workflows" "docs" "tools/pm")
@@ -150,6 +255,15 @@ run_upgrade() {
 					log_info "[+] .agent/${dir}/${rel_path}"
 				fi
 				if [[ "${apply}" == "true" ]]; then
+					# Create backup before first change
+					if [[ "${backup_created}" == "false" ]]; then
+						if create_backup "${project_root}"; then
+							backup_created=true
+						else
+							log_error "Failed to create backup, aborting"
+							return 1
+						fi
+					fi
 					mkdir -p "$(dirname "${dst_file}")"
 					cp "${src_file}" "${dst_file}"
 				fi
@@ -163,6 +277,15 @@ run_upgrade() {
 					diff -u "${dst_file}" "${src_file}" | head -20 || true
 				fi
 				if [[ "${apply}" == "true" ]]; then
+					# Create backup before first change
+					if [[ "${backup_created}" == "false" ]]; then
+						if create_backup "${project_root}"; then
+							backup_created=true
+						else
+							log_error "Failed to create backup, aborting"
+							return 1
+						fi
+					fi
 					cp "${src_file}" "${dst_file}"
 				fi
 			else
@@ -177,12 +300,26 @@ run_upgrade() {
 				local rel_path="${dst_file#${dst}/}"
 				local src_file="${src}/${rel_path}"
 
+				# Skip backup directory
+				if [[ "${rel_path}" == "${BACKUP_DIR_NAME}"* ]]; then
+					continue
+				fi
+
 				if [[ ! -f "${src_file}" ]]; then
 					removed=$((removed + 1))
 					if [[ "${quiet}" == "false" ]]; then
 						log_warn "[-] .agent/${dir}/${rel_path}"
 					fi
 					if [[ "${apply}" == "true" ]]; then
+						# Create backup before first change
+						if [[ "${backup_created}" == "false" ]]; then
+							if create_backup "${project_root}"; then
+								backup_created=true
+							else
+								log_error "Failed to create backup, aborting"
+								return 1
+							fi
+						fi
 						rm -f "${dst_file}"
 					fi
 				fi
@@ -195,6 +332,10 @@ run_upgrade() {
 		echo ""
 		if [[ "${apply}" == "true" ]]; then
 			log_ok "Upgrade applied"
+			if [[ "${backup_created}" == "true" ]]; then
+				log_info "Backup saved to: .agent/${BACKUP_DIR_NAME}/"
+				log_info "To rollback: agent-context upgrade --rollback"
+			fi
 		else
 			log_info "Upgrade preview (use --apply to apply)"
 		fi

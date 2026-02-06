@@ -160,7 +160,7 @@ run_update() {
 
 	# Show what would be updated
 	local behind_count
-	behind_count=$(git -C "${ac_dir}" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
+	behind_count=$(git -C "${ac_dir}" rev-list --count 'HEAD..@{u}' 2>/dev/null || echo "0")
 
 	if [[ "${quiet}" == "false" ]]; then
 		log_info "Updates available: ${behind_count} commit(s) behind"
@@ -169,7 +169,7 @@ run_update() {
 	if [[ "${check_only}" == "true" ]]; then
 		if [[ "${verbose}" == "true" ]]; then
 			echo ""
-			git -C "${ac_dir}" log --oneline HEAD..@{u}
+			git -C "${ac_dir}" log --oneline 'HEAD..@{u}'
 		fi
 		echo "Summary: total=1 passed=0 failed=0 warned=1 skipped=0"
 		return 0

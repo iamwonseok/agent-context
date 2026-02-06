@@ -87,6 +87,50 @@ lint:
 # Test Stage - Core Tests (Always Run)
 # =============================================================================
 
+# Agent-context smoke tests (deps, auth, global, project)
+# Fast, offline checks for PR validation
+test:agent-smoke:
+  stage: test
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq git curl jq
+    # Install yq
+    - |
+      ARCH=$(uname -m)
+      case "$ARCH" in
+        x86_64) YQ_BINARY="yq_linux_amd64" ;;
+        aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
+      esac
+      curl -sL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
+      chmod +x /usr/local/bin/yq
+  script:
+    - ./bin/agent-context.sh tests smoke
+  rules:
+    - !reference [.rules-mr-or-main, rules]
+
+# Non-interactive install regression test
+# Ensures install --non-interactive doesn't break on PR changes
+test:install-noninteractive:
+  stage: test
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq git curl jq
+    # Install yq
+    - |
+      ARCH=$(uname -m)
+      case "$ARCH" in
+        x86_64) YQ_BINARY="yq_linux_amd64" ;;
+        aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
+      esac
+      curl -sL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
+      chmod +x /usr/local/bin/yq
+  script:
+    - ./bin/agent-context.sh tests --tags installNonInteractive
+  rules:
+    - !reference [.rules-mr-or-main, rules]
+
 # Workflow tests (Stage 0-2: unit, smoke, local-git)
 # E2E tests (Stage 3) require API tokens and are run locally only
 test:workflow:

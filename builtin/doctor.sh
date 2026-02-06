@@ -139,14 +139,14 @@ doctor_auth() {
 		local mode
 		mode=$(stat -f "%OLp" "${HOME}/.secrets" 2>/dev/null || stat -c "%a" "${HOME}/.secrets" 2>/dev/null)
 		if [[ "${mode}" == "700" ]]; then
-			log_ok "~/.secrets (mode: 700)"
+			log_ok "\$HOME/.secrets (mode: 700)"
 			passed=$((passed + 1))
 		else
-			log_warn "~/.secrets (mode: ${mode}, should be 700)"
+			log_warn "\$HOME/.secrets (mode: ${mode}, should be 700)"
 			warned=$((warned + 1))
 		fi
 	else
-		log_error "~/.secrets not found"
+		log_error "\$HOME/.secrets not found"
 		failed=$((failed + 1))
 	fi
 

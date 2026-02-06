@@ -472,16 +472,93 @@ TARGET_DIR="$(cd "${TARGET_DIR}" 2>/dev/null && pwd)" || {
 	exit 1
 }
 
-# Check if target is the source directory
-if [[ "${TARGET_DIR}" == "${SCRIPT_DIR}" ]]; then
-	log_error "Cannot install into the source directory itself"
-	exit 1
-fi
+# ============================================================
+# Preflight Checks
+# ============================================================
+preflight_check() {
+	log_info "Running preflight checks..."
+	local errors=0
 
-# Check if target is a git repository (recommended but not required)
-if [[ ! -d "${TARGET_DIR}/.git" ]]; then
-	log_warn "Target is not a git repository. Consider running 'git init' first."
-fi
+	# 1. Check: Cannot install into source directory
+	if [[ "${TARGET_DIR}" == "${SCRIPT_DIR}" ]]; then
+		log_error "Cannot install into the source directory itself"
+		errors=$((errors + 1))
+	fi
+
+	# 2. Check: Required commands
+	local required_cmds=(bash git cp mkdir chmod)
+	for cmd in "${required_cmds[@]}"; do
+		if ! command -v "${cmd}" &>/dev/null; then
+			log_error "Required command not found: ${cmd}"
+			errors=$((errors + 1))
+		fi
+	done
+
+	# 3. Check: Templates directory exists
+	if [[ ! -d "${TEMPLATES_DIR}" ]]; then
+		log_error "Templates directory not found: ${TEMPLATES_DIR}"
+		errors=$((errors + 1))
+	fi
+
+	# 4. Check: Required template files exist
+	local required_templates=(
+		"${TEMPLATES_DIR}/cursorrules.index_map.tmpl"
+		"${TEMPLATES_DIR}/project.yaml.tmpl"
+	)
+	for tmpl in "${required_templates[@]}"; do
+		if [[ ! -f "${tmpl}" ]]; then
+			log_error "Required template not found: ${tmpl}"
+			errors=$((errors + 1))
+		fi
+	done
+
+	# 5. Check: Source directories exist
+	local required_dirs=(
+		"${SCRIPT_DIR}/skills"
+		"${SCRIPT_DIR}/workflows"
+		"${SCRIPT_DIR}/docs"
+		"${SCRIPT_DIR}/tools/pm"
+	)
+	for dir in "${required_dirs[@]}"; do
+		if [[ ! -d "${dir}" ]]; then
+			log_error "Source directory not found: ${dir}"
+			errors=$((errors + 1))
+		fi
+	done
+
+	# 6. Check: Write permission on target
+	if [[ ! -w "${TARGET_DIR}" ]]; then
+		log_error "No write permission on target directory: ${TARGET_DIR}"
+		errors=$((errors + 1))
+	fi
+
+	# 7. Check: Warn about existing files (when not --force)
+	if [[ "${FORCE}" != "true" ]]; then
+		local existing_files=0
+		[[ -f "${TARGET_DIR}/.cursorrules" ]] && existing_files=$((existing_files + 1))
+		[[ -f "${TARGET_DIR}/.project.yaml" ]] && existing_files=$((existing_files + 1))
+		[[ -d "${TARGET_DIR}/.agent" ]] && existing_files=$((existing_files + 1))
+
+		if [[ ${existing_files} -gt 0 ]]; then
+			log_warn "Found ${existing_files} existing file(s). Use --force to overwrite."
+		fi
+	fi
+
+	# 8. Check: Target is not a git repository (warning only)
+	if [[ ! -d "${TARGET_DIR}/.git" ]]; then
+		log_warn "Target is not a git repository. Consider running 'git init' first."
+	fi
+
+	if [[ ${errors} -gt 0 ]]; then
+		log_error "Preflight check failed with ${errors} error(s)"
+		exit 1
+	fi
+
+	log_ok "Preflight checks passed"
+}
+
+# Run preflight checks
+preflight_check
 
 echo ""
 echo "============================================================"
@@ -914,6 +991,23 @@ else
 fi
 
 # ============================================================
+# CHANGE_ME Detection (Final Check)
+# ============================================================
+check_change_me() {
+	local target_dir="$1"
+	local count=0
+	local files_with_change_me=()
+
+	# Check .project.yaml
+	if [[ -f "${target_dir}/.project.yaml" ]] && grep -q "CHANGE_ME" "${target_dir}/.project.yaml" 2>/dev/null; then
+		count=$(grep -c "CHANGE_ME" "${target_dir}/.project.yaml" 2>/dev/null || echo "0")
+		files_with_change_me+=(".project.yaml:${count}")
+	fi
+
+	echo "${#files_with_change_me[@]}:${files_with_change_me[*]}"
+}
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""
@@ -940,9 +1034,35 @@ if [[ "${PROFILE}" == "full" ]]; then
 	echo "  \`-- ...other configs"
 fi
 echo ""
+
+# Final CHANGE_ME check
+change_me_result=$(check_change_me "${TARGET_DIR}")
+change_me_count="${change_me_result%%:*}"
+
+if [[ "${change_me_count}" -gt 0 ]]; then
+	echo "============================================================"
+	echo "  ACTION REQUIRED: CHANGE_ME placeholders detected"
+	echo "============================================================"
+	echo ""
+	log_warn "Your installation contains ${change_me_count} file(s) with CHANGE_ME placeholders."
+	log_warn "The tools will NOT work until you replace these values."
+	echo ""
+	echo "  Quick fix:"
+	echo "    vi ${TARGET_DIR}/.project.yaml"
+	echo ""
+	echo "  Or run doctor to see details:"
+	echo "    agent-context doctor project"
+	echo ""
+fi
+
 echo "Next steps:"
 echo ""
-echo "  1. Edit .project.yaml with your platform settings:"
+
+if [[ "${change_me_count}" -gt 0 ]]; then
+	echo "  1. [REQUIRED] Edit .project.yaml to replace CHANGE_ME values:"
+else
+	echo "  1. Edit .project.yaml with your platform settings:"
+fi
 echo "     vi ${TARGET_DIR}/.project.yaml"
 echo ""
 echo "     Required settings:"
@@ -975,4 +1095,9 @@ echo "  Troubleshooting:"
 echo "     - 'jq parse error' = Wrong email or invalid token"
 echo "     - 'Jira not configured' = Missing base_url, email, or token"
 echo ""
-log_ok "Agent-context installed successfully!"
+
+if [[ "${change_me_count}" -gt 0 ]]; then
+	log_warn "Agent-context installed (configuration required)"
+else
+	log_ok "Agent-context installed successfully!"
+fi

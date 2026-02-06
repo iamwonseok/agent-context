@@ -48,6 +48,7 @@ SUBCOMMANDS:
 OPTIONS:
     --tags <tags>   Run tests matching tags (comma-separated)
     --skip <tags>   Skip tests matching tags (comma-separated)
+    --formula <expr> Run tests matching boolean formula (and/or/not/parentheses)
     -v, --verbose   Show more details
     -q, --quiet     Show only summary
     -h, --help      Show this help
@@ -62,6 +63,15 @@ AVAILABLE TAGS:
     auditProject            Audit project structure
     installNonInteractive   Test non-interactive install
 
+FORMULA SYNTAX:
+    Supports boolean expressions with:
+    - 'and' / '&&'  : Logical AND
+    - 'or' / '||'   : Logical OR
+    - 'not' / '!'   : Logical NOT
+    - '(' ')'       : Grouping (parentheses)
+
+    Precedence (highest to lowest): not > and > or
+
 EXAMPLES:
     # Run smoke tests (default CI check)
     agent-context tests smoke
@@ -71,6 +81,12 @@ EXAMPLES:
 
     # Run smoke but skip project check
     agent-context tests smoke --skip project
+
+    # Formula: deps AND auth but NOT connect
+    agent-context tests --formula "deps and auth and not connect"
+
+    # Formula: auditRepo OR auditProject with deps
+    agent-context tests --formula "(auditRepo or auditProject) and deps"
 
     # List available tests
     agent-context tests list
@@ -385,6 +401,7 @@ test_install_non_interactive() {
 	# This test creates a temporary directory and tests non-interactive install
 	local temp_dir
 	temp_dir=$(mktemp -d)
+	# shellcheck disable=SC2064
 	trap "rm -rf '${temp_dir}'" EXIT
 
 	log_progress "[installNonInteractive] Creating temp project..."
@@ -443,6 +460,234 @@ test_install_non_interactive() {
 	fi
 
 	echo "${total}:${passed}:${failed}"
+}
+
+# ============================================================
+# Formula Parser (Boolean Expression Evaluator)
+# ============================================================
+# Supports: and, or, not, parentheses
+# Uses a simple recursive descent parser
+#
+# Grammar:
+#   expr   -> term (('or' | '||') term)*
+#   term   -> factor (('and' | '&&') factor)*
+#   factor -> ('not' | '!') factor | '(' expr ')' | TAG
+#
+# Implementation: tokenize -> parse -> evaluate per tag
+
+# Global for formula parsing
+declare -a FORMULA_TOKENS
+FORMULA_POS=0
+
+formula_tokenize() {
+	local formula="$1"
+	FORMULA_TOKENS=()
+	FORMULA_POS=0
+
+	# Normalize operators
+	formula="${formula//&&/ and }"
+	formula="${formula//||/ or }"
+	formula="${formula//!/ not }"
+
+	# Tokenize
+	local word
+	for word in ${formula}; do
+		# Handle parentheses attached to words
+		while [[ "${word}" == "("* ]] && [[ "${word}" != "(" ]]; do
+			FORMULA_TOKENS+=("(")
+			word="${word#\(}"
+		done
+
+		local trailing_parens=""
+		while [[ "${word}" == *")" ]] && [[ "${word}" != ")" ]]; do
+			trailing_parens="${trailing_parens})"
+			word="${word%\)}"
+		done
+
+		if [[ -n "${word}" ]]; then
+			FORMULA_TOKENS+=("${word}")
+		fi
+
+		while [[ -n "${trailing_parens}" ]]; do
+			FORMULA_TOKENS+=(")")
+			trailing_parens="${trailing_parens#\)}"
+		done
+	done
+}
+
+formula_current() {
+	if [[ ${FORMULA_POS} -lt ${#FORMULA_TOKENS[@]} ]]; then
+		echo "${FORMULA_TOKENS[${FORMULA_POS}]}"
+	else
+		echo ""
+	fi
+}
+
+formula_advance() {
+	FORMULA_POS=$((FORMULA_POS + 1))
+}
+
+formula_parse_factor() {
+	local current
+	current=$(formula_current)
+
+	case "${current}" in
+		not|NOT)
+			formula_advance
+			local inner
+			inner=$(formula_parse_factor)
+			echo "not:${inner}"
+			;;
+		"(")
+			formula_advance
+			local inner
+			inner=$(formula_parse_expr)
+			if [[ "$(formula_current)" == ")" ]]; then
+				formula_advance
+			fi
+			echo "${inner}"
+			;;
+		""|and|AND|or|OR|")")
+			echo "true"
+			;;
+		*)
+			formula_advance
+			echo "tag:${current}"
+			;;
+	esac
+}
+
+formula_parse_term() {
+	local left
+	left=$(formula_parse_factor)
+
+	while true; do
+		local current
+		current=$(formula_current)
+		case "${current}" in
+			and|AND)
+				formula_advance
+				local right
+				right=$(formula_parse_factor)
+				left="and:${left}:${right}"
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+
+	echo "${left}"
+}
+
+formula_parse_expr() {
+	local left
+	left=$(formula_parse_term)
+
+	while true; do
+		local current
+		current=$(formula_current)
+		case "${current}" in
+			or|OR)
+				formula_advance
+				local right
+				right=$(formula_parse_term)
+				left="or:${left}:${right}"
+				;;
+			*)
+				break
+				;;
+		esac
+	done
+
+	echo "${left}"
+}
+
+formula_parse() {
+	local formula="$1"
+	formula_tokenize "${formula}"
+	formula_parse_expr
+}
+
+# Evaluate parsed formula for a given tag
+# Returns 0 if tag should run, 1 otherwise
+formula_evaluate() {
+	local ast="$1"
+	local tag="$2"
+
+	case "${ast}" in
+		true)
+			return 0
+			;;
+		tag:*)
+			local match_tag="${ast#tag:}"
+			if [[ "${tag}" == "${match_tag}" ]]; then
+				return 0
+			else
+				return 1
+			fi
+			;;
+		not:*)
+			local inner="${ast#not:}"
+			if formula_evaluate "${inner}" "${tag}"; then
+				return 1
+			else
+				return 0
+			fi
+			;;
+		and:*)
+			local rest="${ast#and:}"
+			# Split at first :tag: or :and: or :or: or :not:
+			# This is tricky, use a simpler approach
+			local left right
+			# Find the matching right operand
+			left=$(echo "${rest}" | sed 's/:\(tag:\|and:\|or:\|not:\|true\)/\n\1/' | head -1)
+			right="${rest#${left}:}"
+
+			if formula_evaluate "${left}" "${tag}" && formula_evaluate "${right}" "${tag}"; then
+				return 0
+			else
+				return 1
+			fi
+			;;
+		or:*)
+			local rest="${ast#or:}"
+			local left right
+			left=$(echo "${rest}" | sed 's/:\(tag:\|and:\|or:\|not:\|true\)/\n\1/' | head -1)
+			right="${rest#${left}:}"
+
+			if formula_evaluate "${left}" "${tag}" || formula_evaluate "${right}" "${tag}"; then
+				return 0
+			else
+				return 1
+			fi
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+# Get all matching tags from formula
+formula_get_matching_tags() {
+	local formula="$1"
+	local matching_tags=()
+
+	# Parse formula once
+	local ast
+	ast=$(formula_parse "${formula}")
+
+	# Test each registered tag
+	for entry in "${TEST_REGISTRY[@]}"; do
+		local tag="${entry%%:*}"
+		if formula_evaluate "${ast}" "${tag}"; then
+			matching_tags+=("${tag}")
+		fi
+	done
+
+	# Return comma-separated
+	local IFS=','
+	echo "${matching_tags[*]}"
 }
 
 # ============================================================
@@ -541,6 +786,7 @@ run_tests() {
 	local subcommand=""
 	local tags=""
 	local skip_tags=""
+	local formula=""
 	local verbose=false
 	local quiet=false
 
@@ -556,6 +802,10 @@ run_tests() {
 				;;
 			--skip)
 				skip_tags="$2"
+				shift
+				;;
+			--formula)
+				formula="$2"
 				shift
 				;;
 			-v|--verbose)
@@ -589,12 +839,25 @@ run_tests() {
 			tags="${tags:-installNonInteractive}"
 			;;
 		"")
-			if [[ -z "${tags}" ]]; then
+			if [[ -z "${tags}" ]] && [[ -z "${formula}" ]]; then
 				# Default to smoke
 				tags="${SMOKE_TAGS}"
 			fi
 			;;
 	esac
+
+	# If formula is provided, convert to tags
+	if [[ -n "${formula}" ]]; then
+		tags=$(formula_get_matching_tags "${formula}")
+		if [[ -z "${tags}" ]]; then
+			log_warn "No tags matched formula: ${formula}"
+			echo "Summary: total=0 passed=0 failed=0 warned=0 skipped=0"
+			return 0
+		fi
+		if [[ "${quiet}" == "false" ]]; then
+			log_info "Formula '${formula}' matched tags: ${tags}"
+		fi
+	fi
 
 	if [[ "${quiet}" == "false" ]]; then
 		echo ""

@@ -658,6 +658,63 @@ agent-context report --issue
 
 ---
 
+## 오프라인 환경 설치
+
+네트워크가 제한된 환경(air-gapped)에서 agent-context를 설치하는 방법입니다.
+
+### 준비 단계 (온라인 환경에서)
+
+```bash
+# 1. agent-context 저장소를 tarball로 압축
+cd ~/.agent-context
+git archive --format=tar.gz --prefix=agent-context/ HEAD > agent-context-offline.tar.gz
+
+# 2. 의존성 도구 다운로드 (필요한 경우)
+# macOS
+brew bundle dump  # Brewfile 생성
+
+# Ubuntu/Debian
+apt-get download git curl jq
+```
+
+### 설치 단계 (오프라인 환경에서)
+
+```bash
+# 1. tarball 압축 해제
+tar -xzf agent-context-offline.tar.gz -C ~/
+mv ~/agent-context ~/.agent-context
+
+# 2. alias 설정
+echo 'alias agent-context="~/.agent-context/agent-context.sh"' >> ~/.zshrc
+source ~/.zshrc
+
+# 3. 프로젝트에 설치
+cd /path/to/your-project
+agent-context install --non-interactive --force
+```
+
+### 제한 사항
+
+오프라인 환경에서는 다음 기능이 제한됩니다:
+
+| 기능 | 오프라인 지원 | 대안 |
+|------|:------------:|------|
+| `agent-context install` | O | 정상 동작 |
+| `agent-context upgrade` | O | 정상 동작 |
+| `agent-context doctor deps` | O | 정상 동작 |
+| `agent-context doctor connect` | X | 네트워크 필요 |
+| `agent-context pm jira` | X | Jira API 필요 |
+| `pre-commit autoupdate` | X | 사전 준비 필요 |
+| `glab`, `gh` 명령 | X | Git 플랫폼 API 필요 |
+
+### 권장 사항
+
+1. **의존성 사전 준비**: 온라인 환경에서 필요한 도구(git, jq, yq 등)를 사전에 설치 패키지로 준비
+2. **pre-commit 훅 사전 설정**: `.pre-commit-config.yaml`의 repo를 로컬 경로로 변경하거나 훅 바이너리를 사전 설치
+3. **토큰 파일 준비**: `~/.secrets/` 디렉토리와 토큰 파일을 사전에 준비
+
+---
+
 ## 관련 문서
 
 - [설계 철학 (ARCHITECTURE.md)](ARCHITECTURE.md)
