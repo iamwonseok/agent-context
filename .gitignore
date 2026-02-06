@@ -13,8 +13,10 @@
 *~
 
 # Agent workflow
-.context/test-results/
 .worktrees/
+
+# Local scratch (do not commit)
+.context/
 
 # Python
 __pycache__/

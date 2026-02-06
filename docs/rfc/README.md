@@ -14,7 +14,7 @@ RFC는 구현 전에 중요한 설계 결정을 구조적으로 기록하기 위
 ## RFC 라이프사이클
 
 ```
-Draft (.context/rfc/) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive (docs/rfc/)
+Draft (local only) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive (docs/rfc/)
    |                        |                    |                |
    Personal              Discussion           Execute         Reference
    Workspace              & Review              Code           Material
@@ -29,18 +29,18 @@ Draft (.context/rfc/) -> Issue (GitHub/GitLab/JIRA) -> Implementation -> Archive
 개인 작업 공간에서 RFC를 작성한다(커밋하지 않음):
 
 ```bash
-# Find next number (check both .context/rfc/ and docs/rfc/)
-ls -1 .context/rfc/*.md docs/rfc/*.md 2>/dev/null | grep -o '[0-9]\{3\}' | sort -n | tail -1
+# Find next number (check docs/rfc/)
+ls -1 docs/rfc/*.md 2>/dev/null | grep -o '[0-9]\{3\}' | sort -n | tail -1
 
 # Create new RFC
 NEXT_NUM=$(printf "%03d" $((LAST_NUM + 1)))
-cp docs/rfc/000-template.md ".context/rfc/${NEXT_NUM}-short-description.md"
+cp docs/rfc/000-template.md "/tmp/${NEXT_NUM}-short-description.md"
 
 # Edit RFC
 # Fill in all required sections
 ```
 
-**위치:** `.context/rfc/NNN-short-description.md` (gitignored)
+**위치:** 로컬 파일(예: `/tmp/NNN-short-description.md`), 커밋하지 않음
 
 ### 2. Issue 생성
 
@@ -53,7 +53,7 @@ RFC 초안이 준비되면 논의를 위한 이슈를 생성한다.
 gh issue create \
   --title "RFC-NNN: Short Description" \
   --label "rfc,proposal" \
-  --body-file .context/rfc/NNN-short-description.md
+  --body-file /tmp/NNN-short-description.md
 
 # GitLab
 # Note: glab does not have a stable --body-file flag across versions.
@@ -61,13 +61,13 @@ gh issue create \
 glab issue create \
   --title "RFC-NNN: Short Description" \
   --label "rfc,proposal" \
-  --description "$(cat .context/rfc/NNN-short-description.md)"
+  --description "$(cat /tmp/NNN-short-description.md)"
 
 # JIRA (pm)
 # Note: pm supports --description as a string (not a file flag).
 pm jira issue create "RFC-NNN: Short Description" \
   --type Task \
-  --description "$(cat .context/rfc/NNN-short-description.md)"
+  --description "$(cat /tmp/NNN-short-description.md)"
 ```
 
 **결과:** Issue URL이 단일 진실 소스가 된다
@@ -75,7 +75,7 @@ pm jira issue create "RFC-NNN: Short Description" \
 ### 3. 논의 및 결정
 
 - 이슈 댓글로 피드백 수집
-- 피드백을 반영해 `.context/rfc/NNN-*.md` 수정
+- 피드백을 반영해 로컬 RFC 초안을 수정
 - 이슈 설명을 수정하거나 댓글 추가
 - RFC 상태 업데이트:
   - `Proposed` (initial state)
@@ -94,7 +94,7 @@ git checkout -b feat/rfc-NNN-short-description
 # Reference RFC in commits
 git commit -m "feat: implement RFC-NNN phase 1"
 
-# Update RFC status in .context/rfc/
+# Update RFC status in local draft (optional)
 # Status: Accepted -> Implemented
 ```
 
@@ -104,7 +104,7 @@ git commit -m "feat: implement RFC-NNN phase 1"
 
 ```bash
 # Copy implemented RFC to docs/rfc/ for permanent reference
-cp .context/rfc/NNN-short-description.md docs/rfc/
+cp /tmp/NNN-short-description.md docs/rfc/
 
 # Commit as documentation
 git add docs/rfc/NNN-short-description.md
@@ -143,7 +143,7 @@ git commit -m "docs: archive RFC-NNN (implemented)"
 
 RFC 템플릿: `docs/rfc/000-template.md`
 
-새 RFC를 만들 때 `.context/rfc/`로 복사한다.
+새 RFC는 로컬 파일로 만든 뒤, 필요하면 `docs/rfc/`로 아카이브한다.
 
 ---
 
