@@ -181,11 +181,11 @@ test:unit:
     - |
       set -e
       echo "=== Unit Tests ==="
-      ./bin/agent-context.sh --version 2>&1 | grep -qE '[0-9]+\.[0-9]+\.[0-9]+'
+      ./bin/agent-context.sh --version 2>&1 | grep -cE '[0-9]+\.[0-9]+\.[0-9]+' >/dev/null
       echo "[V] version output valid"
-      ./bin/agent-context.sh --help 2>&1 | grep -q "USAGE"
+      ./bin/agent-context.sh --help 2>&1 | grep -c "USAGE" >/dev/null
       echo "[V] help output valid"
-      ./bin/agent-context.sh tests list 2>&1 | grep -q "deps"
+      ./bin/agent-context.sh tests list 2>&1 | grep -c "deps" >/dev/null
       echo "[V] tests list valid"
       echo "Summary: total=3 passed=3 failed=0 warned=0 skipped=0"
   rules:
