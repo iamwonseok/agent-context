@@ -45,10 +45,12 @@ variables:
   stage: test
   # image: ubuntu:22.04 is used on Docker executor; ignored on Shell executor.
   # before_script installs deps without root for Shell executor compatibility.
+  variables:
+    # Source repo IS the installation; tests use this to find bin/, lib/, etc.
+    AGENT_CONTEXT_DIR: $CI_PROJECT_DIR
   before_script:
     - |
       set -e
-      set -o pipefail
       CI_BIN_DIR="${CI_PROJECT_DIR}/.ci/bin"
       mkdir -p "${CI_BIN_DIR}"
       export PATH="${CI_BIN_DIR}:${PATH}"
@@ -167,7 +169,8 @@ test:agent-smoke:
   extends: .ubuntu-base
   script:
     - mkdir -p ~/.secrets && chmod 700 ~/.secrets
-    - ./bin/agent-context.sh tests smoke
+    # Skip project tag: source repo has no .agent/ (see .context/004)
+    - ./bin/agent-context.sh tests smoke --skip project
   rules:
     - !reference [.rules-mr-or-main, rules]
 
