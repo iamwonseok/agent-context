@@ -29,22 +29,10 @@ build/
 .DS_Store
 Thumbs.db
 
-# Test artifacts
-tests/workspace/
-tests/*.log
-
 # Local secrets (never commit) - root only
 /.secrets/
-
-# Test reports (local only)
-tests/reports/
 
 # Secrets (keep examples only)
 .secrets/*
 !.secrets/*.example
 !.secrets/README.md
-
-# Demo files (local only)
-agent-live-demo/
-demo/export/
-demo/.env

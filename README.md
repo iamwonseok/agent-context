@@ -150,8 +150,8 @@ agent-context install
 # 환경 진단 (의존성, 인증, 프로젝트 설정)
 agent-context doctor
 
-# 빠른 상태 점검 (smoke test)
-agent-context tests smoke
+# 빠른 상태 점검 (audit)
+agent-context audit --project
 ```
 
 **정상 출력 예시:**
@@ -164,12 +164,11 @@ agent-context doctor
 [V] yq found (optional)
 Summary: total=5 passed=5 failed=0 warned=0 skipped=0
 
-agent-context tests smoke
-[V] deps: all required dependencies found
-[V] auth: secrets directory exists
-[V] global: ~/.agent-context is valid
-[V] project: .agent/ structure is valid
-Summary: total=4 passed=4 failed=0 warned=0 skipped=0
+agent-context audit --project
+[V] project: .cursorrules exists
+[V] project: .project.yaml exists
+[V] project: .agent/ exists
+Summary: total=N passed=N failed=0 warned=0 skipped=0
 ```
 
 실패 항목이 있으면 아래 [빠른 문제 해결](#빠른-문제-해결) 또는 [docs/USER_GUIDE.md](docs/USER_GUIDE.md#문제-해결) 참고.
@@ -201,11 +200,9 @@ agent-context pm jira me
 | `agent-context upgrade` | 프로젝트 업그레이드 (brew upgrade와 유사) | `--apply`, `--prune`, `--rollback` |
 | `agent-context doctor` | 환경 진단 (오프라인) | 별칭: `dr`. 하위: `deps`, `auth`, `project`, `connect` |
 | `agent-context audit` | 저장소/프로젝트 감사 | `--repo` (개발자), `--project` (사용자) |
-| `agent-context tests` | 테스트 실행 (CI 친화) | 하위: `list`, `smoke`, `e2e`. `--tags`, `--skip`, `--formula` |
 | `agent-context log` | 실행 로그 조회 | `--list`, `--global`, `--project`, `--tail`, `--follow`, `--level` |
 | `agent-context report` | 진단 리포트 생성 | `--output <file>`, `--issue` (GitLab 이슈 생성) |
 | `agent-context clean` | 캐시/로그 정리 | `--logs`, `--global`, `--all`, `--force`, `--dry-run` |
-| `agent-context demo` | 설치 데모 실행 | `demo/install.sh` 래퍼 |
 | `agent-context pm <cmd>` | PM CLI (Jira/Confluence) | `pm config show`, `pm jira issue list` 등 |
 
 **공통 옵션:** `--debug`, `--quiet`, `--verbose`, `--version`, `--help`
@@ -224,11 +221,8 @@ agent-context install --non-interactive --force \
 
 | 목적 | 명령 | 상세 문서 |
 |------|------|-----------|
-| 현재 환경이 정상인지 빠르게 확인 | `agent-context tests smoke` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
-| 처음부터 끝까지 설치 과정 재현 | `agent-context demo` | [demo/README.md](demo/README.md) |
-| 특정 항목만 세밀하게 점검 | `agent-context tests --tags ...` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
-| Docker에서 크로스 플랫폼 검증 | `agent-context demo --os ubuntu` | [demo/README.md](demo/README.md) |
-| CI 파이프라인에 점검 추가 | `agent-context tests smoke` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
+| 현재 환경이 정상인지 빠르게 확인 | `agent-context audit --project` | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) |
+| 설치 직후 기본 점검 | `agent-context doctor && agent-context audit --project` | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) |
 
 ---
 
@@ -239,7 +233,7 @@ agent-context install --non-interactive --force \
 | 증상 | 원인 | 해결 |
 |------|------|------|
 | `doctor`에서 의존성 실패 | `jq`, `yq` 등 미설치 | Step 1 의존성 설치 재실행 |
-| `tests smoke`에서 auth 실패 | `~/.secrets/` 디렉토리 없음 | `mkdir -p ~/.secrets && chmod 700 ~/.secrets` |
+| `audit`에서 perms 경고 | `~/.secrets/` 권한 불일치 | `chmod 700 ~/.secrets` |
 | `install` 후 `.project.yaml`에 `CHANGE_ME` | 대화형 설정 건너뜀 | `.project.yaml` 직접 편집 또는 `agent-context install --force`로 재설치 |
 | `agent-context: command not found` | alias 미설정 또는 쉘 미재시작 | `source ~/.zshrc` (또는 `~/.bashrc`) 실행 |
 | `upgrade --apply` 후 문제 발생 | 업그레이드 충돌 | `agent-context upgrade --rollback`으로 복원 |
@@ -272,11 +266,11 @@ pre-commit run --all-files
 git commit -m "feat: add new feature"
 
 # 6. 변경사항 검증
-agent-context tests smoke          # 빠른 상태 점검
+agent-context audit --project      # 빠른 상태 점검
 agent-context audit --repo         # 저장소 내부 감사
 
-# 7. (선택) 데모로 E2E 검증
-./demo/install.sh --skip-e2e --only 6
+# 7. (선택) 추가 검증
+# Real E2E는 별도 리포에서 운영하는 것을 권장합니다.
 ```
 
 상세 가이드: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
@@ -292,10 +286,9 @@ agent-context/
 ├── lib/                # 공통 라이브러리
 │   ├── logging.sh      # 로깅 ([V]/[X]/[!]/[i] 마커)
 │   └── platform.sh     # 플랫폼 감지
-├── builtin/            # 내장 명령어 (doctor, tests, audit 등)
+├── builtin/            # 내장 명령어 (doctor, audit 등)
 │   ├── install.sh
 │   ├── doctor.sh
-│   ├── tests.sh
 │   ├── audit.sh
 │   ├── init.sh
 │   ├── update.sh
@@ -306,7 +299,6 @@ agent-context/
 ├── docs/               # 문서
 │   ├── ARCHITECTURE.md # 설계 철학 (SSOT)
 │   ├── USER_GUIDE.md   # 사용자 가이드
-│   ├── TESTING_GUIDE.md # 테스트 가이드
 │   ├── CONTRIBUTING.md # 기여자 가이드
 │   └── convention/     # 코딩 컨벤션
 ├── skills/             # 범용 스킬 템플릿 (Thin)
@@ -316,8 +308,7 @@ agent-context/
 │   └── project/        # 조직 레벨
 ├── tools/pm/           # JIRA/Confluence CLI
 ├── templates/          # 설치 시 복사되는 템플릿
-├── demo/               # 데모 및 E2E 테스트
-└── tests/              # 테스트
+└── (removed) demo/, tests/
 ```
 
 ---
@@ -356,12 +347,10 @@ agent-context/
 | 문서 | 설명 | 대상 |
 |------|------|------|
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | 설치, 설정, CLI 레퍼런스 | 사용자 |
-| [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) | 테스트 시나리오 및 검증 가이드 | 개발자/QA |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | 개발 및 기여 | 개발자 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 (SSOT) | 모두 |
 | [docs/convention/](docs/convention/) | 코딩 컨벤션 | 개발자 |
 | [workflows/README.md](workflows/README.md) | 워크플로 공통 정책 | 모두 |
-| [demo/README.md](demo/README.md) | 데모 가이드 (개발자/검증 전용) | 개발자 |
 
 ## 라이선스
 

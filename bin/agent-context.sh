@@ -81,9 +81,6 @@ COMMANDS:
     report      Generate diagnostic report
                 Options: --issue (opt-in GitLab issue creation)
 
-    demo        Run demo installation
-                Wrapper for demo/install.sh
-
     pm          Run project PM CLI (pm)
                 Delegates to .agent/tools/pm/bin/pm in current project
 
@@ -316,21 +313,6 @@ cmd_install() {
 }
 
 # ============================================================
-# Command: demo
-# ============================================================
-cmd_demo() {
-	local demo_script="${SCRIPT_DIR}/demo/install.sh"
-
-	if [[ ! -f "${demo_script}" ]]; then
-		log_error "demo/install.sh not found: ${demo_script}"
-		exit 1
-	fi
-
-	# Pass all arguments to demo/install.sh
-	exec bash "${demo_script}" "$@"
-}
-
-# ============================================================
 # Command: pm
 # ============================================================
 cmd_pm() {
@@ -514,10 +496,6 @@ main() {
 		report)
 			shift
 			cmd_report "$@"
-			;;
-		demo)
-			shift
-			cmd_demo "$@"
 			;;
 		pm)
 			shift

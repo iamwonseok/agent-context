@@ -75,7 +75,6 @@ agent-context/
 ├── docs/                  # 문서
 │   ├── ARCHITECTURE.md    # 설계 철학 (SSOT)
 │   ├── USER_GUIDE.md      # 사용자 가이드
-│   ├── TESTING_GUIDE.md   # 테스트 가이드
 │   ├── CONTRIBUTING.md    # 이 파일
 │   ├── convention/        # 코딩 컨벤션
 │   └── rfc/               # 설계 제안
@@ -104,16 +103,7 @@ agent-context/
 │   ├── project.yaml.tmpl
 │   └── ...
 │
-├── demo/                  # 데모 및 E2E 테스트
-│   ├── README.md
-│   ├── install.sh         # 데모 러너
-│   ├── docker/            # Docker 이미지
-│   ├── installation/      # 설치 데모 스크립트
-│   └── scenario/          # E2E 시나리오
-│
-└── tests/                 # 테스트
-    ├── skills/
-    └── workflows/
+└── (removed) demo/, tests/ # 데모/E2E 및 테스트 디렉터리는 제거됨
 ```
 
 ### 핵심 파일 설명
@@ -177,9 +167,10 @@ gh pr create --title "feat: Add new feature" --body "Description..."
 
 ---
 
-## 테스트
+## 테스트 (Deprecated)
 
-테스트 시나리오 전체 목록과 상세 검증 방법은 [TESTING_GUIDE.md](TESTING_GUIDE.md)를 참고.
+현재 레포에서는 테스트 러너 기반의 테스트 디렉터리(`tests/`)와 데모(`demo/`)를 유지하지 않습니다.
+기본 검증은 `pre-commit`, `agent-context doctor`, `agent-context audit`로 수행합니다.
 
 ### 정적 분석
 
@@ -199,24 +190,8 @@ pre-commit run trailing-whitespace --all-files
 # 저장소 내부 감사 (개발자 모드)
 agent-context audit --repo
 
-# 빠른 smoke 테스트
-agent-context tests smoke
-
-# 특정 태그만 실행
-agent-context tests --tags deps,auth
-
-# 테스트 목록 확인
-agent-context tests list
-```
-
-### 단위 테스트
-
-```bash
-# skills 검증
-./tests/skills/test_structure.sh
-
-# workflows 검증
-./tests/workflows/test_structure.sh
+# 저장소 내부 감사 (개발자 모드)
+agent-context audit --repo
 ```
 
 ### 통합 테스트
@@ -229,43 +204,9 @@ agent-context tests list
 
 ---
 
-## 데모 실행
+## 데모 실행 (Deprecated)
 
-### 로컬 데모
-
-```bash
-# 오프라인 모드 (API 호출 없음)
-./demo/install.sh --skip-e2e
-
-# 특정 단계까지만
-./demo/install.sh --skip-e2e --only 6
-```
-
-### Docker 데모
-
-```bash
-# Ubuntu 컨테이너
-./demo/install.sh --os ubuntu --skip-e2e
-
-# UBI9 컨테이너
-./demo/install.sh --os ubi9 --skip-e2e
-```
-
-### E2E 데모 (외부 서비스 연동)
-
-```bash
-# 환경 변수 설정
-export JIRA_EMAIL="your-email@example.com"
-export DEMO_GITLAB_GROUP="your-group"
-
-# E2E 실행
-./demo/install.sh --os ubuntu
-
-# 결과 확인
-cat /tmp/agent-context-demo-*/export/latest/DEMO_REPORT.md
-```
-
-데모 상세 정보는 [demo/README.md](../demo/README.md) 참조.
+`demo/` 디렉터리는 제거되었습니다.
 
 ---
 
@@ -293,10 +234,8 @@ cat /tmp/agent-context-demo-*/export/latest/DEMO_REPORT.md
 ### PR 체크리스트
 
 - [ ] `pre-commit run --all-files` 통과
-- [ ] `agent-context tests smoke` 통과
 - [ ] `agent-context audit --repo` 통과 (저장소 변경 시)
 - [ ] 관련 문서 업데이트 (README, 가이드 등)
-- [ ] 테스트 추가 또는 기존 테스트 통과
 - [ ] 커밋 메시지 컨벤션 준수
 
 ### RFC 프로세스
@@ -319,6 +258,4 @@ gh pr create --title "RFC: My Proposal"
 ## 관련 문서
 
 - [설계 철학 (ARCHITECTURE.md)](ARCHITECTURE.md)
-- [테스트 가이드 (TESTING_GUIDE.md)](TESTING_GUIDE.md)
 - [RFC 가이드 (rfc/README.md)](rfc/README.md)
-- [데모 가이드 (demo/README.md)](../demo/README.md)

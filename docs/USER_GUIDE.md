@@ -10,7 +10,6 @@ agent-context를 프로젝트에 설치하고 활용하는 방법을 안내합�
 - [명령어 레퍼런스](#명령어-레퍼런스)
 - [일상 운영](#일상-운영)
 - [워크플로 사용](#워크플로-사용)
-- [데모 및 E2E](#데모-및-e2e)
 - [문제 해결](#문제-해결)
 - [오프라인 환경 설치](#오프라인-환경-설치)
 
@@ -221,20 +220,19 @@ Summary: total=7 passed=7 failed=0 warned=0 skipped=0
 
 실패 항목이 있으면 `doctor` 출력의 `[X]` 메시지를 확인하고 [문제 해결](#문제-해결) 참고.
 
-### 2단계: 빠른 상태 점검 (tests smoke)
+### 2단계: 빠른 상태 점검 (audit)
 
 ```bash
-agent-context tests smoke
+agent-context audit --project
 ```
 
-핵심 태그(`deps`, `auth`, `global`, `project`)를 한 번에 검사합니다:
+`.agent/` 구조와 `.project.yaml` 설정의 정합성을 검사합니다. `CHANGE_ME` 같은 미완성 설정도 감지합니다.
 
 ```
-[V] deps: all required dependencies found
-[V] auth: secrets directory exists
-[V] global: ~/.agent-context is valid
-[V] project: .agent/ structure is valid
-Summary: total=4 passed=4 failed=0 warned=0 skipped=0
+[V] project: .cursorrules exists
+[V] project: .project.yaml exists
+[V] project: .agent/ exists
+Summary: total=N passed=N failed=0 warned=0 skipped=0
 ```
 
 ### 3단계: 프로젝트 감사 (audit)
@@ -248,7 +246,7 @@ agent-context audit --project
 ### 전체 검증 한 줄 실행
 
 ```bash
-agent-context doctor && agent-context tests smoke && agent-context audit --project
+agent-context doctor && agent-context audit --project
 ```
 
 세 명령 모두 exit code 0이면 설치가 정상입니다.
@@ -405,58 +403,6 @@ agent-context audit --repo      # 개발자 모드 (저장소 내부)
 agent-context audit --project   # 사용자 모드 (프로젝트 설치)
 ```
 
-### tests -- 테스트 실행
-
-```bash
-agent-context tests [subcommand] [options]
-```
-
-| 하위 명령/옵션 | 설명 |
-|----------------|------|
-| `list` | 사용 가능한 테스트 및 태그 목록 |
-| `smoke` | 빠른 검사 (deps, auth, global, project) |
-| `e2e` | 전체 E2E 테스트 (Docker 필요) |
-| `--tags <tags>` | 지정 태그만 실행 (쉼표 구분) |
-| `--skip <tags>` | 지정 태그 건너뛰기 |
-| `--formula <expr>` | 부울 수식으로 태그 필터링 |
-
-**사용 가능한 태그:**
-
-| 태그 | 설명 |
-|------|------|
-| `deps` | 필수 의존성 확인 |
-| `auth` | 인증 및 시크릿 |
-| `global` | 글로벌 설치 (`~/.agent-context`) |
-| `project` | 프로젝트 설치 (`.agent/`) |
-| `connect` | 외부 연결 (네트워크 필요) |
-| `auditRepo` | 저장소 템플릿 감사 |
-| `auditProject` | 프로젝트 구조 감사 |
-| `installNonInteractive` | 비대화형 설치 테스트 |
-
-**formula 구문:** `and`/`&&`, `or`/`||`, `not`/`!`, 괄호 `()` 지원. 우선순위: not > and > or.
-
-```bash
-# 빠른 smoke 테스트
-agent-context tests smoke
-
-# 특정 태그 실행
-agent-context tests --tags deps,auth
-
-# smoke에서 project 제외
-agent-context tests smoke --skip project
-
-# formula: deps AND auth, NOT connect
-agent-context tests --formula "deps and auth and not connect"
-
-# formula: audit 중 하나 + deps
-agent-context tests --formula "(auditRepo or auditProject) and deps"
-
-# 사용 가능한 테스트 목록
-agent-context tests list
-```
-
-**exit code:** 0(성공), 1(실패), 3(환경 스킵)
-
 ### log -- 실행 로그 조회
 
 ```bash
@@ -522,14 +468,6 @@ agent-context clean --global        # 글로벌 상태 정리
 agent-context clean --all --force   # 전체 정리 (확인 없이)
 ```
 
-### demo -- 설치 데모 실행
-
-```bash
-agent-context demo [options]
-```
-
-`demo/install.sh`의 래퍼입니다. 상세 사용법은 [demo/README.md](../demo/README.md) 참고.
-
 ### pm -- PM CLI 실행
 
 ```bash
@@ -586,7 +524,7 @@ agent-context upgrade
 agent-context upgrade --apply
 
 # 4. 적용 후 검증
-agent-context tests smoke
+agent-context audit --project
 ```
 
 ### 롤백
@@ -598,7 +536,7 @@ agent-context tests smoke
 agent-context upgrade --rollback
 
 # 복원 후 검증
-agent-context tests smoke
+agent-context audit --project
 ```
 
 ### 로그 관리
@@ -716,7 +654,7 @@ variables:
 
 test:
   script:
-    - agent-context tests smoke
+    - agent-context audit --project
 ```
 
 **GitHub Actions:**
@@ -731,7 +669,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - run: agent-context tests smoke
+      - run: agent-context audit --project
 ```
 
 ---
@@ -776,7 +714,7 @@ pre-commit run --all-files
 agent-context audit --project
 
 # smoke 테스트 (CI에 올리기 전 로컬 확인)
-agent-context tests smoke
+agent-context audit --project
 
 # PR/MR 생성
 git push origin feat/TASK-123-description
@@ -792,7 +730,7 @@ gh pr create --title "TASK-123: Add new feature"
 | 작업 시작 전 | `agent-context doctor` | 환경 이상 조기 발견 |
 | 작업 시작 전 | `agent-context update --check` | 소스 업데이트 확인 |
 | 작업 완료 후 | `agent-context audit --project` | 설정 정합성 확인 |
-| PR 생성 전 | `agent-context tests smoke` | CI 실패 사전 방지 |
+| PR 생성 전 | `agent-context audit --project` | 구조/설정 정합성 확인 |
 | 주기적 | `agent-context update && agent-context upgrade --apply` | 최신 상태 유지 |
 
 ### CI/CD 통합
@@ -823,7 +761,7 @@ agent-context-check:
     - git clone "$CI_REPOSITORY_URL" ~/.agent-context
   script:
     - ~/.agent-context/bin/agent-context.sh doctor deps
-    - ~/.agent-context/bin/agent-context.sh tests smoke --skip connect
+    - ~/.agent-context/bin/agent-context.sh audit --repo
   allow_failure: false
 
 agent-context-audit:
@@ -858,7 +796,7 @@ jobs:
       - name: Run smoke tests
         run: |
           ~/.agent-context/bin/agent-context.sh doctor deps
-          ~/.agent-context/bin/agent-context.sh tests smoke --skip connect
+          ~/.agent-context/bin/agent-context.sh audit --repo
 ```
 
 ### 스킬 활용
@@ -872,22 +810,6 @@ jobs:
 | Implement | 구현 | `.agent/skills/implement.md` |
 | Test | 품질 검증 | `.agent/skills/test.md` |
 | Review | 결과 확인 | `.agent/skills/review.md` |
-
----
-
-## 데모 및 E2E
-
-> **주의:** 데모/E2E 테스트는 실제 Jira/GitLab/Confluence에 리소스를 생성/수정합니다. 권한, 쿼터, 네트워크 사유로 실패가 정상일 수 있습니다.
-
-| 목적 | 명령 |
-|------|------|
-| 설치 과정 재현 (오프라인) | `agent-context demo --skip-e2e` |
-| 전체 E2E 재현 | `agent-context demo` |
-| Docker 크로스 플랫폼 | `agent-context demo --os ubuntu` |
-
-상세 사용법, 환경 설정, 결과 해석은 [demo/README.md](../demo/README.md) 참고.
-
-테스트 시나리오 상세는 [TESTING_GUIDE.md](TESTING_GUIDE.md) 참고.
 
 ---
 
@@ -913,7 +835,7 @@ agent-context doctor connect   # 외부 연결 (네트워크 필요)
 | 증상 | 원인 | 확인 명령 | 해결 |
 |------|------|-----------|------|
 | `doctor`에서 의존성 실패 | 도구 미설치 | `agent-context doctor deps` | 의존성 재설치 |
-| `tests smoke`에서 auth 실패 | `~/.secrets/` 없음 | `agent-context doctor auth` | `mkdir -p ~/.secrets && chmod 700 ~/.secrets` |
+| `audit`에서 perms 경고 | `~/.secrets/` 권한 불일치 | `agent-context audit perms` | `chmod 700 ~/.secrets` |
 | `.project.yaml`에 `CHANGE_ME` | 설정 미완료 | `agent-context audit --project` | `.project.yaml` 편집 또는 `install --force` |
 | `agent-context: command not found` | alias 미설정 | `type agent-context` | `source ~/.zshrc` 또는 `init` 재실행 |
 | `upgrade --apply` 후 문제 | 업그레이드 충돌 | `agent-context log upgrade` | `agent-context upgrade --rollback` |
@@ -1075,7 +997,7 @@ agent-context install --non-interactive --force
 
 # 4. 설치 검증
 agent-context doctor
-agent-context tests smoke
+agent-context audit --project
 ```
 
 ### 제한 사항
@@ -1087,7 +1009,7 @@ agent-context tests smoke
 | `agent-context install` | O | 정상 동작 |
 | `agent-context upgrade` | O | 정상 동작 |
 | `agent-context doctor deps` | O | 정상 동작 |
-| `agent-context tests smoke` | O | 정상 동작 |
+| `agent-context audit --project` | O | 정상 동작 |
 | `agent-context doctor connect` | X | 네트워크 필요 |
 | `agent-context pm jira` | X | Jira API 필요 |
 | `pre-commit autoupdate` | X | 사전 준비 필요 |
@@ -1104,8 +1026,6 @@ agent-context tests smoke
 ## 관련 문서
 
 - [설계 철학 (ARCHITECTURE.md)](ARCHITECTURE.md)
-- [테스트 가이드 (TESTING_GUIDE.md)](TESTING_GUIDE.md)
 - [워크플로 공통 정책 (workflows/README.md)](../workflows/README.md)
 - [기여자 가이드 (CONTRIBUTING.md)](CONTRIBUTING.md)
 - [코딩 컨벤션 (convention/)](convention/)
-- [데모 가이드 (demo/README.md)](../demo/README.md)

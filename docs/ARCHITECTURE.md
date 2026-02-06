@@ -395,7 +395,7 @@ agent-context/              # This repo = what gets deployed
 |-- workflows/              # Context-aware workflow definitions
 |-- tools/                  # CLI tools (agent, lint, pm, worktree)
 |-- docs/                   # Documentation and style guides
-`-- tests/                  # Workflow integration tests
+`-- (removed) tests/         # Workflow integration tests (removed)
 ```
 
 **배포 모델 (Hybrid):**
@@ -481,9 +481,7 @@ agent-context/              # This repo = what gets deployed
 - `tools/lint/check_no_emoji_text.py`: 모든 텍스트 파일에서 이모지/장식 유니코드 검출 시 실패
 - 위반 시 `[X]` 출력과 함께 커밋 차단
 
-`tests/workflows/verify.sh`에서 워크플로-스킬 정합성을 검증한다:
-- 각 워크플로가 올바른 스킬 시퀀스를 트리거하는지 확인
-- 시퀀스 로그를 생성하고 검증
+워크플로-스킬 정합성 검증은 필요 시 이슈 기반으로 테스트를 추가하여 보강한다.
 
 ---
 

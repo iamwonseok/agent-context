@@ -1,9 +1,0 @@
-{
-  "accountId": "mock-user-123",
-  "accountType": "atlassian",
-  "displayName": "Mock Test User",
-  "emailAddress": "mock-test@example.com",
-  "active": true,
-  "timeZone": "UTC",
-  "locale": "en_US"
-}
