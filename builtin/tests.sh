@@ -463,21 +463,32 @@ test_install_non_interactive() {
 }
 
 # ============================================================
-# Formula Parser (Boolean Expression Evaluator)
+# Formula Parser (Include/Exclude Collection)
 # ============================================================
 # Supports: and, or, not, parentheses
-# Uses a simple recursive descent parser
+# Uses a recursive descent parser that collects include/exclude
+# tag sets. No subshell calls -- avoids bash variable-isolation.
+#
+# Semantics for tag selection:
+#   Positive tags  -> include set
+#   NOT tags       -> exclude set
+#   AND / OR       -> combine (both operators collect tags)
+#
+# "deps and auth"           -> include {deps, auth}
+# "not connect"             -> exclude {connect}, include defaults to all
+# "deps and auth and not connect" -> include {deps, auth}, exclude {connect}
 #
 # Grammar:
 #   expr   -> term (('or' | '||') term)*
 #   term   -> factor (('and' | '&&') factor)*
 #   factor -> ('not' | '!') factor | '(' expr ')' | TAG
-#
-# Implementation: tokenize -> parse -> evaluate per tag
 
-# Global for formula parsing
+# Global state
 declare -a FORMULA_TOKENS
 FORMULA_POS=0
+FORMULA_NEGATED=false
+declare -a FORMULA_INCLUDE_TAGS
+declare -a FORMULA_EXCLUDE_TAGS
 
 formula_tokenize() {
 	local formula="$1"
@@ -489,10 +500,9 @@ formula_tokenize() {
 	formula="${formula//||/ or }"
 	formula="${formula//!/ not }"
 
-	# Tokenize
+	# Tokenize (handle parentheses attached to words)
 	local word
 	for word in ${formula}; do
-		# Handle parentheses attached to words
 		while [[ "${word}" == "("* ]] && [[ "${word}" != "(" ]]; do
 			FORMULA_TOKENS+=("(")
 			word="${word#\(}"
@@ -515,157 +525,70 @@ formula_tokenize() {
 	done
 }
 
-formula_current() {
-	if [[ ${FORMULA_POS} -lt ${#FORMULA_TOKENS[@]} ]]; then
-		echo "${FORMULA_TOKENS[${FORMULA_POS}]}"
-	else
-		echo ""
-	fi
-}
-
-formula_advance() {
-	FORMULA_POS=$((FORMULA_POS + 1))
-}
-
-formula_parse_factor() {
-	local current
-	current=$(formula_current)
+# factor -> NOT factor | '(' expr ')' | TAG
+# Collects tags into FORMULA_INCLUDE_TAGS or FORMULA_EXCLUDE_TAGS
+formula_collect_factor() {
+	local current="${FORMULA_TOKENS[${FORMULA_POS}]:-}"
 
 	case "${current}" in
 		not|NOT)
-			formula_advance
-			local inner
-			inner=$(formula_parse_factor)
-			echo "not:${inner}"
+			FORMULA_POS=$((FORMULA_POS + 1))
+			local was_negated="${FORMULA_NEGATED}"
+			if [[ "${FORMULA_NEGATED}" == "true" ]]; then
+				FORMULA_NEGATED=false
+			else
+				FORMULA_NEGATED=true
+			fi
+			formula_collect_factor
+			FORMULA_NEGATED="${was_negated}"
 			;;
 		"(")
-			formula_advance
-			local inner
-			inner=$(formula_parse_expr)
-			if [[ "$(formula_current)" == ")" ]]; then
-				formula_advance
+			FORMULA_POS=$((FORMULA_POS + 1))
+			formula_collect_expr
+			if [[ "${FORMULA_TOKENS[${FORMULA_POS}]:-}" == ")" ]]; then
+				FORMULA_POS=$((FORMULA_POS + 1))
 			fi
-			echo "${inner}"
 			;;
 		""|and|AND|or|OR|")")
-			echo "true"
+			# Empty or unexpected: skip
 			;;
 		*)
-			formula_advance
-			echo "tag:${current}"
+			FORMULA_POS=$((FORMULA_POS + 1))
+			if [[ "${FORMULA_NEGATED}" == "true" ]]; then
+				FORMULA_EXCLUDE_TAGS+=("${current}")
+			else
+				FORMULA_INCLUDE_TAGS+=("${current}")
+			fi
 			;;
 	esac
 }
 
-formula_parse_term() {
-	local left
-	left=$(formula_parse_factor)
-
+# term -> factor (AND factor)*
+formula_collect_term() {
+	formula_collect_factor
 	while true; do
-		local current
-		current=$(formula_current)
-		case "${current}" in
-			and|AND)
-				formula_advance
-				local right
-				right=$(formula_parse_factor)
-				left="and:${left}:${right}"
-				;;
-			*)
-				break
-				;;
-		esac
+		local current="${FORMULA_TOKENS[${FORMULA_POS}]:-}"
+		if [[ "${current}" == "and" ]] || [[ "${current}" == "AND" ]]; then
+			FORMULA_POS=$((FORMULA_POS + 1))
+			formula_collect_factor
+		else
+			break
+		fi
 	done
-
-	echo "${left}"
 }
 
-formula_parse_expr() {
-	local left
-	left=$(formula_parse_term)
-
+# expr -> term (OR term)*
+formula_collect_expr() {
+	formula_collect_term
 	while true; do
-		local current
-		current=$(formula_current)
-		case "${current}" in
-			or|OR)
-				formula_advance
-				local right
-				right=$(formula_parse_term)
-				left="or:${left}:${right}"
-				;;
-			*)
-				break
-				;;
-		esac
+		local current="${FORMULA_TOKENS[${FORMULA_POS}]:-}"
+		if [[ "${current}" == "or" ]] || [[ "${current}" == "OR" ]]; then
+			FORMULA_POS=$((FORMULA_POS + 1))
+			formula_collect_term
+		else
+			break
+		fi
 	done
-
-	echo "${left}"
-}
-
-formula_parse() {
-	local formula="$1"
-	formula_tokenize "${formula}"
-	formula_parse_expr
-}
-
-# Evaluate parsed formula for a given tag
-# Returns 0 if tag should run, 1 otherwise
-formula_evaluate() {
-	local ast="$1"
-	local tag="$2"
-
-	case "${ast}" in
-		true)
-			return 0
-			;;
-		tag:*)
-			local match_tag="${ast#tag:}"
-			if [[ "${tag}" == "${match_tag}" ]]; then
-				return 0
-			else
-				return 1
-			fi
-			;;
-		not:*)
-			local inner="${ast#not:}"
-			if formula_evaluate "${inner}" "${tag}"; then
-				return 1
-			else
-				return 0
-			fi
-			;;
-		and:*)
-			local rest="${ast#and:}"
-			# Split at first :tag: or :and: or :or: or :not:
-			# This is tricky, use a simpler approach
-			local left right
-			# Find the matching right operand
-			left=$(echo "${rest}" | sed 's/:\(tag:\|and:\|or:\|not:\|true\)/\n\1/' | head -1)
-			right="${rest#${left}:}"
-
-			if formula_evaluate "${left}" "${tag}" && formula_evaluate "${right}" "${tag}"; then
-				return 0
-			else
-				return 1
-			fi
-			;;
-		or:*)
-			local rest="${ast#or:}"
-			local left right
-			left=$(echo "${rest}" | sed 's/:\(tag:\|and:\|or:\|not:\|true\)/\n\1/' | head -1)
-			right="${rest#${left}:}"
-
-			if formula_evaluate "${left}" "${tag}" || formula_evaluate "${right}" "${tag}"; then
-				return 0
-			else
-				return 1
-			fi
-			;;
-		*)
-			return 1
-			;;
-	esac
 }
 
 # Get all matching tags from formula
@@ -673,19 +596,47 @@ formula_get_matching_tags() {
 	local formula="$1"
 	local matching_tags=()
 
-	# Parse formula once
-	local ast
-	ast=$(formula_parse "${formula}")
+	FORMULA_INCLUDE_TAGS=()
+	FORMULA_EXCLUDE_TAGS=()
+	FORMULA_NEGATED=false
 
-	# Test each registered tag
+	formula_tokenize "${formula}"
+	formula_collect_expr
+
 	for entry in "${TEST_REGISTRY[@]}"; do
 		local tag="${entry%%:*}"
-		if formula_evaluate "${ast}" "${tag}"; then
+		local include=false
+
+		# Determine inclusion
+		if [[ ${#FORMULA_INCLUDE_TAGS[@]} -eq 0 ]]; then
+			# No explicit includes -> default to all
+			include=true
+		else
+			local inc
+			for inc in "${FORMULA_INCLUDE_TAGS[@]}"; do
+				if [[ "${tag}" == "${inc}" ]]; then
+					include=true
+					break
+				fi
+			done
+		fi
+
+		# Apply exclusions
+		if [[ "${include}" == "true" ]]; then
+			local exc
+			for exc in "${FORMULA_EXCLUDE_TAGS[@]}"; do
+				if [[ "${tag}" == "${exc}" ]]; then
+					include=false
+					break
+				fi
+			done
+		fi
+
+		if [[ "${include}" == "true" ]]; then
 			matching_tags+=("${tag}")
 		fi
 	done
 
-	# Return comma-separated
 	local IFS=','
 	echo "${matching_tags[*]}"
 }

@@ -7,7 +7,6 @@
 #   agent-context init      # Initialize global environment
 #   agent-context install   # Install to current project
 #   agent-context doctor    # Diagnose installation health
-#   agent-context help      # Show help
 #
 # Global installation:
 #   git clone <repo> ~/.agent-context
@@ -92,13 +91,11 @@ COMMANDS:
     pm          Run project PM CLI (pm)
                 Delegates to .agent/tools/pm/bin/pm in current project
 
-    help        Show this help message
-    --version   Show version information
-
 COMMON OPTIONS:
     -d, --debug     Display debugging information
     -q, --quiet     Reduce output (keep final Summary)
     -v, --verbose   Increase output verbosity
+    -V, --version   Show version information
     -h, --help      Show this message
 
 GLOBAL INSTALLATION:
