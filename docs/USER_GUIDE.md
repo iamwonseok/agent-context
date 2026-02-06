@@ -16,29 +16,145 @@ agent-context를 프로젝트에 설치하고 활용하는 방법을 안내합�
 
 ### 필수 조건
 
-```bash
-# 필수 도구 설치
-brew install gh glab jq yq
-pip install pre-commit
+#### 1. GitLab 접근 설정
 
-# 인증 설정
-gh auth login      # GitHub
-glab auth login    # GitLab
+**SSH 키 생성** (없는 경우):
+
+```bash
+# 기존 키 확인
+ls -la ~/.ssh/id_ed25519.pub
+
+# 새로 생성
+ssh-keygen -t ed25519 -C "your-email@fadutec.dev"
+
+# SSH Agent에 추가
+eval "$(ssh-agent -s)"
+
+# macOS: Keychain에 저장 (재부팅 후에도 유지)
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+
+# Linux: 일반 추가
+ssh-add ~/.ssh/id_ed25519
+```
+
+**macOS 추가 설정** (선택):
+
+`~/.ssh/config`에 다음을 추가하면 재부팅 후에도 Keychain에서 자동 로드:
+
+```
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519
+```
+
+**GitLab에 SSH 키 등록**:
+
+1. https://gitlab.fadutec.dev/-/user_settings/ssh_keys 접속
+2. `cat ~/.ssh/id_ed25519.pub` 출력 내용 복사
+3. "Add new key" 클릭 후 붙여넣기
+
+**SSH 연결 테스트**:
+
+```bash
+ssh -T git@gitlab.fadutec.dev
+# 성공: "Welcome to GitLab, @username!"
+```
+
+#### 2. GitLab PAT 생성
+
+1. https://gitlab.fadutec.dev/-/user_settings/personal_access_tokens 접속
+2. Token name: "agent-context" (또는 원하는 이름)
+3. Scopes: `api`, `read_repository`, `write_repository`
+4. "Create personal access token" 클릭
+5. 토큰 복사 (다시 볼 수 없음)
+
+```bash
+# PAT 저장
+mkdir -p ~/.secrets && chmod 700 ~/.secrets
+read -sp "GitLab PAT: " token && echo "$token" > ~/.secrets/gitlab-api-token && chmod 600 ~/.secrets/gitlab-api-token && unset token
+```
+
+#### 3. 의존성 설치
+
+**macOS**:
+
+```bash
+brew install git jq yq glab
+pip3 install pre-commit
+```
+
+**Ubuntu/Debian**:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git curl jq python3-pip
+
+# yq (아키텍처 자동 감지)
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64) YQ_BINARY="yq_linux_amd64" ;;
+    aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
+esac
+sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
+sudo chmod +x /usr/local/bin/yq
+
+# glab
+curl -s https://raw.githubusercontent.com/profclems/glab/trunk/scripts/install.sh | sudo sh
+
+pip3 install --user pre-commit
+```
+
+**RHEL/CentOS/Fedora**:
+
+```bash
+sudo dnf install -y git curl jq python3 python3-pip
+# yq, glab 설치는 Ubuntu와 동일
+```
+
+#### 4. glab 인증
+
+```bash
+glab auth login --hostname gitlab.fadutec.dev
+# Protocol: SSH
+# Login method: Paste a token
+# Token: [저장한 PAT 붙여넣기]
+
+glab auth status  # 확인
+```
+
+#### 5. Atlassian 토큰 설정 (옵션)
+
+Jira/Confluence 연동이 필요한 경우:
+
+1. https://id.atlassian.com/manage-profile/security/api-tokens 접속
+2. "Create API token" 클릭
+3. 토큰 저장:
+
+```bash
+read -sp "Atlassian Token: " token && echo "$token" > ~/.secrets/atlassian-api-token && chmod 600 ~/.secrets/atlassian-api-token && unset token
 ```
 
 ### 설치 방법
 
 ```bash
-# 1. agent-context 클론 (일회성)
-git clone https://github.com/your-org/agent-context.git /tmp/agent-context
+# 1. agent-context 클론 (글로벌 설치)
+git clone git@gitlab.fadutec.dev:soc-ip/agentic-ai/agent-context.git ~/.agent-context
 
-# 2. 대상 프로젝트에 설치
+# 2. 글로벌 환경 초기화
+~/.agent-context/agent-context.sh init
+
+# 3. 쉘 재시작
+source ~/.zshrc   # zsh
+# source ~/.bashrc  # bash (Linux)
+
+# 4. 대상 프로젝트에 설치
 cd /path/to/your-project
-/tmp/agent-context/install.sh .
+agent-context install
 
 # 또는 프로필 지정
-/tmp/agent-context/install.sh --profile minimal .
-/tmp/agent-context/install.sh --profile full .
+agent-context install --profile minimal
+agent-context install --profile full
 ```
 
 ### 설치 프로필

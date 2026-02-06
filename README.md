@@ -28,28 +28,55 @@
 
 **macOS (Homebrew):**
 ```bash
-brew install git curl jq yq gh glab
-pip install pre-commit
+brew install git curl jq yq glab
+pip3 install pre-commit
 ```
 
 **Ubuntu/Debian/WSL:**
 ```bash
 sudo apt-get update
-sudo apt-get install -y git curl jq
-# yq (YAML processor)
-sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo apt-get install -y git curl jq python3-pip
+
+# yq (아키텍처 자동 감지)
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64) YQ_BINARY="yq_linux_amd64" ;;
+    aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
+esac
+sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
 sudo chmod +x /usr/local/bin/yq
-# gh (GitHub CLI)
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-sudo apt-get update && sudo apt-get install -y gh
-pip install pre-commit
+
+# glab (GitLab CLI)
+curl -s https://raw.githubusercontent.com/profclems/glab/trunk/scripts/install.sh | sudo sh
+
+pip3 install --user pre-commit
 ```
+
+**RHEL/CentOS/Fedora:**
+```bash
+sudo dnf install -y git curl jq python3 python3-pip
+
+# yq (아키텍처 자동 감지)
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64) YQ_BINARY="yq_linux_amd64" ;;
+    aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
+esac
+sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
+sudo chmod +x /usr/local/bin/yq
+
+# glab (GitLab CLI)
+curl -s https://raw.githubusercontent.com/profclems/glab/trunk/scripts/install.sh | sudo sh
+
+pip3 install --user pre-commit
+```
+
+상세 설정 (GitLab SSH/PAT 등): [docs/USER_GUIDE.md](docs/USER_GUIDE.md#필수-조건)
 
 ### Step 2: agent-context 클론 (글로벌 설치)
 
 ```bash
-git clone https://github.com/your-org/agent-context.git ~/.agent-context
+git clone git@gitlab.fadutec.dev:soc-ip/agentic-ai/agent-context.git ~/.agent-context
 ```
 
 ### Step 3: 글로벌 환경 초기화
@@ -98,11 +125,23 @@ API Token Setup Guide
 
 ### Step 4: 쉘 재시작
 
+쉘 설정을 반영하기 위해 다음 중 하나를 실행:
+
+**zsh 사용자** (macOS 기본, 일부 Linux):
 ```bash
-source ~/.zshrc   # zsh 사용자
-# source ~/.bashrc  # bash 사용자 (Linux)
-# source ~/.bash_profile  # bash 사용자 (macOS)
+source ~/.zshrc
 ```
+
+**bash 사용자**:
+```bash
+# Linux
+source ~/.bashrc
+
+# macOS (bash 사용 시)
+source ~/.bash_profile
+```
+
+**또는**: 터미널 창을 닫고 새로 열기
 
 ### Step 5: API 토큰 설정
 
@@ -256,7 +295,7 @@ agent-context 자체를 개발하거나 기여합니다.
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/your-org/agent-context.git
+git clone git@gitlab.fadutec.dev:soc-ip/agentic-ai/agent-context.git
 cd agent-context
 
 # 2. 의존성 설치
