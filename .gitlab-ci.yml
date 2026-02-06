@@ -122,14 +122,13 @@ lint:
 # Test Stage - Core Tests (Always Run on MR/main)
 # =============================================================================
 
-# Agent-context smoke tests (deps, auth, global, project)
-# Fast, offline checks for PR validation
-test:agent-smoke:
+# Smoke tests: Layer 0 (static/contract) + Layer 1 (offline functional)
+# All token-free tests for MR validation
+test:smoke:
   extends: .ubuntu-base
   script:
     - mkdir -p ~/.secrets && chmod 700 ~/.secrets
-    # Skip project tag: source repo has no .agent/ (see .context/004)
-    - ./bin/agent-context.sh tests smoke --skip project
+    - ./bin/agent-context.sh tests smoke
   rules:
     - !reference [.rules-mr-or-main, rules]
 
@@ -140,27 +139,18 @@ test:unit:
     - |
       set -e
       echo "=== Unit Tests ==="
-      ./bin/agent-context.sh --version 2>&1 | grep -cE '[0-9]+\.[0-9]+\.[0-9]+' >/dev/null
+      ./bin/agent-context.sh --version 2>&1 | grep -qE '[0-9]+\.[0-9]+\.[0-9]+'
       echo "[V] version output valid"
-      ./bin/agent-context.sh --help 2>&1 | grep -c "USAGE" >/dev/null
+      ./bin/agent-context.sh --help 2>&1 | grep -q "USAGE"
       echo "[V] help output valid"
-      ./bin/agent-context.sh tests list 2>&1 | grep -c "deps" >/dev/null
+      list_output=$(./bin/agent-context.sh tests list 2>&1)
+      echo "$list_output" | grep -qE 'prereq|deps'
       echo "[V] tests list valid"
       echo "Summary: total=3 passed=3 failed=0 warned=0 skipped=0"
   rules:
     - !reference [.rules-mr-or-main, rules]
 
-# Non-interactive install regression test
-# Ensures install --non-interactive doesn't break on PR changes
-test:install-noninteractive:
-  extends: .ubuntu-base
-  script:
-    - ./bin/agent-context.sh tests --tags installNonInteractive
-  rules:
-    - !reference [.rules-mr-or-main, rules]
-
-# Workflow tests (Stage 0-2: unit, smoke, local-git)
-# E2E tests (Stage 3) require API tokens and are run locally only
+# Workflow tests via Docker (unit, smoke, local-git)
 test:workflow:
   extends: .docker-test
   script:
@@ -206,31 +196,6 @@ test:meta:
         - skills/**/*
         - workflows/**/*
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# Error handling tests (no tokens required)
-test:error-handling:
-  extends: .docker-test
-  script:
-    - docker compose -f tests/docker-compose.test.yml run error-handling
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        - tests/integration/**/*
-        - tools/pm/**/*
-        - tools/agent/**/*
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# Scenario tests (quick mode, core scenarios only)
-test:scenario:
-  extends: .docker-test
-  script:
-    - docker compose -f tests/docker-compose.test.yml run scenario
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        - tests/scenario/**/*
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  allow_failure: true
 
 # =============================================================================
 # Test Stage - Demo Install Tests (via demo/install.sh)
@@ -324,8 +289,8 @@ test:e2e-demo-full:
     - when: manual
   allow_failure: true
 
-# Full scenario tests (all 15 scenarios, manual only)
-test:scenario-full:
+# Full tests (all layers + legacy, manual only)
+test:full:
   extends: .docker-test
   variables:
     DOCKER_TLS_CERTDIR: ""
@@ -336,7 +301,23 @@ test:scenario-full:
     JIRA_URL: ${JIRA_URL}
     JIRA_EMAIL: ${JIRA_EMAIL}
   script:
-    - docker compose -f tests/docker-compose.test.yml run scenario-full
+    - docker compose -f tests/docker-compose.test.yml run full-tests
   rules:
     - when: manual
+  allow_failure: true
+
+# Layer 2: Mock integration tests (requires mock server)
+test:mock-integration:
+  extends: .docker-test
+  script:
+    - docker compose -f tests/docker-compose.test.yml up -d mock-server
+    - sleep 5  # Wait for mock server to be healthy
+    - docker compose -f tests/docker-compose.test.yml run mock-tests
+    - docker compose -f tests/docker-compose.test.yml down
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - tools/pm/**/*
+        - tests/mock/**/*
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   allow_failure: true

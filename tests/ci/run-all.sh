@@ -7,9 +7,8 @@
 #
 # Stages:
 #   lint    - Pre-commit lint checks
-#   unit    - Unit tests (version, help)
-#   smoke   - Smoke tests (deps, auth, global, project)
-#   install - Non-interactive install test
+#   unit    - Unit tests (version, help, tests list)
+#   smoke   - Smoke tests (Layer 0 + Layer 1 - token-free)
 #   docker  - Docker-based install tests (ubuntu, ubi9)
 #   e2e     - E2E tests (requires tokens + network)
 
@@ -18,6 +17,9 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Ensure AGENT_CONTEXT_DIR is set for tests to locate agent-context resources
+export AGENT_CONTEXT_DIR="${AGENT_CONTEXT_DIR:-${ROOT_DIR}}"
 
 # ============================================================
 # Colors
@@ -93,9 +95,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ============================================================
-# Result Tracking
+# Result Tracking (bash 3.2 compatible)
 # ============================================================
-declare -A STAGE_RESULTS
+# Store results as "stage:result" entries in a string
+STAGE_RESULTS=""
 TOTAL_PASS=0
 TOTAL_FAIL=0
 TOTAL_SKIP=0
@@ -103,12 +106,25 @@ TOTAL_SKIP=0
 record_result() {
 	local stage="$1"
 	local result="$2"
-	STAGE_RESULTS["${stage}"]="${result}"
+	# Append to results string
+	STAGE_RESULTS="${STAGE_RESULTS}${stage}:${result};"
 	case "${result}" in
 		PASS) TOTAL_PASS=$((TOTAL_PASS + 1)) ;;
 		FAIL) TOTAL_FAIL=$((TOTAL_FAIL + 1)) ;;
 		SKIP) TOTAL_SKIP=$((TOTAL_SKIP + 1)) ;;
 	esac
+}
+
+# Get result for a stage (bash 3.2 compatible)
+get_result() {
+	local stage="$1"
+	local entry
+	entry=$(echo "${STAGE_RESULTS}" | tr ';' '\n' | grep "^${stage}:" | tail -1)
+	if [[ -n "${entry}" ]]; then
+		echo "${entry#*:}"
+	else
+		echo "N/A"
+	fi
 }
 
 should_run() {
@@ -164,8 +180,10 @@ run_unit() {
 		failed=1
 	fi
 
-	# Tests list
-	if "${ROOT_DIR}/bin/agent-context.sh" tests list 2>&1 | grep -q "deps"; then
+	# Tests list (use variable to avoid SIGPIPE with grep -q and pipefail)
+	local tests_output
+	tests_output=$("${ROOT_DIR}/bin/agent-context.sh" tests list 2>&1) || true
+	if echo "${tests_output}" | grep -qE "deps|prereq"; then
 		log_ok "tests list contains expected tags"
 	else
 		log_error "tests list missing expected tags"
@@ -193,21 +211,6 @@ run_smoke() {
 	else
 		log_error "Smoke tests failed"
 		record_result "smoke" "FAIL"
-	fi
-}
-
-# ============================================================
-# Stage: Install (Non-interactive)
-# ============================================================
-run_install() {
-	log_header "Stage: Install Tests"
-
-	if "${ROOT_DIR}/bin/agent-context.sh" tests --tags installNonInteractive; then
-		log_ok "Install tests passed"
-		record_result "install" "PASS"
-	else
-		log_error "Install tests failed"
-		record_result "install" "FAIL"
 	fi
 }
 
@@ -289,8 +292,9 @@ print_summary() {
 	printf "%-20s %s\n" "STAGE" "RESULT"
 	printf "%-20s %s\n" "-----" "------"
 
-	for stage in lint unit smoke install docker-ubuntu docker-ubi9 e2e; do
-		local result="${STAGE_RESULTS[${stage}]:-N/A}"
+	for stage in lint unit smoke docker-ubuntu docker-ubi9 e2e; do
+		local result
+		result=$(get_result "${stage}")
 		case "${result}" in
 			PASS)
 				printf "%-20s ${GREEN}%s${NC}\n" "${stage}" "${result}"
@@ -329,8 +333,9 @@ Commit: $(git -C "${ROOT_DIR}" rev-parse --short HEAD 2>/dev/null || echo "unkno
 |-------|--------|
 EOF
 
-	for stage in lint unit smoke install docker-ubuntu docker-ubi9 e2e; do
-		local result="${STAGE_RESULTS[${stage}]:-N/A}"
+	for stage in lint unit smoke docker-ubuntu docker-ubi9 e2e; do
+		local result
+		result=$(get_result "${stage}")
 		echo "| ${stage} | ${result} |" >> "${result_file}"
 	done
 
@@ -361,7 +366,7 @@ main() {
 	should_run "lint" && run_lint
 	should_run "unit" && run_unit
 	should_run "smoke" && run_smoke
-	should_run "install" && run_install
+	# Note: install is now part of smoke (install-non-interactive tag)
 	should_run "docker" && run_docker
 	should_run "e2e" && run_e2e
 

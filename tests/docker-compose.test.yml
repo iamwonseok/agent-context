@@ -3,7 +3,7 @@
 #
 # Services map to CI test jobs:
 #   unit       - Unit tests (fast, no network)
-#   smoke      - Smoke tests (deps, auth, global, project)
+#   smoke      - Smoke tests (prereq + Layer 0/1 token-free tests)
 #   local-git  - Local git workflow tests
 #   meta       - Framework self-validation
 #   error-handling - Error handling tests
@@ -41,7 +41,7 @@ services:
         /agent-context/bin/agent-context.sh --version
         /agent-context/bin/agent-context.sh --help | grep -q 'USAGE'
         echo '[V] version and help output valid'
-        /agent-context/bin/agent-context.sh tests list | grep -q 'deps'
+        /agent-context/bin/agent-context.sh tests list | grep -qE 'deps|prereq'
         echo '[V] tests list contains expected tags'
         echo 'Summary: total=2 passed=2 failed=0 warned=0 skipped=0'
       "
@@ -95,46 +95,6 @@ services:
       "
 
   # =================================================================
-  # Stage 2: Error Handling Tests
-  # =================================================================
-  error-handling:
-    <<: *base
-    command: >-
-      bash -c "
-        set -e
-        echo '=== Error Handling Tests ==='
-        /agent-context/bin/agent-context.sh foobar 2>/dev/null; rc=\$$?
-        if [ \$${rc} -eq 2 ]; then
-          echo '[V] unknown command returns exit 2'
-        else
-          echo '[X] unknown command returned exit '\$${rc}
-          exit 1
-        fi
-        echo '[V] error handling tests passed'
-      "
-
-  # =================================================================
-  # Stage 2: Scenario Tests (quick mode)
-  # =================================================================
-  scenario:
-    <<: *base
-    command: >-
-      bash -c "
-        set -e
-        echo '=== Scenario Tests (Quick) ==='
-        mkdir -p /root/.secrets && chmod 700 /root/.secrets
-        git config --global user.name 'CI Bot'
-        git config --global user.email 'ci@test.local'
-        tmpdir=\$$(mktemp -d)
-        cd \$${tmpdir}
-        git init -q
-        /agent-context/bin/agent-context.sh install --non-interactive --force
-        /agent-context/bin/agent-context.sh tests --tags installNonInteractive
-        echo '[V] scenario tests passed'
-        rm -rf \$${tmpdir}
-      "
-
-  # =================================================================
   # Stage 3: E2E Tests (requires tokens)
   # =================================================================
   e2e:
@@ -165,15 +125,15 @@ services:
         fi
         git config --global user.name 'CI Bot'
         git config --global user.email 'ci@test.local'
-        /agent-context/bin/agent-context.sh tests --tags connect
-        /agent-context/bin/agent-context.sh tests --tags installNonInteractive
+        /agent-context/bin/agent-context.sh doctor connect
+        /agent-context/bin/agent-context.sh tests --tags install-non-interactive
         echo '[V] e2e tests passed'
       "
 
   # =================================================================
-  # Stage 3: Full Scenario Tests (all 15 scenarios)
+  # Stage 3: Full Tests (all layers + legacy)
   # =================================================================
-  scenario-full:
+  full-tests:
     <<: *base
     environment:
       AGENT_CONTEXT_DIR: /agent-context
@@ -187,14 +147,13 @@ services:
     command: >-
       bash -c "
         set -e
-        echo '=== Full Scenario Tests ==='
+        echo '=== Full Tests (Layer 0+1 + Legacy) ==='
         mkdir -p /root/.secrets && chmod 700 /root/.secrets
         git config --global user.name 'CI Bot'
         git config --global user.email 'ci@test.local'
         /agent-context/bin/agent-context.sh tests smoke
-        /agent-context/bin/agent-context.sh tests --tags installNonInteractive
-        /agent-context/bin/agent-context.sh tests --tags auditRepo,auditProject
-        echo '[V] full scenario tests passed'
+        /agent-context/bin/agent-context.sh tests --tags audit-repo,audit-project
+        echo '[V] full tests passed'
       "
 
   # =================================================================
@@ -225,17 +184,60 @@ services:
         cd \$${tmpdir}
         git init -q
         /agent-context/builtin/install.sh --non-interactive --force --profile full
-        echo '[i] Verifying installation artifacts...'
-        test -d .agent/skills && echo '[V] .agent/skills/' || { echo '[X] .agent/skills/ missing'; exit 1; }
-        test -d .agent/workflows && echo '[V] .agent/workflows/' || { echo '[X] .agent/workflows/ missing'; exit 1; }
-        test -f .cursorrules && echo '[V] .cursorrules' || { echo '[X] .cursorrules missing'; exit 1; }
-        test -f .project.yaml && echo '[V] .project.yaml' || { echo '[X] .project.yaml missing'; exit 1; }
+        echo '[i] Verifying artifacts...'
+        test -d .agent/skills && echo '[V] skills' || { echo '[X] skills'; exit 1; }
+        test -d .agent/workflows && echo '[V] workflows' || { echo '[X] workflows'; exit 1; }
+        test -f .cursorrules && echo '[V] cursorrules' || { echo '[X] cursorrules'; exit 1; }
+        test -f .project.yaml && echo '[V] project.yaml' || { echo '[X] project.yaml'; exit 1; }
         echo '[i] Running doctor...'
         /agent-context/bin/agent-context.sh doctor deps
         echo '[i] Running smoke tests...'
         /agent-context/bin/agent-context.sh tests smoke --skip connect
-        echo '[V] Docker install test (Ubuntu) passed'
+        echo '[V] Docker install (Ubuntu) passed'
         rm -rf \$${tmpdir}
+      "
+
+  # =================================================================
+  # Layer 2: Mock API Server
+  # =================================================================
+  mock-server:
+    build:
+      context: ../demo/docker/ubuntu
+      dockerfile: Dockerfile
+    working_dir: /agent-context/tests/mock/server
+    volumes:
+      - ..:/agent-context:ro
+    environment:
+      MOCK_PORT: "8899"
+      FIXTURES_DIR: /agent-context/tests/mock/server/fixtures
+    ports:
+      - 8899:8899
+    command: python3 mock_server.py --port 8899
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8899/health]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # =================================================================
+  # Layer 2: Mock Integration Tests
+  # =================================================================
+  mock-tests:
+    <<: *base
+    depends_on:
+      mock-server:
+        condition: service_healthy
+    environment:
+      AGENT_CONTEXT_DIR: /agent-context
+      CI: "true"
+      MOCK_API_HOST: mock-server
+      MOCK_API_PORT: "8899"
+    command: >-
+      bash -c "
+        set -e
+        echo '=== Layer 2: Mock Integration Tests ==='
+        /agent-context/bin/agent-context.sh tests --tags jira-auth-mock,confluence-auth-mock
+        echo '[V] mock integration tests passed'
       "
 
   # =================================================================
@@ -266,15 +268,15 @@ services:
         cd \$${tmpdir}
         git init -q
         /agent-context/builtin/install.sh --non-interactive --force --profile full
-        echo '[i] Verifying installation artifacts...'
-        test -d .agent/skills && echo '[V] .agent/skills/' || { echo '[X] .agent/skills/ missing'; exit 1; }
-        test -d .agent/workflows && echo '[V] .agent/workflows/' || { echo '[X] .agent/workflows/ missing'; exit 1; }
-        test -f .cursorrules && echo '[V] .cursorrules' || { echo '[X] .cursorrules missing'; exit 1; }
-        test -f .project.yaml && echo '[V] .project.yaml' || { echo '[X] .project.yaml missing'; exit 1; }
+        echo '[i] Verifying artifacts...'
+        test -d .agent/skills && echo '[V] skills' || { echo '[X] skills'; exit 1; }
+        test -d .agent/workflows && echo '[V] workflows' || { echo '[X] workflows'; exit 1; }
+        test -f .cursorrules && echo '[V] cursorrules' || { echo '[X] cursorrules'; exit 1; }
+        test -f .project.yaml && echo '[V] project.yaml' || { echo '[X] project.yaml'; exit 1; }
         echo '[i] Running doctor...'
         /agent-context/bin/agent-context.sh doctor deps
         echo '[i] Running smoke tests...'
         /agent-context/bin/agent-context.sh tests smoke --skip connect
-        echo '[V] Docker install test (UBI9) passed'
+        echo '[V] Docker install (UBI9) passed'
         rm -rf \$${tmpdir}
       "

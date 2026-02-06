@@ -5,12 +5,103 @@ agent-context CLI의 전체 테스트 시나리오 및 검증 방법을 정리�
 
 ## 목차
 
+- [테스트 아키텍처](#테스트-아키텍처)
 - [공통 규격](#공통-규격)
 - [레벨 1: 기본 조회](#레벨-1-기본-조회)
 - [레벨 2: 환경 진단](#레벨-2-환경-진단)
 - [레벨 3: 상태 확인](#레벨-3-상태-확인)
 - [레벨 4: 설치/업데이트](#레벨-4-설치업데이트)
 - [레벨 5: 고급/위험 작업](#레벨-5-고급위험-작업)
+
+---
+
+## 테스트 아키텍처
+
+테스트는 4개 Layer로 구성됩니다:
+
+| Layer | 이름 | 토큰 필요 | 네트워크 | 설명 |
+|-------|------|:--------:|:--------:|------|
+| 0 | Static/Contract | X | X | 템플릿, 스킬, 워크플로우 파일 구조 검증 |
+| 1 | Offline Functional | X | X | CLI 도움말, 버전, 설치 기능 검증 |
+| 2 | Mock Integration | X | X | Mock 서버 기반 API 통합 테스트 |
+| 3 | Real E2E | O | O | 실제 SaaS(Jira, GitLab) 연동 테스트 |
+
+### Smoke 테스트 (Layer 0 + 1)
+
+MR 파이프라인에서 필수로 실행되는 토큰 불필요 테스트:
+
+```bash
+agent-context tests smoke
+```
+
+포함 태그: `deps`, `templates-contract`, `skills-spec`, `workflows-chain`,
+`cli-help-contract`, `cli-version`, `cli-error-handling`, `tests-runner-contract`,
+`install-non-interactive`, `install-artifacts`, `pm-offline`, `secrets-mask`
+
+### 사용 가능한 테스트 태그
+
+```bash
+agent-context tests list
+```
+
+| 태그 | Layer | 설명 |
+|------|:-----:|------|
+| `deps` | 0 | 필수 바이너리 및 권한 검사 |
+| `templates-contract` | 0 | 템플릿 파일/토큰 계약 검증 |
+| `skills-spec` | 0 | Thin Skill 스펙 검증 |
+| `workflows-chain` | 0 | 워크플로우 스킬 체인 순서 검증 |
+| `cli-help-contract` | 1 | 모든 CLI 서브커맨드 --help exit 0 |
+| `cli-version` | 1 | CLI 버전 출력 검증 |
+| `cli-error-handling` | 1 | CLI 에러 케이스 검증 |
+| `tests-runner-contract` | 1 | 테스트 러너 자기 검증 |
+| `install-non-interactive` | 1 | 비대화형 설치 검증 |
+| `install-artifacts` | 1 | 설치 산출물 검증 |
+| `pm-offline` | 1 | PM 오프라인 기능 검증 |
+| `secrets-mask` | 1 | 시크릿 마스킹 검증 |
+| `jira-auth-mock` | 2 | Jira 인증 (Mock 서버) |
+| `confluence-auth-mock` | 2 | Confluence 인증 (Mock 서버) |
+| `pm-jira-mock` | 2 | PM Jira 명령 (Mock 서버) |
+| `pm-confluence-mock` | 2 | PM Confluence 명령 (Mock 서버) |
+| `audit-repo` | - | 저장소 템플릿 감사 |
+| `audit-project` | - | 프로젝트 구조 감사 |
+
+### 레거시 태그 (DEPRECATED)
+
+다음 태그들은 `doctor` 서브커맨드로 이관되었습니다:
+
+| 레거시 태그 | 대체 명령 |
+|------------|----------|
+| `auth` | `agent-context doctor auth` |
+| `global` | `agent-context doctor global` |
+| `project` | `agent-context doctor project` |
+| `connect` | `agent-context doctor connect` |
+
+### 로컬 CI 실행
+
+```bash
+# 전체 CI 파이프라인 시뮬레이션 (Docker/E2E 제외)
+./tests/ci/run-all.sh --skip-docker --skip-e2e
+
+# Docker 테스트 포함
+./tests/ci/run-all.sh --skip-e2e
+
+# 특정 단계만 실행
+./tests/ci/run-all.sh --only smoke
+```
+
+### Mock 서버 테스트 (Layer 2)
+
+```bash
+# Mock 서버 시작
+python3 tests/mock/server/mock_server.py --port 8899 &
+
+# Layer 2 테스트 실행
+MOCK_API_HOST=localhost MOCK_API_PORT=8899 \
+  agent-context tests --tags jira-auth-mock,confluence-auth-mock
+
+# Mock 서버 종료
+pkill -f mock_server.py
+```
 
 ---
 
@@ -226,7 +317,8 @@ test $? -eq 0 && echo "[V] audit --repo passed" || echo "[X] audit --repo failed
 
 **체크리스트:**
 
-- 출력에 사용 가능한 태그 나열 (deps, auth, global, project, connect 등)
+- 출력에 사용 가능한 태그 나열 (deps, templates-contract, cli-help-contract 등)
+- Smoke 테스트 태그 목록 표시
 - exit code = 0
 
 **확인 방법:**
@@ -305,16 +397,19 @@ fi
 
 ### tests smoke -- 빠른 상태 점검
 
-- **목적**: 설치 후 환경이 정상인지 빠르게 확인 (CI 기본 체크)
+- **목적**: MR 파이프라인에서 토큰 없이 실행 가능한 필수 테스트 (Layer 0 + 1)
 
 | # | 시나리오 | 명령어 | 기대 결과 |
 |---|----------|--------|-----------|
-| 3-2 | smoke 테스트 | `agent-context tests smoke` | deps+auth+global+project 검사, Summary, exit 0/1 |
-| 3-3 | smoke + skip | `agent-context tests smoke --skip project` | project 제외하고 실행 |
+| 3-2 | smoke 테스트 | `agent-context tests smoke` | Layer 0+1 테스트 12개 실행, Summary, exit 0/1 |
+| 3-3 | smoke + skip | `agent-context tests smoke --skip install-non-interactive` | 특정 태그 제외하고 실행 |
 
 **체크리스트:**
 
-- `smoke`는 `deps`, `auth`, `global`, `project` 태그를 모두 실행
+- `smoke`는 Layer 0(Static/Contract) + Layer 1(Offline Functional) 테스트 실행
+- 포함 태그: `deps`, `templates-contract`, `skills-spec`, `workflows-chain`,
+  `cli-help-contract`, `cli-version`, `cli-error-handling`, `tests-runner-contract`,
+  `install-non-interactive`, `install-artifacts`, `pm-offline`, `secrets-mask`
 - `--skip`으로 특정 태그 제외 가능
 - Summary 포맷 준수
 - exit code: 0(모두 통과), 1(실패 있음)
@@ -322,15 +417,12 @@ fi
 **확인 방법:**
 
 ```bash
-# 기본 smoke
+# 기본 smoke (Layer 0+1 전체)
 agent-context tests smoke
 test $? -eq 0 && echo "[V] smoke passed" || echo "[X] smoke failed"
 
-# project 제외
-output=$(agent-context tests smoke --skip project 2>&1)
-echo "$output" | grep -q "project" \
-    && echo "[X] project should be skipped" \
-    || echo "[V] project correctly skipped"
+# 특정 태그 제외
+agent-context tests smoke --skip install-non-interactive
 ```
 
 ### tests --tags -- 태그 기반 실행
@@ -625,19 +717,30 @@ test $? -eq 0 && echo "[V] clean ok" || echo "[X] clean failed"
 
 ### tests e2e -- E2E 테스트
 
-- **목적**: Docker 기반 전체 E2E 테스트 실행
+- **목적**: 실제 SaaS(Jira, GitLab) 연동 테스트 (Layer 3)
 
 | # | 시나리오 | 명령어 | 기대 결과 |
 |---|----------|--------|-----------|
 | 5-6 | E2E 테스트 | `agent-context tests e2e` | Docker 환경에서 전체 테스트, Summary 출력 |
-| 5-7 | installNonInteractive | `agent-context tests --tags installNonInteractive` | 비대화형 설치 E2E |
+| 5-7 | install-non-interactive | `agent-context tests --tags install-non-interactive` | 비대화형 설치 테스트 |
 
 **체크리스트:**
 
-- Docker가 설치/실행 중이어야 함
+- 토큰이 필요한 테스트는 환경변수 설정 필요 (`JIRA_API_TOKEN`, `GITLAB_API_TOKEN` 등)
+- Docker가 설치/실행 중이어야 함 (Docker 기반 테스트 시)
 - Docker 미설치 시 exit code = 3 (환경 스킵)
 - E2E 실패는 외부 요인(네트워크, 권한 등)일 수 있음
 - Summary 포맷 준수
+
+**로컬 실행:**
+
+```bash
+# 전체 로컬 CI (Docker/E2E 제외)
+./tests/ci/run-all.sh --skip-docker --skip-e2e
+
+# Docker 포함
+./tests/ci/run-all.sh --skip-e2e
+```
 
 ### 전체 라이프사이클 통합 시나리오
 
@@ -691,7 +794,22 @@ rm -rf "$TESTDIR"
 
 ### CI/CD 파이프라인 통합
 
-**GitLab CI 예시:**
+**GitLab CI 구성:**
+
+현재 `.gitlab-ci.yml`의 주요 테스트 Job:
+
+| Job | 설명 | 실행 조건 |
+|-----|------|----------|
+| `lint` | pre-commit 린트 검사 | MR/main |
+| `test:smoke` | Layer 0+1 smoke 테스트 | MR/main |
+| `test:unit` | 버전, 도움말, tests list 검증 | MR/main |
+| `test:workflow` | Docker 기반 워크플로우 테스트 | MR/main |
+| `test:docker-install` | Ubuntu/UBI9 설치 테스트 | MR/main |
+| `test:meta` | skills/workflows 변경 시 메타 검증 | 조건부 |
+| `test:mock-integration` | PM/Mock 변경 시 Layer 2 테스트 | 조건부 |
+| `test:e2e` | 토큰 필요 E2E (수동/스케줄) | manual |
+
+**커스텀 프로젝트 CI 예시:**
 
 ```yaml
 # .gitlab-ci.yml
@@ -701,12 +819,12 @@ stages:
 agent-context-smoke:
   stage: check
   image: ubuntu:22.04
+  variables:
+    AGENT_CONTEXT_DIR: $CI_PROJECT_DIR
   before_script:
-    - apt-get update && apt-get install -y git curl jq
-    - git clone "$CI_REPOSITORY_URL" ~/.agent-context
+    - apt-get update && apt-get install -y git curl jq yq
   script:
-    - ~/.agent-context/bin/agent-context.sh doctor deps
-    - ~/.agent-context/bin/agent-context.sh tests smoke --skip connect
+    - ./bin/agent-context.sh tests smoke
   allow_failure: false
 ```
 

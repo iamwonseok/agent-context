@@ -1,0 +1,8 @@
+{
+  "accountId": "mock-user-123",
+  "accountType": "atlassian",
+  "displayName": "Mock Test User",
+  "email": "mock-test@example.com",
+  "publicName": "Mock Test User",
+  "type": "known"
+}
