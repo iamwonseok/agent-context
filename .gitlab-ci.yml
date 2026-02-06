@@ -32,23 +32,70 @@ variables:
   variables:
     DOCKER_TLS_CERTDIR: ""
   before_script:
+    - |
+      if ! command -v docker >/dev/null 2>&1; then
+        echo "[X] docker not found. This job requires a Docker-capable runner."
+        echo "[!] On Docker executor: image docker:24 + services docker:24-dind provides Docker."
+        echo "[!] On Shell executor: Docker must be installed on the runner host."
+        exit 1
+      fi
     - docker compose -f tests/docker-compose.test.yml build
 
 .ubuntu-base:
   stage: test
-  image: ubuntu:22.04
+  # image: ubuntu:22.04 is used on Docker executor; ignored on Shell executor.
+  # before_script installs deps without root for Shell executor compatibility.
   before_script:
-    - apt-get update -qq
-    - apt-get install -y -qq git curl jq
-    # Install yq
     - |
-      ARCH=$(uname -m)
-      case "$ARCH" in
-        x86_64) YQ_BINARY="yq_linux_amd64" ;;
-        aarch64|arm64) YQ_BINARY="yq_linux_arm64" ;;
-      esac
-      curl -sL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
-      chmod +x /usr/local/bin/yq
+      set -e
+      set -o pipefail
+      CI_BIN_DIR="${CI_PROJECT_DIR}/.ci/bin"
+      mkdir -p "${CI_BIN_DIR}"
+      export PATH="${CI_BIN_DIR}:${PATH}"
+
+      # Verify core commands (provided by runner host)
+      for cmd in git bash; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+          echo "[X] Required command not found: $cmd"
+          exit 1
+        fi
+      done
+
+      # Install jq and yq to local bin (no root needed)
+      python3 -c '
+      import os, platform, stat, sys, urllib.request
+      dst_dir = sys.argv[1]
+      os.makedirs(dst_dir, exist_ok=True)
+      arch = platform.machine().lower()
+      if arch == "amd64":
+          arch = "x86_64"
+      tools = {
+          "jq": {
+              "x86_64": "https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64",
+              "aarch64": "https://github.com/jqlang/jq/releases/latest/download/jq-linux-arm64",
+          },
+          "yq": {
+              "x86_64": "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64",
+              "aarch64": "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64",
+          },
+      }
+      for name, urls in tools.items():
+          dst = os.path.join(dst_dir, name)
+          if os.path.isfile(dst):
+              print(f"[-] {name} already exists at {dst}")
+              continue
+          url = urls.get(arch)
+          if not url:
+              raise SystemExit(f"[X] Unsupported architecture for {name}: {arch}")
+          print(f"[*] Downloading {name}: {url}")
+          urllib.request.urlretrieve(url, dst)
+          os.chmod(dst, os.stat(dst).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+          print(f"[V] Installed {name} to {dst}")
+      ' "${CI_BIN_DIR}"
+
+      if ! command -v curl >/dev/null 2>&1; then
+        echo "[!] curl not found; tests requiring HTTP calls may fail"
+      fi
 
 .rules-mr-or-main:
   rules:
