@@ -307,19 +307,15 @@ SHELL_BLOCK
 cmd_install() {
 	local install_script="${BUILTIN_DIR}/install.sh"
 
-	# Prefer builtin if exists, else fallback to root install.sh
-	if [[ -f "${install_script}" ]]; then
-		exec bash "${install_script}" "$@"
-	elif [[ -f "${SCRIPT_DIR}/install.sh" ]]; then
-		# Pass all arguments to install.sh, defaulting to current directory
-		if [[ $# -eq 0 ]]; then
-			exec bash "${SCRIPT_DIR}/install.sh" .
-		else
-			exec bash "${SCRIPT_DIR}/install.sh" "$@"
-		fi
-	else
-		log_error "install.sh not found"
+	if [[ ! -f "${install_script}" ]]; then
+		log_error "install.sh not found: ${install_script}"
 		exit 1
+	fi
+
+	if [[ $# -eq 0 ]]; then
+		exec bash "${install_script}" .
+	else
+		exec bash "${install_script}" "$@"
 	fi
 }
 

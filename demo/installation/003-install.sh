@@ -15,7 +15,7 @@ step_run() {
 	log_step "${STEP_NUM}" "${STEP_NAME}"
 
 	local any_project="${WORKDIR}/any-project"
-	local installer="${AGENT_CONTEXT_ROOT}/install.sh"
+	local installer="${AGENT_CONTEXT_ROOT}/builtin/install.sh"
 
 	# Verify installer exists
 	if [[ ! -f "${installer}" ]]; then

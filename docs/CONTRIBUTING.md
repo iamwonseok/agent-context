@@ -58,7 +58,6 @@ VSCode/Cursor 사용 시 권장 확장:
 agent-context/
 ├── .cursorrules           # 에이전트 규칙 (이 저장소용)
 ├── .pre-commit-config.yaml
-├── install.sh             # 설치 스크립트
 │
 ├── bin/                   # CLI 진입점
 │   └── agent-context.sh   # 메인 CLI
@@ -68,6 +67,7 @@ agent-context/
 │   └── platform.sh        # 플랫폼 감지
 │
 ├── builtin/               # 내장 명령어
+│   ├── install.sh         # 설치 스크립트
 │   ├── doctor.sh, tests.sh, audit.sh
 │   ├── init.sh, update.sh, upgrade.sh
 │   └── clean.sh, log.sh, report.sh
@@ -123,7 +123,7 @@ agent-context/
 | `bin/agent-context.sh` | CLI 메인 진입점 | 하위 호환성 유지 |
 | `lib/` | 공통 라이브러리 | logging/platform 변경 시 전체 영향 |
 | `builtin/` | 내장 명령어 구현 | exit code 규격 준수 (0/1/2/3) |
-| `install.sh` | 사용자 프로젝트에 설치 | 하위 호환성 유지 |
+| `builtin/install.sh` | 사용자 프로젝트에 설치 | 하위 호환성 유지 |
 | `skills/` | 범용 템플릿 | Thin 원칙 유지 |
 | `workflows/` | 컨텍스트 워크플로 | Thick 원칙 유지 |
 | `tools/pm/` | CLI 도구 | POSIX 호환 |

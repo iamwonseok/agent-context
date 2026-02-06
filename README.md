@@ -293,6 +293,7 @@ agent-context/
 │   ├── logging.sh      # 로깅 ([V]/[X]/[!]/[i] 마커)
 │   └── platform.sh     # 플랫폼 감지
 ├── builtin/            # 내장 명령어 (doctor, tests, audit 등)
+│   ├── install.sh
 │   ├── doctor.sh
 │   ├── tests.sh
 │   ├── audit.sh
@@ -302,7 +303,6 @@ agent-context/
 │   ├── clean.sh
 │   ├── log.sh
 │   └── report.sh
-├── install.sh          # 프로젝트 설치 스크립트
 ├── docs/               # 문서
 │   ├── ARCHITECTURE.md # 설계 철학 (SSOT)
 │   ├── USER_GUIDE.md   # 사용자 가이드

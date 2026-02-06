@@ -224,7 +224,7 @@ services:
         tmpdir=$$(mktemp -d)
         cd \$${tmpdir}
         git init -q
-        /agent-context/install.sh --non-interactive --force --profile full
+        /agent-context/builtin/install.sh --non-interactive --force --profile full
         echo '[i] Verifying installation artifacts...'
         test -d .agent/skills && echo '[V] .agent/skills/' || { echo '[X] .agent/skills/ missing'; exit 1; }
         test -d .agent/workflows && echo '[V] .agent/workflows/' || { echo '[X] .agent/workflows/ missing'; exit 1; }
@@ -265,7 +265,7 @@ services:
         tmpdir=$$(mktemp -d)
         cd \$${tmpdir}
         git init -q
-        /agent-context/install.sh --non-interactive --force --profile full
+        /agent-context/builtin/install.sh --non-interactive --force --profile full
         echo '[i] Verifying installation artifacts...'
         test -d .agent/skills && echo '[V] .agent/skills/' || { echo '[X] .agent/skills/ missing'; exit 1; }
         test -d .agent/workflows && echo '[V] .agent/workflows/' || { echo '[X] .agent/workflows/ missing'; exit 1; }

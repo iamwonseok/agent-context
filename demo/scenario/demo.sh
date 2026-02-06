@@ -1222,7 +1222,7 @@ setup_gitlab_repo() {
 setup_project_config() {
 	log_info "Installing agent-context to demo workspace..."
 
-	local install_script="${PROJECT_ROOT}/install.sh"
+	local install_script="${PROJECT_ROOT}/builtin/install.sh"
 
 	if [[ "${DRY_RUN}" == "true" ]]; then
 		log_info "[DRY-RUN] Would run: install.sh ${DEMO_WORKSPACE:-/tmp/demo}"

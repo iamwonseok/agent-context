@@ -412,7 +412,7 @@ test_install_non_interactive() {
 	# Run install
 	local ac_dir
 	ac_dir=$(get_agent_context_dir)
-	local install_script="${ac_dir}/install.sh"
+	local install_script="${ac_dir}/builtin/install.sh"
 
 	if [[ ! -f "${install_script}" ]]; then
 		log_error "[installNonInteractive] install.sh not found"

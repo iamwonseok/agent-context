@@ -189,11 +189,6 @@ test:docker-install:
       exit $FAIL
   rules:
     - !reference [.rules-mr-or-main, rules]
-  artifacts:
-    when: always
-    paths:
-      - tests/ci-results/
-    expire_in: 7 days
 
 # =============================================================================
 # Test Stage - Conditional Tests (Run on Specific Changes)
@@ -257,18 +252,12 @@ test:demo-install-ubuntu:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - install.sh
         - demo/**/*
         - bin/**/*
         - lib/**/*
         - builtin/**/*
         - templates/**/*
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  artifacts:
-    when: always
-    paths:
-      - /tmp/agent-context-demo-*/
-    expire_in: 7 days
 
 # Full demo installation test on UBI9 (offline, up to step 6)
 test:demo-install-ubi9:
@@ -286,18 +275,12 @@ test:demo-install-ubi9:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - install.sh
         - demo/**/*
         - bin/**/*
         - lib/**/*
         - builtin/**/*
         - templates/**/*
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  artifacts:
-    when: always
-    paths:
-      - /tmp/agent-context-demo-*/
-    expire_in: 7 days
 
 # =============================================================================
 # Test Stage - Manual/Scheduled Tests (Require Tokens)
@@ -340,11 +323,6 @@ test:e2e-demo-full:
   rules:
     - when: manual
   allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - /tmp/agent-context-parallel-*/
-    expire_in: 30 days
 
 # Full scenario tests (all 15 scenarios, manual only)
 test:scenario-full:

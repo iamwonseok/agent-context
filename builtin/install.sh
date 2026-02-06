@@ -3,9 +3,9 @@
 # Installs agent-context into a target project directory
 #
 # Usage:
-#   ./install.sh [options] [target_directory]
-#   ./install.sh /path/to/my-project
-#   ./install.sh --profile full .
+#   agent-context install [options] [target_directory]
+#   agent-context install /path/to/my-project
+#   agent-context install --profile full .
 #
 # This script installs agent-context with the following layout:
 #   - .cursorrules (project root)
@@ -22,12 +22,12 @@
 set -e
 set -o pipefail
 
-# Script directory (agent-context source)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Script directory (agent-context source root, one level up from builtin/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATES_DIR="${SCRIPT_DIR}/templates"
 
 # Common Libraries
-# shellcheck source=lib/logging.sh
+# shellcheck source=../lib/logging.sh
 source "${SCRIPT_DIR}/lib/logging.sh"
 
 escape_sed_replacement() {
