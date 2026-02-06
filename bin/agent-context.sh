@@ -75,10 +75,6 @@ COMMANDS:
                 - Developer mode: ~/.agent-context internal checks
                 - User mode: project .agent/ checks
 
-    tests       Run test suites (non-interactive, CI-friendly)
-                Subcommands: list, smoke, e2e
-                Options: --tags <tags>, --skip <tags>
-
     log         Show command execution logs
                 Options: --list, --global, --project, --tail N
 
@@ -441,22 +437,6 @@ cmd_audit() {
 }
 
 # ============================================================
-# Command: tests
-# ============================================================
-cmd_tests() {
-	local tests_script="${BUILTIN_DIR}/tests.sh"
-
-	if [[ -f "${tests_script}" ]]; then
-		# shellcheck source=../builtin/tests.sh
-		source "${tests_script}"
-		run_tests "$@"
-	else
-		log_error "tests command not yet implemented"
-		exit 1
-	fi
-}
-
-# ============================================================
 # Command: log
 # ============================================================
 cmd_log() {
@@ -526,10 +506,6 @@ main() {
 		audit)
 			shift
 			cmd_audit "$@"
-			;;
-		tests)
-			shift
-			cmd_tests "$@"
 			;;
 		log)
 			shift

@@ -1,7 +1,9 @@
-# 테스트 가이드
+# 테스트 가이드 (Deprecated)
 
 agent-context CLI의 전체 테스트 시나리오 및 검증 방법을 정리한 문서입니다.
-`tests` 명령의 모든 시나리오를 담당합니다. 데모(E2E) 시나리오는 [demo/README.md](../demo/README.md) 참고.
+
+현재 레포에서는 테스트 러너(`agent-context tests`) 기반의 대규모 테스트 체계를 기본 경로에서 사용하지 않습니다.
+검증은 우선 `agent-context audit` 중심으로 수행하며, Real E2E는 별도 리포에서 운영하는 것을 권장합니다.
 
 ## 목차
 
@@ -15,7 +17,7 @@ agent-context CLI의 전체 테스트 시나리오 및 검증 방법을 정리�
 
 ---
 
-## 테스트 아키텍처
+## 테스트 아키텍처 (참고용)
 
 테스트는 4개 Layer로 구성됩니다:
 
@@ -26,19 +28,20 @@ agent-context CLI의 전체 테스트 시나리오 및 검증 방법을 정리�
 | 2 | Mock Integration | X | X | Mock 서버 기반 API 통합 테스트 |
 | 3 | Real E2E | O | O | 실제 SaaS(Jira, GitLab) 연동 테스트 |
 
-### Smoke 테스트 (Layer 0 + 1)
+### Smoke 테스트 (Layer 0 + 1, 참고용)
 
 MR 파이프라인에서 필수로 실행되는 토큰 불필요 테스트:
 
+이 문서의 `tests` 관련 내용은 참고용입니다.
+현재 기본 검증은 아래처럼 `audit`를 사용합니다.
+
 ```bash
-agent-context tests smoke
+agent-context audit
+agent-context audit --project
+agent-context audit --repo
 ```
 
-포함 태그: `deps`, `templates-contract`, `skills-spec`, `workflows-chain`,
-`cli-help-contract`, `cli-version`, `cli-error-handling`, `tests-runner-contract`,
-`install-non-interactive`, `install-artifacts`, `pm-offline`, `secrets-mask`
-
-### 사용 가능한 테스트 태그
+### 사용 가능한 테스트 태그 (참고용)
 
 ```bash
 agent-context tests list
