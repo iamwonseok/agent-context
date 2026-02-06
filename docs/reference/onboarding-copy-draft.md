@@ -43,7 +43,7 @@ git clone <REPO_URL> ~/.agent-context
 #### Step 3) 글로벌 환경 초기화 (alias + 토큰 로딩)
 
 ```bash
-~/.agent-context/agent-context.sh init
+~/.agent-context/bin/agent-context.sh init
 source ~/.zshrc  # zsh
 ```
 

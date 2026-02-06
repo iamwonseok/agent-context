@@ -174,24 +174,19 @@ test:workflow:
 # Test Stage - Docker Install Tests (Cross-Platform)
 # =============================================================================
 
-# Docker-based installation test on Ubuntu
-test:docker-install-ubuntu:
+# Docker-based installation tests (Ubuntu + UBI9, parallel in one job)
+test:docker-install:
   extends: .docker-test
   script:
-    - docker compose -f tests/docker-compose.test.yml run install-ubuntu
-  rules:
-    - !reference [.rules-mr-or-main, rules]
-  artifacts:
-    when: always
-    paths:
-      - tests/ci-results/
-    expire_in: 7 days
-
-# Docker-based installation test on UBI9 (RHEL)
-test:docker-install-ubi9:
-  extends: .docker-test
-  script:
-    - docker compose -f tests/docker-compose.test.yml run install-ubi9
+    - |
+      docker compose -f tests/docker-compose.test.yml run install-ubuntu &
+      PID_UBUNTU=$!
+      docker compose -f tests/docker-compose.test.yml run install-ubi9 &
+      PID_UBI9=$!
+      FAIL=0
+      wait $PID_UBUNTU || FAIL=1
+      wait $PID_UBI9 || FAIL=1
+      exit $FAIL
   rules:
     - !reference [.rules-mr-or-main, rules]
   artifacts:
