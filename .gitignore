@@ -13,7 +13,7 @@
 *~
 
 # Agent workflow
-.context/
+.context/test-results/
 .worktrees/
 
 # Python

@@ -329,6 +329,7 @@ run_in_docker() {
 		"-e" "RUN_ID=${RUN_ID}"
 		"-e" "PROFILE=${PROFILE}"
 		"-e" "SKIP_E2E=${SKIP_E2E}"
+		"-e" "E2E_OPTIONAL=${E2E_OPTIONAL}"
 		"-e" "FORCE=${FORCE}"
 		"-e" "WORKDIR=${WORKDIR}"
 		"-e" "JIRA_BASE_URL=${JIRA_BASE_URL}"

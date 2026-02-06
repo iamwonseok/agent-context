@@ -175,6 +175,10 @@ setup_ssh() {
 
 	# Check if SSH key exists (must be mounted from host)
 	if [[ ! -f "${ssh_key}" ]]; then
+		if [[ "${SKIP_E2E:-false}" == "true" ]] || [[ "${E2E_OPTIONAL:-false}" == "true" ]]; then
+			log_warn "SSH key not found: ${ssh_key} (skipped -- offline mode)"
+			return 0
+		fi
 		log_error "SSH key not found: ${ssh_key}"
 		log_error "Mount your SSH directory: -v ~/.ssh:/root/.ssh:ro"
 		exit 1
@@ -239,7 +243,7 @@ ssh_preflight() {
 	else
 		log_error "SSH preflight failed"
 		log_error "Output: ${ssh_output}"
-		exit 1
+		return 1
 	fi
 }
 
@@ -252,9 +256,21 @@ main() {
 	setup_atlassian_auth
 	setup_git_user
 
-	# Setup SSH for git operations
+	# Setup SSH for git operations (skip preflight when E2E is disabled)
 	setup_ssh
-	ssh_preflight
+	if [[ "${SKIP_E2E:-false}" == "true" ]]; then
+		log_info "SSH preflight skipped (SKIP_E2E=true)"
+	elif [[ "${E2E_OPTIONAL:-false}" == "true" ]]; then
+		# E2E optional: attempt preflight but don't fail on error
+		if ! ssh_preflight; then
+			log_warn "SSH preflight failed (E2E optional, continuing without SSH)"
+		fi
+	else
+		# SSH is required for E2E; exit on failure
+		if ! ssh_preflight; then
+			exit 1
+		fi
+	fi
 
 	# Print environment info if no arguments
 	if [[ $# -eq 0 ]] || [[ "$1" == "bash" ]]; then
