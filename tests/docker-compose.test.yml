@@ -212,6 +212,7 @@ services:
       SKIP_E2E: "true"
       PROFILE: full
       FORCE: "true"
+      AGENT_CONTEXT_DIR: /agent-context
     command: >-
       bash -c "
         set -e
@@ -252,6 +253,7 @@ services:
       SKIP_E2E: "true"
       PROFILE: full
       FORCE: "true"
+      AGENT_CONTEXT_DIR: /agent-context
     command: >-
       bash -c "
         set -e
