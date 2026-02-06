@@ -70,6 +70,7 @@ lint:
   stage: lint
   image: python:3.11-slim
   before_script:
+    - apt-get update -qq && apt-get install -y -qq git
     - |
       # hadolint is a standalone binary (not in apt or pip).
       # Download it if not already present for the pre-commit hadolint hook.
