@@ -12,11 +12,11 @@ STEP_NUM="004"
 STEP_NAME="Configure project"
 
 # Default test values (use RUN_ID for isolation when available)
-: "${JIRA_BASE_URL:=https://fadutec.atlassian.net}"
+: "${JIRA_BASE_URL:=https://wonseokko.atlassian.net}"
 : "${JIRA_PROJECT_KEY:=SVI4}"
-: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${CONFLUENCE_BASE_URL:=https://wonseokko.atlassian.net/wiki}"
 : "${CONFLUENCE_SPACE_KEY:=~wonseok}"
-: "${GITLAB_BASE_URL:=https://gitlab.fadutec.dev}"
+: "${GITLAB_BASE_URL:=https://gitlab.com}"
 # GITLAB_PROJECT: Use DEMO_REPO_NAME if set (from parallel runner), otherwise default
 if [[ -n "${DEMO_REPO_NAME:-}" ]]; then
 	: "${GITLAB_PROJECT:=${DEMO_GITLAB_GROUP:-soc-ip/agentic-ai}/${DEMO_REPO_NAME}}"

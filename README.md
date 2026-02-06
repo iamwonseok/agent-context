@@ -1,34 +1,20 @@
 # agent-context
 
 에이전트 기반 개발을 위한 워크플로 템플릿.
-
-**설계 철학**: Thin Skill / Thick Workflow 패턴은 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)를 참고.
-
-## 왜 이 프로젝트인가?
-
-**문제**:
-- 새 프로젝트마다 워크플로를 처음부터 구성
-- 반복 작업과 구조의 비일관성
-- AI 에이전트 협업에 대한 표준 부재
-
-**해결**:
-| 구성요소 | 목적 | 위치 |
-|-----------|---------|----------|
-| Skills | 범용 템플릿 | `skills/` |
-| Workflows | 컨텍스트 기반 오케스트레이션 | `workflows/` |
-| CLI Tools | JIRA/Confluence 인터페이스 | `tools/pm/` |
-
-**목표**: AI 에이전트가 CLI(`git`, `gh`, `glab`, `pm`)로 모든 작업을 수행하며 브라우저 전환을 최소화.
+AI 에이전트가 CLI(`git`, `gh`, `glab`, `pm`)로 모든 작업을 수행하며 브라우저 전환을 최소화합니다.
+**설계 철학**: Thin Skill / Thick Workflow 패턴 -- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 참고.
 
 ---
 
 ## 사용자 빠른 시작
 
+> 오프라인 환경에서도 Step 1~7까지 동작합니다.
+
 ### Step 1: 의존성 설치
 
 **macOS (Homebrew):**
 ```bash
-brew install git curl jq yq glab
+brew install git curl jq yq
 pip3 install pre-commit
 ```
 
@@ -46,9 +32,6 @@ esac
 sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
 sudo chmod +x /usr/local/bin/yq
 
-# glab (GitLab CLI)
-curl -s https://raw.githubusercontent.com/profclems/glab/trunk/scripts/install.sh | sudo sh
-
 pip3 install --user pre-commit
 ```
 
@@ -65,9 +48,6 @@ esac
 sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_BINARY}"
 sudo chmod +x /usr/local/bin/yq
 
-# glab (GitLab CLI)
-curl -s https://raw.githubusercontent.com/profclems/glab/trunk/scripts/install.sh | sudo sh
-
 pip3 install --user pre-commit
 ```
 
@@ -82,7 +62,7 @@ git clone git@gitlab.fadutec.dev:soc-ip/agentic-ai/agent-context.git ~/.agent-co
 ### Step 3: 글로벌 환경 초기화
 
 ```bash
-~/.agent-context/agent-context.sh init
+~/.agent-context/bin/agent-context.sh init
 ```
 
 **출력 예시:**
@@ -114,7 +94,7 @@ API Token Setup Guide
 [i] The following will be added to /Users/you/.zshrc:
   ----------------------------------------
   # BEGIN AGENT_CONTEXT
-  alias agent-context="~/.agent-context/agent-context.sh"
+  alias agent-context="~/.agent-context/bin/agent-context.sh"
   [[ -f ~/.secrets/atlassian-api-token ]] && export ATLASSIAN_API_TOKEN="$(cat ~/.secrets/atlassian-api-token)"
   # END AGENT_CONTEXT
   ----------------------------------------
@@ -162,118 +142,73 @@ cd /path/to/your-project
 agent-context install
 ```
 
-**출력 및 입력 예시:**
-```
-============================================================
-Agent-Context Installation
-============================================================
+### Step 7: 설치 검증 (필수)
 
-Source:   /Users/you/.agent-context
-Target:   /path/to/your-project
-Profile:  full
-Force:    false
-
-[i] Installing core files...
-[V] Created: .cursorrules (with index map)
-[V] Installed: .agent/skills/
-[V] Installed: .agent/workflows/
-[V] Installed: .agent/docs/
-[V] Installed: .agent/tools/pm/
-[i] Configuring .project.yaml...
-
-[i] Configure your platform settings (press Enter to skip):
-
-  Jira URL [https://your-domain.atlassian.net]: https://mycompany.atlassian.net
-  Jira Project Key [e.g., PROJ]: DEMO
-  Atlassian Email [your-email@example.com]: developer@mycompany.com
-  GitLab URL (optional) [https://gitlab.example.com]: https://gitlab.mycompany.com
-  Confluence Space Key (optional) [e.g., DEV or ~user]: DEV
-  GitHub Repo (optional) [e.g., owner/repo]:
-
-[V] Created: .project.yaml (fully configured)
-[i]   Jira: https://mycompany.atlassian.net (DEMO)
-[i]   Email: developer@mycompany.com
-[i]   GitLab: https://gitlab.mycompany.com
-[i] Installing configuration files (full profile)...
-[V] Installed: .editorconfig
-[V] Installed: .pre-commit-config.yaml
-[V] Updated: .gitignore (agent-context entries appended)
-[V] Found global secrets: ~/.secrets
-[V]   - Atlassian API token found
-
-============================================================
-Installation Complete
-============================================================
-
-[V] Agent-context installed successfully!
-```
-
-### Step 7: 설정 확인
+설치 직후 반드시 다음 두 명령으로 환경을 검증합니다:
 
 ```bash
-cat .project.yaml
+# 환경 진단 (의존성, 인증, 프로젝트 설정)
+agent-context doctor
+
+# 빠른 상태 점검 (smoke test)
+agent-context tests smoke
 ```
 
-**출력 예시:**
-```yaml
-roles:
-  vcs: gitlab
-  issue: jira
-  review: gitlab
-  docs: confluence
+**정상 출력 예시:**
+```
+agent-context doctor
+[V] bash >= 4.0
+[V] git >= 2.0
+[V] curl found
+[V] jq found
+[V] yq found (optional)
+Summary: total=5 passed=5 failed=0 warned=0 skipped=0
 
-platforms:
-  jira:
-    base_url: https://mycompany.atlassian.net
-    project_key: DEMO
-    email: developer@mycompany.com
-
-  confluence:
-    base_url: https://mycompany.atlassian.net/wiki
-    space_key: DEV
-
-  gitlab:
-    base_url: https://gitlab.mycompany.com
-
-branch:
-  feature_prefix: feat/
-  bugfix_prefix: fix/
-  hotfix_prefix: hotfix/
+agent-context tests smoke
+[V] deps: all required dependencies found
+[V] auth: secrets directory exists
+[V] global: ~/.agent-context is valid
+[V] project: .agent/ structure is valid
+Summary: total=4 passed=4 failed=0 warned=0 skipped=0
 ```
 
-### Step 8: 연결 테스트
+실패 항목이 있으면 아래 [빠른 문제 해결](#빠른-문제-해결) 또는 [docs/USER_GUIDE.md](docs/USER_GUIDE.md#문제-해결) 참고.
+
+### Step 8: (선택) 외부 연결 테스트
+
+네트워크가 가능한 환경에서 외부 서비스 연결을 확인합니다:
 
 ```bash
+# GitLab/Jira/Confluence 연결 확인
+agent-context doctor connect
+
+# PM CLI 연결 테스트
 agent-context pm config show
 agent-context pm jira me
 ```
 
-**출력 예시:**
-```
-[i] Configuration loaded from: .project.yaml
-[V] Jira: https://mycompany.atlassian.net (DEMO)
-[V] Email: developer@mycompany.com
-[V] Token: ~/.secrets/atlassian-api-token
-
-{
-  "displayName": "Developer Name",
-  "emailAddress": "developer@mycompany.com",
-  "accountId": "..."
-}
-```
-
 ---
 
-### 주요 명령어
+## 주요 명령어
 
-| 명령어 | 설명 |
-|--------|------|
-| `agent-context init` | 글로벌 환경 초기화 |
-| `agent-context install` | 현재 프로젝트에 설치 (대화형) |
-| `agent-context install --force` | 기존 파일 덮어쓰기 |
-| `agent-context install --profile minimal` | 최소 설치 (core만) |
-| `agent-context install --non-interactive` | 비대화형 설치 |
-| `agent-context pm <cmd>` | 프로젝트 PM CLI 실행 |
+전체 CLI 트리입니다. 상세 옵션은 각 명령에 `--help`를 붙여 확인하세요.
+
+| 명령어 | 설명 | 비고 |
+|--------|------|------|
+| `agent-context init` | 글로벌 환경 초기화 | `~/.secrets`, 쉘 alias 설정 |
+| `agent-context install` | 현재 프로젝트에 설치 | `--profile minimal/full`, `--force`, `--non-interactive` |
+| `agent-context update` | 소스 업데이트 (brew update와 유사) | 별칭: `up`. `--check`, `--force` |
+| `agent-context upgrade` | 프로젝트 업그레이드 (brew upgrade와 유사) | `--apply`, `--prune`, `--rollback` |
+| `agent-context doctor` | 환경 진단 (오프라인) | 별칭: `dr`. 하위: `deps`, `auth`, `project`, `connect` |
+| `agent-context audit` | 저장소/프로젝트 감사 | `--repo` (개발자), `--project` (사용자) |
+| `agent-context tests` | 테스트 실행 (CI 친화) | 하위: `list`, `smoke`, `e2e`. `--tags`, `--skip`, `--formula` |
+| `agent-context log` | 실행 로그 조회 | `--list`, `--global`, `--project`, `--tail`, `--follow`, `--level` |
+| `agent-context report` | 진단 리포트 생성 | `--output <file>`, `--issue` (GitLab 이슈 생성) |
+| `agent-context clean` | 캐시/로그 정리 | `--logs`, `--global`, `--all`, `--force`, `--dry-run` |
+| `agent-context demo` | 설치 데모 실행 | `demo/install.sh` 래퍼 |
+| `agent-context pm <cmd>` | PM CLI (Jira/Confluence) | `pm config show`, `pm jira issue list` 등 |
+
+**공통 옵션:** `--debug`, `--quiet`, `--verbose`, `--version`, `--help`
 
 ### 비대화형 설치 (CI/스크립트용)
 
@@ -285,7 +220,29 @@ agent-context install --non-interactive --force \
     --gitlab-url https://gitlab.mycompany.com
 ```
 
-상세 가이드: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+### 무엇을 실행해야 할까?
+
+| 목적 | 명령 | 상세 문서 |
+|------|------|-----------|
+| 현재 환경이 정상인지 빠르게 확인 | `agent-context tests smoke` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
+| 처음부터 끝까지 설치 과정 재현 | `agent-context demo` | [demo/README.md](demo/README.md) |
+| 특정 항목만 세밀하게 점검 | `agent-context tests --tags ...` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
+| Docker에서 크로스 플랫폼 검증 | `agent-context demo --os ubuntu` | [demo/README.md](demo/README.md) |
+| CI 파이프라인에 점검 추가 | `agent-context tests smoke` | [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
+
+---
+
+## 빠른 문제 해결
+
+자주 발생하는 문제와 해결 방법입니다. 전체 문제 해결 가이드는 [docs/USER_GUIDE.md](docs/USER_GUIDE.md#문제-해결) 참고.
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `doctor`에서 의존성 실패 | `jq`, `yq` 등 미설치 | Step 1 의존성 설치 재실행 |
+| `tests smoke`에서 auth 실패 | `~/.secrets/` 디렉토리 없음 | `mkdir -p ~/.secrets && chmod 700 ~/.secrets` |
+| `install` 후 `.project.yaml`에 `CHANGE_ME` | 대화형 설정 건너뜀 | `.project.yaml` 직접 편집 또는 `agent-context install --force`로 재설치 |
+| `agent-context: command not found` | alias 미설정 또는 쉘 미재시작 | `source ~/.zshrc` (또는 `~/.bashrc`) 실행 |
+| `upgrade --apply` 후 문제 발생 | 업그레이드 충돌 | `agent-context upgrade --rollback`으로 복원 |
 
 ---
 
@@ -298,20 +255,27 @@ agent-context 자체를 개발하거나 기여합니다.
 git clone git@gitlab.fadutec.dev:soc-ip/agentic-ai/agent-context.git
 cd agent-context
 
-# 2. 의존성 설치
+# 2. 의존성 설치 (개발자 도구 포함)
 pip install pre-commit
-brew install gh glab jq yq shellcheck shfmt
+brew install jq yq shellcheck shfmt
 
-# 3. pre-commit 훅 설정
+# 3. (선택) VCS CLI 설치
+brew install gh glab
+
+# 4. pre-commit 훅 설정
 pre-commit install
 
-# 4. 피처 브랜치에서 작업
+# 5. 피처 브랜치에서 작업
 git checkout -b feat/my-feature
 # ... make changes ...
 pre-commit run --all-files
 git commit -m "feat: add new feature"
 
-# 5. 데모로 검증 (선택)
+# 6. 변경사항 검증
+agent-context tests smoke          # 빠른 상태 점검
+agent-context audit --repo         # 저장소 내부 감사
+
+# 7. (선택) 데모로 E2E 검증
 ./demo/install.sh --skip-e2e --only 6
 ```
 
@@ -323,9 +287,26 @@ git commit -m "feat: add new feature"
 
 ```
 agent-context/
+├── bin/                # CLI 진입점
+│   └── agent-context.sh
+├── lib/                # 공통 라이브러리
+│   ├── logging.sh      # 로깅 ([V]/[X]/[!]/[i] 마커)
+│   └── platform.sh     # 플랫폼 감지
+├── builtin/            # 내장 명령어 (doctor, tests, audit 등)
+│   ├── doctor.sh
+│   ├── tests.sh
+│   ├── audit.sh
+│   ├── init.sh
+│   ├── update.sh
+│   ├── upgrade.sh
+│   ├── clean.sh
+│   ├── log.sh
+│   └── report.sh
+├── install.sh          # 프로젝트 설치 스크립트
 ├── docs/               # 문서
 │   ├── ARCHITECTURE.md # 설계 철학 (SSOT)
 │   ├── USER_GUIDE.md   # 사용자 가이드
+│   ├── TESTING_GUIDE.md # 테스트 가이드
 │   ├── CONTRIBUTING.md # 기여자 가이드
 │   └── convention/     # 코딩 컨벤션
 ├── skills/             # 범용 스킬 템플릿 (Thin)
@@ -339,36 +320,48 @@ agent-context/
 └── tests/              # 테스트
 ```
 
-## CLI 도구 요약
-
-| 도구 | 용도 | 주요 명령 |
-|------|------|----------|
-| `git` | 버전 관리 | `checkout`, `commit`, `push` |
-| `gh` | GitHub | `pr create`, `pr merge` |
-| `glab` | GitLab | `mr create`, `mr merge` |
-| `pm` | JIRA/Confluence | `jira issue`, `confluence page` |
+---
 
 ## 필수 도구
 
+### 사용자 (필수)
+
 | 도구 | 목적 | 설치 |
-|------|---------|---------|
+|------|------|------|
 | `git` | 버전 관리 | 대부분 사전 설치 |
-| `gh` | GitHub CLI | `brew install gh` |
-| `glab` | GitLab CLI | `brew install glab` |
+| `curl` | HTTP 요청 | 대부분 사전 설치 |
+| `jq` | JSON 처리 | `brew install jq` / `apt install jq` |
+| `yq` | YAML 처리 | `brew install yq` / [GitHub releases](https://github.com/mikefarah/yq/releases) |
 | `pre-commit` | 린팅/포맷팅 | `pip install pre-commit` |
-| `jq` | JSON 처리 | `brew install jq` |
-| `yq` | YAML 처리 | `brew install yq` |
+
+### 사용자 (선택)
+
+| 도구 | 목적 | 설치 | 필요 시점 |
+|------|------|------|-----------|
+| `glab` | GitLab CLI | `brew install glab` | GitLab MR 관리 |
+| `gh` | GitHub CLI | `brew install gh` | GitHub PR 관리 |
+
+### 개발자 전용
+
+| 도구 | 목적 | 설치 |
+|------|------|------|
+| `shellcheck` | 쉘 스크립트 린팅 | `brew install shellcheck` |
+| `shfmt` | 쉘 스크립트 포맷팅 | `brew install shfmt` |
+| `hadolint` | Dockerfile 린팅 | `brew install hadolint` |
+
+---
 
 ## 문서
 
 | 문서 | 설명 | 대상 |
 |------|------|------|
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | 설치 및 사용법 | 사용자 |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | 설치, 설정, CLI 레퍼런스 | 사용자 |
+| [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) | 테스트 시나리오 및 검증 가이드 | 개발자/QA |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | 개발 및 기여 | 개발자 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 | 모두 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 설계 철학 (SSOT) | 모두 |
 | [docs/convention/](docs/convention/) | 코딩 컨벤션 | 개발자 |
 | [workflows/README.md](workflows/README.md) | 워크플로 공통 정책 | 모두 |
-| [demo/README.md](demo/README.md) | 데모 가이드 | 개발자 |
+| [demo/README.md](demo/README.md) | 데모 가이드 (개발자/검증 전용) | 개발자 |
 
 ## 라이선스
 

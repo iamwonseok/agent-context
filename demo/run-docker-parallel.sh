@@ -64,13 +64,29 @@ SKIP_E2E=false
 ONLY_STEP=""
 SERIAL_MODE=false
 
+# Load demo/.env (if exists)
+# Priority: explicit export > demo/.env > script defaults
+_ENV_FILE="${SCRIPT_DIR}/.env"
+if [[ -f "${_ENV_FILE}" ]]; then
+	while IFS= read -r _line || [[ -n "${_line}" ]]; do
+		# Skip comments and empty lines
+		[[ "${_line}" =~ ^[[:space:]]*($|#) ]] && continue
+		_key="${_line%%=*}"
+		_val="${_line#*=}"
+		# Only export if not already set in environment
+		if [[ -z "${!_key+x}" ]]; then
+			export "${_key}=${_val}"
+		fi
+	done < "${_ENV_FILE}"
+fi
+
 # Default platform settings
 : "${JIRA_EMAIL:=}"
-: "${JIRA_BASE_URL:=https://fadutec.atlassian.net}"
+: "${JIRA_BASE_URL:=https://wonseokko.atlassian.net}"
 : "${JIRA_PROJECT_KEY:=SVI4}"
-: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${CONFLUENCE_BASE_URL:=https://wonseokko.atlassian.net/wiki}"
 : "${CONFLUENCE_SPACE_KEY:=~wonseok}"
-: "${GITLAB_BASE_URL:=https://gitlab.fadutec.dev}"
+: "${GITLAB_BASE_URL:=https://gitlab.com}"
 : "${DEMO_GITLAB_GROUP:=soc-ip/agentic-ai}"
 : "${DEMO_JIRA_PROJECT:=${JIRA_PROJECT_KEY}}"
 : "${DEMO_CONFLUENCE_SPACE:=${CONFLUENCE_SPACE_KEY}}"

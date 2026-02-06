@@ -215,6 +215,24 @@ else
 fi
 
 # ============================================================
+# Load demo/.env (if exists)
+# ============================================================
+# Priority: explicit export > demo/.env > script defaults
+_ENV_FILE="${SCRIPT_DIR}/.env"
+if [[ -f "${_ENV_FILE}" ]]; then
+	while IFS= read -r _line || [[ -n "${_line}" ]]; do
+		# Skip comments and empty lines
+		[[ "${_line}" =~ ^[[:space:]]*($|#) ]] && continue
+		_key="${_line%%=*}"
+		_val="${_line#*=}"
+		# Only export if not already set in environment
+		if [[ -z "${!_key+x}" ]]; then
+			export "${_key}=${_val}"
+		fi
+	done < "${_ENV_FILE}"
+fi
+
+# ============================================================
 # Export Environment
 # ============================================================
 export RUN_ID
@@ -227,19 +245,19 @@ export FORCE
 export DOCKER_MODE
 
 # Default Jira settings for demo
-: "${JIRA_BASE_URL:=https://fadutec.atlassian.net}"
+: "${JIRA_BASE_URL:=https://wonseokko.atlassian.net}"
 : "${JIRA_PROJECT_KEY:=SVI4}"
 export JIRA_BASE_URL
 export JIRA_PROJECT_KEY
 
 # Default Confluence settings for demo
-: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${CONFLUENCE_BASE_URL:=https://wonseokko.atlassian.net/wiki}"
 : "${CONFLUENCE_SPACE_KEY:=~wonseok}"
 export CONFLUENCE_BASE_URL
 export CONFLUENCE_SPACE_KEY
 
 # Default GitLab settings for demo
-: "${GITLAB_BASE_URL:=https://gitlab.fadutec.dev}"
+: "${GITLAB_BASE_URL:=https://gitlab.com}"
 export GITLAB_BASE_URL
 
 # Default demo scenario settings (Step 008) - align with JIRA_PROJECT_KEY

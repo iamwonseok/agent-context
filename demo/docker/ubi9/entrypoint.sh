@@ -50,7 +50,7 @@ setup_glab_auth() {
 				# Extract host from URL (e.g., https://gitlab.example.com -> gitlab.example.com)
 				host=$(echo "${base_url}" | sed -E 's#^[a-zA-Z]+://##' | sed -E 's#/.*$##')
 			fi
-			: "${host:=gitlab.fadutec.dev}"
+			: "${host:=gitlab.com}"
 			export GITLAB_HOST="${host}"
 
 			# Write glab config for self-managed host (always overwrite to ensure correct settings)
@@ -171,7 +171,7 @@ setup_git_user() {
 setup_ssh() {
 	local ssh_key="/root/.ssh/id_ed25519"
 	local ssh_pub_key="/root/.ssh/id_ed25519.pub"
-	local gitlab_host="${GITLAB_HOST:-gitlab.fadutec.dev}"
+	local gitlab_host="${GITLAB_HOST:-gitlab.com}"
 
 	# Check if SSH key exists (must be mounted from host)
 	if [[ ! -f "${ssh_key}" ]]; then
@@ -226,7 +226,7 @@ setup_ssh() {
 # SSH Preflight Check
 # ============================================================
 ssh_preflight() {
-	local gitlab_host="${GITLAB_HOST:-gitlab.fadutec.dev}"
+	local gitlab_host="${GITLAB_HOST:-gitlab.com}"
 
 	log_info "SSH preflight: testing connection to ${gitlab_host}..."
 

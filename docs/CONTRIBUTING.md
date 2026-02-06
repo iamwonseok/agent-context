@@ -60,9 +60,22 @@ agent-context/
 ├── .pre-commit-config.yaml
 ├── install.sh             # 설치 스크립트
 │
+├── bin/                   # CLI 진입점
+│   └── agent-context.sh   # 메인 CLI
+│
+├── lib/                   # 공통 라이브러리
+│   ├── logging.sh         # 로깅 ([V]/[X]/[!] 마커)
+│   └── platform.sh        # 플랫폼 감지
+│
+├── builtin/               # 내장 명령어
+│   ├── doctor.sh, tests.sh, audit.sh
+│   ├── init.sh, update.sh, upgrade.sh
+│   └── clean.sh, log.sh, report.sh
+│
 ├── docs/                  # 문서
 │   ├── ARCHITECTURE.md    # 설계 철학 (SSOT)
 │   ├── USER_GUIDE.md      # 사용자 가이드
+│   ├── TESTING_GUIDE.md   # 테스트 가이드
 │   ├── CONTRIBUTING.md    # 이 파일
 │   ├── convention/        # 코딩 컨벤션
 │   └── rfc/               # 설계 제안
@@ -87,7 +100,7 @@ agent-context/
 │       └── lib/
 │
 ├── templates/             # 설치 시 복사되는 템플릿
-│   ├── cursorrules.tmpl
+│   ├── cursorrules.index_map.tmpl
 │   ├── project.yaml.tmpl
 │   └── ...
 │
@@ -107,6 +120,9 @@ agent-context/
 
 | 파일/디렉토리 | 용도 | 수정 시 주의 |
 |--------------|------|-------------|
+| `bin/agent-context.sh` | CLI 메인 진입점 | 하위 호환성 유지 |
+| `lib/` | 공통 라이브러리 | logging/platform 변경 시 전체 영향 |
+| `builtin/` | 내장 명령어 구현 | exit code 규격 준수 (0/1/2/3) |
 | `install.sh` | 사용자 프로젝트에 설치 | 하위 호환성 유지 |
 | `skills/` | 범용 템플릿 | Thin 원칙 유지 |
 | `workflows/` | 컨텍스트 워크플로 | Thick 원칙 유지 |
@@ -163,6 +179,8 @@ gh pr create --title "feat: Add new feature" --body "Description..."
 
 ## 테스트
 
+테스트 시나리오 전체 목록과 상세 검증 방법은 [TESTING_GUIDE.md](TESTING_GUIDE.md)를 참고.
+
 ### 정적 분석
 
 ```bash
@@ -173,6 +191,22 @@ pre-commit run --all-files
 pre-commit run shellcheck --all-files
 pre-commit run shfmt --all-files
 pre-commit run trailing-whitespace --all-files
+```
+
+### agent-context 내장 검증
+
+```bash
+# 저장소 내부 감사 (개발자 모드)
+agent-context audit --repo
+
+# 빠른 smoke 테스트
+agent-context tests smoke
+
+# 특정 태그만 실행
+agent-context tests --tags deps,auth
+
+# 테스트 목록 확인
+agent-context tests list
 ```
 
 ### 단위 테스트
@@ -259,6 +293,8 @@ cat /tmp/agent-context-demo-*/export/latest/DEMO_REPORT.md
 ### PR 체크리스트
 
 - [ ] `pre-commit run --all-files` 통과
+- [ ] `agent-context tests smoke` 통과
+- [ ] `agent-context audit --repo` 통과 (저장소 변경 시)
 - [ ] 관련 문서 업데이트 (README, 가이드 등)
 - [ ] 테스트 추가 또는 기존 테스트 통과
 - [ ] 커밋 메시지 컨벤션 준수
@@ -283,5 +319,6 @@ gh pr create --title "RFC: My Proposal"
 ## 관련 문서
 
 - [설계 철학 (ARCHITECTURE.md)](ARCHITECTURE.md)
+- [테스트 가이드 (TESTING_GUIDE.md)](TESTING_GUIDE.md)
 - [RFC 가이드 (rfc/README.md)](rfc/README.md)
 - [데모 가이드 (demo/README.md)](../demo/README.md)

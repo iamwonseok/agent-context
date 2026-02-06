@@ -21,8 +21,8 @@ WARN_COUNT=0
 # Configuration
 : "${JIRA_EMAIL:?JIRA_EMAIL is required}"
 : "${JIRA_PROJECT_KEY:=SVI4}"
-: "${JIRA_BASE_URL:=https://fadutec.atlassian.net}"
-: "${CONFLUENCE_BASE_URL:=https://fadutec.atlassian.net/wiki}"
+: "${JIRA_BASE_URL:=https://wonseokko.atlassian.net}"
+: "${CONFLUENCE_BASE_URL:=https://wonseokko.atlassian.net/wiki}"
 : "${CONFLUENCE_SPACE_KEY:=~wonseok}"
 : "${GITLAB_GROUP:=soc-ip/agentic-ai}"
 ATLASSIAN_TOKEN_FILE="${HOME}/.secrets/atlassian-api-token"
